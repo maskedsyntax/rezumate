@@ -27,7 +27,7 @@ export default function Home() {
         <section className="shell hero">
           <div className="hero-left">
             <div className="eyebrow">Private On-Device ATS Optimization · Coming to iPhone</div>
-            <h1>Tailor your resume. 100% privately.</h1>
+            <h1>Tailor your resume.<br />100% privately.</h1>
             <p className="lead">
               Upload any resume, paste a job description, and watch your ATS score jump
               30+ points — without sending your career history to a cloud server.

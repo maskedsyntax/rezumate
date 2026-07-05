@@ -220,7 +220,6 @@ h3 {
 }
 
 h1 {
-  max-width: 13ch;
   margin: 20px 0 18px;
   font-size: clamp(38px, 5.5vw, 64px);
   line-height: 0.98;
