@@ -9,6 +9,9 @@ struct RezumateNativeApp: App {
             RootView()
                 .environmentObject(appState)
                 .preferredColorScheme(.light)
+                .onOpenURL { url in
+                    appState.importResumeFromExternalURL(url)
+                }
         }
     }
 }

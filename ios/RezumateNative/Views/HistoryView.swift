@@ -160,7 +160,7 @@ private struct OfflineHistoryView: View {
                     .font(.title3.weight(.black))
                     .foregroundStyle(RezTheme.ink)
 
-                Text("Saved analyses will appear here when the backend is reachable.")
+                Text("Saved analyses will appear here when local history is available.")
                     .font(.subheadline.weight(.semibold))
                     .foregroundStyle(RezTheme.muted)
                     .multilineTextAlignment(.center)

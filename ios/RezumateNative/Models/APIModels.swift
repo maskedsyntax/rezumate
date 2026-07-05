@@ -187,3 +187,9 @@ struct AcceptRewriteResponse: Decodable {
     let updatedResumeText: String
 }
 
+struct ImproveResumeResponse: Decodable {
+    let success: Bool
+    let variantId: UUID
+    let optimizedResumeText: String
+    let updatedAnalysis: AnalyzeResponse
+}

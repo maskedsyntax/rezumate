@@ -42,7 +42,7 @@ struct AnalyzeView: View {
         VStack(alignment: .leading, spacing: 18) {
             HStack(alignment: .top) {
                 VStack(alignment: .leading, spacing: 4) {
-                    Text("Hello, Arjun")
+                    Text("Ready to tailor your resume")
                         .font(.system(size: 24, weight: .black))
                         .foregroundStyle(RezTheme.ink)
                     Text("Let's improve your resume today.")

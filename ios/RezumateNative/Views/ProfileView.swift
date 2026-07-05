@@ -2,7 +2,6 @@ import SwiftUI
 
 struct ProfileView: View {
     @EnvironmentObject private var appState: AppState
-    @ObservedObject private var aiService = LocalAIService.shared
 
     var body: some View {
         NavigationStack {
@@ -21,11 +20,11 @@ struct ProfileView: View {
                                 }
 
                             VStack(alignment: .leading, spacing: 4) {
-                                Text(appState.session?.user?.email ?? "Signed in")
+                                Text("Local workspace")
                                     .font(.headline.weight(.black))
                                     .foregroundStyle(RezTheme.ink)
                                 
-                                Text((appState.session?.user?.planTier ?? "pro").uppercased() + " PLAN")
+                                Text("PRIVATE ON-DEVICE")
                                     .font(.system(size: 10, weight: .black))
                                     .foregroundStyle(RezTheme.ink)
                                     .padding(.horizontal, 8)
@@ -43,48 +42,20 @@ struct ProfileView: View {
                     
                     RezCard {
                         VStack(alignment: .leading, spacing: 12) {
-                            SectionTitle("On-Device AI Model", subtitle: "Llama 3.2 1B Instruct")
-                            
-                            if aiService.modelExists {
-                                Label("Model loaded successfully", systemImage: "checkmark.circle.fill")
-                                    .font(.subheadline.weight(.semibold))
-                                    .foregroundStyle(RezTheme.success)
-                                Text("Offline bullet optimization is fully enabled. Rewrites are generated directly on your Neural Engine.")
-                                    .font(.caption)
-                                    .foregroundStyle(RezTheme.muted)
-                            } else if aiService.isDownloadingModel {
-                                VStack(alignment: .leading, spacing: 8) {
-                                    Text("Downloading model... \(Int(aiService.downloadProgress * 100))%")
-                                        .font(.subheadline.weight(.bold))
-                                        .foregroundStyle(RezTheme.ink)
-                                    ProgressView(value: aiService.downloadProgress, total: 1.0)
-                                        .tint(RezTheme.primary)
-                                    Button("Cancel Download") {
-                                        aiService.cancelDownload()
-                                    }
-                                    .buttonStyle(RezSecondaryButtonStyle(fill: RezTheme.error))
-                                }
-                            } else {
-                                VStack(alignment: .leading, spacing: 8) {
-                                    Text("Bullet optimization currently runs in rules-based fallback mode.")
-                                        .font(.caption)
-                                        .foregroundStyle(RezTheme.muted)
-                                    Button("Download Llama 3.2 (~650MB)") {
-                                        aiService.downloadModel()
-                                    }
-                                    .buttonStyle(RezPrimaryButtonStyle())
-                                }
-                            }
+                            SectionTitle("Privacy")
+                            Text("Resume parsing, scoring, suggestions, history, and export run locally on this device.")
+                                .font(.caption)
+                                .foregroundStyle(RezTheme.muted)
                         }
                     }
 
                     RezCard {
                         VStack(alignment: .leading, spacing: 12) {
-                            SectionTitle("Account")
+                            SectionTitle("Local Data")
                             Button(role: .destructive) {
                                 appState.signOut()
                             } label: {
-                                Label("Sign Out", systemImage: "rectangle.portrait.and.arrow.right")
+                                Label("Clear Current Analysis", systemImage: "trash")
                             }
                             .buttonStyle(RezSecondaryButtonStyle(fill: RezTheme.error))
                         }
@@ -97,4 +68,3 @@ struct ProfileView: View {
         }
     }
 }
-

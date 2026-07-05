@@ -17,20 +17,37 @@ final class AppState: ObservableObject {
     @Published var latestAnalysis: AnalyzeResponse?
     @Published var selectedVariant: VariantDetail?
 
-    let api = APIClient(baseURL: AppConfiguration.apiBaseURL)
+    let api = APIClient()
 
     init() {
-        if let token = KeychainSessionStore.loadToken() {
-            session = AuthSession(token: token, user: nil)
-        }
+        let token = KeychainSessionStore.loadToken() ?? "local-session-token"
+        session = AuthSession(token: token, user: nil)
     }
 
     var token: String? {
         session?.token
     }
 
+    func importResumeFromExternalURL(_ url: URL) {
+        guard let token else { return }
+
+        Task { @MainActor in
+            let didStartAccessing = url.startAccessingSecurityScopedResource()
+            defer {
+                if didStartAccessing { url.stopAccessingSecurityScopedResource() }
+            }
+
+            do {
+                upload = try await api.uploadResume(fileURL: url, token: token)
+                latestAnalysis = nil
+                selectedVariant = nil
+            } catch {
+                print("Failed to import opened document: \(error.localizedDescription)")
+            }
+        }
+    }
+
     func signOut() {
-        session = nil
         upload = nil
         jobDescription = ""
         latestAnalysis = nil

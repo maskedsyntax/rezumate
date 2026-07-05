@@ -156,8 +156,10 @@ struct SectionTitle: View {
                 Text(subtitle)
                     .font(.subheadline)
                     .foregroundStyle(RezTheme.muted)
+                    .fixedSize(horizontal: false, vertical: true)
             }
         }
+        .frame(maxWidth: .infinity, alignment: .leading)
     }
 }
 
@@ -196,9 +198,12 @@ struct RezPrimaryButtonStyle: ButtonStyle {
                 .font(.headline.weight(.black))
                 .textCase(.uppercase)
                 .foregroundStyle(foreground)
+                .lineLimit(1)
+                .minimumScaleFactor(0.82)
                 .padding(.horizontal, 16)
+                .frame(maxWidth: .infinity)
         }
-        .frame(maxWidth: .infinity, minHeight: 52)
+        .frame(maxWidth: .infinity, minHeight: 52, maxHeight: 52)
         .overlay {
             RoundedRectangle(cornerRadius: 6)
                 .stroke(RezTheme.ink, lineWidth: 2)
@@ -223,9 +228,12 @@ struct RezSecondaryButtonStyle: ButtonStyle {
                 .font(.headline.weight(.black))
                 .textCase(.uppercase)
                 .foregroundStyle(RezTheme.ink)
+                .lineLimit(1)
+                .minimumScaleFactor(0.82)
                 .padding(.horizontal, 16)
+                .frame(maxWidth: .infinity)
         }
-        .frame(maxWidth: .infinity, minHeight: 50)
+        .frame(maxWidth: .infinity, minHeight: 50, maxHeight: 50)
         .overlay {
             RoundedRectangle(cornerRadius: 6)
                 .stroke(RezTheme.ink, lineWidth: 2)

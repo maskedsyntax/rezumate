@@ -16,7 +16,7 @@ Rezumate helps job seekers upload a resume, paste a job description, get instant
 
 Resumes contain highly sensitive personal information, including names, phone numbers, email addresses, and full career history. Standard resume builders upload this data to third-party cloud servers. 
 
-Rezumate processes everything in-memory and stores history in secure, local sandboxed storage on the device. All AI tasks are handled on-device using local models, ensuring complete data privacy.
+Rezumate processes everything in-memory and stores history in secure, local sandboxed storage on the device. Resume analysis and writing suggestions run locally, keeping sensitive resume data private.
 
 ---
 
@@ -38,11 +38,11 @@ open ios/RezumateNative.xcodeproj
 The app runs 100% locally and includes:
 - **Local Document Parsers:** In-memory parsing of PDFs (`PDFKit`) and Word Documents (`DocxTextExtractor` ZIP XML scanner).
 - **Deterministic ATS Scoring:** Local calculations for keyword match, structure quality, and formatting warning checks.
-- **On-Device AI Rewrites:** Powered by a quantized **Llama 3.2 1B Instruct** model running directly on Apple's Neural Engine.
+- **Local Writing Suggestions:** Rules-based bullet improvements run locally on device.
 - **Local Storage:** Saved variants and scoring history are persisted locally in secure, sandboxed storage via JSON structures.
 - **On-Device Export:** Generates clean, selectable, single-column ATS-safe PDFs directly from local SwiftUI layout bounds.
 
-*Note: In debug builds, you can click "Use Local Dev Session" to bypass Apple authentication and run the app completely offline immediately.*
+*Note: The app opens directly into a local workspace and does not require an account for the first release.*
 
 ---
 
