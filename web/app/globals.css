@@ -379,9 +379,11 @@ h3 {
 }
 
 .optimized-badge {
-  background: #16a34a;
-  color: #fff;
-  border-color: #15803d;
+  background: #fff;
+  color: #16a34a;
+  border-color: #16a34a;
+  font-size: 9px;
+  letter-spacing: 0.04em;
 }
 
 .score-card {
