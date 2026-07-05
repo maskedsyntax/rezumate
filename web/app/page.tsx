@@ -14,10 +14,10 @@ const features = [
 ];
 
 const steps = [
-  ["01", "Upload", "PDF or DOCX"],
-  ["02", "Analyze", "Get your ATS score"],
-  ["03", "Improve", "Inject keywords & fix bullets"],
-  ["04", "Export", "Download LaTeX-style PDF"],
+  ["01", "Upload", "PDF or DOCX resume"],
+  ["02", "Analyze", "Instant ATS score & gaps"],
+  ["03", "Improve", "Inject keywords, fix bullets"],
+  ["04", "Export", "Download LaTeX PDF"],
 ];
 
 export default function Home() {
@@ -29,8 +29,8 @@ export default function Home() {
             <div className="eyebrow">Private On-Device ATS Optimization · Coming to iPhone</div>
             <h1>Tailor your resume. 100% privately.</h1>
             <p className="lead">
-              Upload any resume, paste a job description, and watch your ATS score jump —
-              on average 30+ points — without sending your career history to a cloud server.
+              Upload any resume, paste a job description, and watch your ATS score jump
+              30+ points — without sending your career history to a cloud server.
             </p>
             <div className="actions">
               <a
@@ -43,13 +43,14 @@ export default function Home() {
             </div>
 
             <div className="hero-steps">
-              {steps.map(([num, label, sub]) => (
+              {steps.map(([num, label, sub], i) => (
                 <div className="hero-step" key={num}>
                   <span className="hero-step-num">{num}</span>
-                  <div>
+                  <div className="hero-step-body">
                     <strong>{label}</strong>
                     <span>{sub}</span>
                   </div>
+                  {i < steps.length - 1 && <span className="hero-step-sep" aria-hidden="true">›</span>}
                 </div>
               ))}
             </div>
@@ -60,43 +61,32 @@ export default function Home() {
               <div className="phone-island" aria-hidden="true" />
               <div className="screen">
 
-                <div className="screen-tabs">
-                  <span className="screen-tab">Upload</span>
-                  <span className="screen-tab screen-tab-active">Results</span>
-                  <span className="screen-tab">History</span>
+                <div className="app-header">
+                  <div className="app-header-left">
+                    <img src="/rezumate-logo.svg" alt="" className="app-logo" />
+                    <div>
+                      <strong>Rezumate</strong>
+                      <span>Results</span>
+                    </div>
+                  </div>
+                  <span className="app-badge optimized-badge">✓ Optimized</span>
                 </div>
 
                 <div className="score-card">
-                  <div className="score-card-top">
-                    <div className="score-label">ATS Match Score</div>
-                    <span className="optimized-badge">Optimized ✓</span>
-                  </div>
-                  <div className="score-numbers">
-                    <div className="score-before-col">
-                      <span className="score-was-label">Before</span>
-                      <span className="score-was-num">55</span>
-                    </div>
-                    <div className="score-arrow-col">→</div>
-                    <div className="score-after-col">
-                      <span className="score-now-label">After</span>
-                      <div className="score-now-row">
-                        <strong className="score-now-num">87</strong>
-                        <em>/100</em>
-                      </div>
-                    </div>
-                    <span className="score-delta">+32 pts</span>
+                  <div className="score-label">ATS Match Score</div>
+                  <div className="sc-main">
+                    <span className="sc-big">87<em>/100</em></span>
+                    <span className="sc-gain">+32 pts</span>
                   </div>
                   <div className="progress-track" aria-hidden="true">
                     <div className="progress-fill" style={{ width: "87%" }} />
                   </div>
+                  <div className="sc-from">Improved from 55</div>
                 </div>
 
                 <div className="screen-section">
-                  <div className="screen-section-header">
-                    <span className="section-label">Keywords injected</span>
-                    <span className="screen-badge-count">+4</span>
-                  </div>
-                  <div className="chips">
+                  <div className="section-label">Keywords injected</div>
+                  <div className="chips" style={{ marginTop: "5px" }}>
                     <span className="chip chip-added">Docker</span>
                     <span className="chip chip-added">Kubernetes</span>
                     <span className="chip chip-added">TypeScript</span>
@@ -104,15 +94,12 @@ export default function Home() {
                   </div>
                 </div>
 
-                <div className="bullet-diff">
-                  <div className="bullet-diff-row bullet-diff-before">
-                    <span className="diff-tag">Before</span>
-                    <p>Worked on backend services and APIs</p>
-                  </div>
-                  <div className="bullet-diff-row bullet-diff-after">
-                    <span className="diff-tag diff-tag-after">After</span>
-                    <p>Engineered backend APIs using Docker across 3+ environments, improving delivery speed by 25%</p>
-                  </div>
+                <div className="bullet-improve-card">
+                  <div className="bi-tag">✦ Bullet strengthened</div>
+                  <p className="bi-text">
+                    Engineered backend APIs using Docker across 3+ environments,
+                    improving delivery speed by 25%
+                  </p>
                 </div>
 
                 <div className="screen-export-btn">
