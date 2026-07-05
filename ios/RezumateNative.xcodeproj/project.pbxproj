@@ -9,13 +9,10 @@
 /* Begin PBXBuildFile section */
 		100000000000000000000001 /* RezumateNativeApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 200000000000000000000001 /* RezumateNativeApp.swift */; };
 		100000000000000000000002 /* AppState.swift in Sources */ = {isa = PBXBuildFile; fileRef = 200000000000000000000002 /* AppState.swift */; };
-		100000000000000000000003 /* AppConfiguration.swift in Sources */ = {isa = PBXBuildFile; fileRef = 200000000000000000000003 /* AppConfiguration.swift */; };
 		100000000000000000000004 /* APIModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 200000000000000000000004 /* APIModels.swift */; };
 		100000000000000000000005 /* APIClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = 200000000000000000000005 /* APIClient.swift */; };
 		100000000000000000000006 /* KeychainSessionStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 200000000000000000000006 /* KeychainSessionStore.swift */; };
-		100000000000000000000007 /* AppleSignInCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 200000000000000000000007 /* AppleSignInCoordinator.swift */; };
 		100000000000000000000008 /* RootView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 200000000000000000000008 /* RootView.swift */; };
-		100000000000000000000009 /* AuthView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 200000000000000000000009 /* AuthView.swift */; };
 		10000000000000000000000A /* DocumentPicker.swift in Sources */ = {isa = PBXBuildFile; fileRef = 20000000000000000000000A /* DocumentPicker.swift */; };
 		10000000000000000000000B /* AnalyzeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 20000000000000000000000B /* AnalyzeView.swift */; };
 		10000000000000000000000C /* ResultsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 20000000000000000000000C /* ResultsView.swift */; };
@@ -30,19 +27,20 @@
 		100000000000000000000015 /* LocalStorageManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 200000000000000000000015 /* LocalStorageManager.swift */; };
 		100000000000000000000016 /* PDFExportService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 200000000000000000000016 /* PDFExportService.swift */; };
 		100000000000000000000017 /* LocalAIService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 200000000000000000000017 /* LocalAIService.swift */; };
+		100000000000000000000018 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = 200000000000000000000018 /* PrivacyInfo.xcprivacy */; };
+		100000000000000000000019 /* ResumeDocument.swift in Sources */ = {isa = PBXBuildFile; fileRef = 20000000000000000000001A /* ResumeDocument.swift */; };
+		10000000000000000000001A /* ResumeParser.swift in Sources */ = {isa = PBXBuildFile; fileRef = 20000000000000000000001B /* ResumeParser.swift */; };
+		10000000000000000000001B /* LaTeXStylePDFRenderer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 20000000000000000000001C /* LaTeXStylePDFRenderer.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
 		200000000000000000000000 /* RezumateNative.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = RezumateNative.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		200000000000000000000001 /* RezumateNativeApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RezumateNativeApp.swift; sourceTree = "<group>"; };
 		200000000000000000000002 /* AppState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppState.swift; sourceTree = "<group>"; };
-		200000000000000000000003 /* AppConfiguration.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppConfiguration.swift; sourceTree = "<group>"; };
 		200000000000000000000004 /* APIModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Models/APIModels.swift; sourceTree = "<group>"; };
 		200000000000000000000005 /* APIClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Services/APIClient.swift; sourceTree = "<group>"; };
 		200000000000000000000006 /* KeychainSessionStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Services/KeychainSessionStore.swift; sourceTree = "<group>"; };
-		200000000000000000000007 /* AppleSignInCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Services/AppleSignInCoordinator.swift; sourceTree = "<group>"; };
 		200000000000000000000008 /* RootView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Views/RootView.swift; sourceTree = "<group>"; };
-		200000000000000000000009 /* AuthView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Views/AuthView.swift; sourceTree = "<group>"; };
 		20000000000000000000000A /* DocumentPicker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Views/DocumentPicker.swift; sourceTree = "<group>"; };
 		20000000000000000000000B /* AnalyzeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Views/AnalyzeView.swift; sourceTree = "<group>"; };
 		20000000000000000000000C /* ResultsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Views/ResultsView.swift; sourceTree = "<group>"; };
@@ -57,6 +55,11 @@
 		200000000000000000000015 /* LocalStorageManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Services/LocalStorageManager.swift; sourceTree = "<group>"; };
 		200000000000000000000016 /* PDFExportService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Services/PDFExportService.swift; sourceTree = "<group>"; };
 		200000000000000000000017 /* LocalAIService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Services/LocalAIService.swift; sourceTree = "<group>"; };
+		200000000000000000000018 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; lastKnownFileType = text.xml; path = Resources/PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
+		200000000000000000000019 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		20000000000000000000001A /* ResumeDocument.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Models/ResumeDocument.swift; sourceTree = "<group>"; };
+		20000000000000000000001B /* ResumeParser.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Services/ResumeParser.swift; sourceTree = "<group>"; };
+		20000000000000000000001C /* LaTeXStylePDFRenderer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Services/LaTeXStylePDFRenderer.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXGroup section */
@@ -72,14 +75,12 @@
 			isa = PBXGroup;
 			children = (
 				200000000000000000000001 /* RezumateNativeApp.swift */,
+				200000000000000000000019 /* Info.plist */,
 				200000000000000000000002 /* AppState.swift */,
-				200000000000000000000003 /* AppConfiguration.swift */,
 				200000000000000000000004 /* APIModels.swift */,
 				200000000000000000000005 /* APIClient.swift */,
 				200000000000000000000006 /* KeychainSessionStore.swift */,
-				200000000000000000000007 /* AppleSignInCoordinator.swift */,
 				200000000000000000000008 /* RootView.swift */,
-				200000000000000000000009 /* AuthView.swift */,
 				20000000000000000000000A /* DocumentPicker.swift */,
 				20000000000000000000000B /* AnalyzeView.swift */,
 				20000000000000000000000C /* ResultsView.swift */,
@@ -94,6 +95,10 @@
 				200000000000000000000015 /* LocalStorageManager.swift */,
 				200000000000000000000016 /* PDFExportService.swift */,
 				200000000000000000000017 /* LocalAIService.swift */,
+				20000000000000000000001A /* ResumeDocument.swift */,
+				20000000000000000000001B /* ResumeParser.swift */,
+				20000000000000000000001C /* LaTeXStylePDFRenderer.swift */,
+				200000000000000000000018 /* PrivacyInfo.xcprivacy */,
 			);
 			path = RezumateNative;
 			sourceTree = "<group>";
@@ -166,6 +171,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				100000000000000000000010 /* Assets.xcassets in Resources */,
+				100000000000000000000018 /* PrivacyInfo.xcprivacy in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -188,13 +194,10 @@
 			files = (
 				100000000000000000000001 /* RezumateNativeApp.swift in Sources */,
 				100000000000000000000002 /* AppState.swift in Sources */,
-				100000000000000000000003 /* AppConfiguration.swift in Sources */,
 				100000000000000000000004 /* APIModels.swift in Sources */,
 				100000000000000000000005 /* APIClient.swift in Sources */,
 				100000000000000000000006 /* KeychainSessionStore.swift in Sources */,
-				100000000000000000000007 /* AppleSignInCoordinator.swift in Sources */,
 				100000000000000000000008 /* RootView.swift in Sources */,
-				100000000000000000000009 /* AuthView.swift in Sources */,
 				10000000000000000000000A /* DocumentPicker.swift in Sources */,
 				10000000000000000000000B /* AnalyzeView.swift in Sources */,
 				10000000000000000000000C /* ResultsView.swift in Sources */,
@@ -208,6 +211,9 @@
 				100000000000000000000015 /* LocalStorageManager.swift in Sources */,
 				100000000000000000000016 /* PDFExportService.swift in Sources */,
 				100000000000000000000017 /* LocalAIService.swift in Sources */,
+				100000000000000000000019 /* ResumeDocument.swift in Sources */,
+				10000000000000000000001A /* ResumeParser.swift in Sources */,
+				10000000000000000000001B /* LaTeXStylePDFRenderer.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -302,15 +308,8 @@
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = GVGJLY2H53;
-				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_KEY_CFBundleDisplayName = Rezumate;
-				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.productivity";
-				INFOPLIST_KEY_NSDocumentsFolderUsageDescription = "Rezumate imports your selected resume so it can be analyzed against a job description.";
-				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
-				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
-				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
-				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
-				INFOPLIST_KEY_REZUMATE_API_BASE_URL = "http://127.0.0.1:8000";
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = RezumateNative/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
 				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.aftaab.rezumate;
@@ -329,15 +328,8 @@
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = GVGJLY2H53;
-				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_KEY_CFBundleDisplayName = Rezumate;
-				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.productivity";
-				INFOPLIST_KEY_NSDocumentsFolderUsageDescription = "Rezumate imports your selected resume so it can be analyzed against a job description.";
-				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
-				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
-				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
-				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
-				INFOPLIST_KEY_REZUMATE_API_BASE_URL = "https://api.rezumate.app";
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = RezumateNative/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
 				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.aftaab.rezumate;

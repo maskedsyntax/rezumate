@@ -16,8 +16,6 @@ enum APIClientError: Error, LocalizedError {
 }
 
 struct APIClient {
-    let baseURL: URL
-    
     func authenticateWithApple(identityToken: String, email: String?, fullName: String?) async throws -> AuthResponse {
         // Return a local guest user session instantly
         let user = AuthUser(id: UUID(), email: email ?? "local.user@rezumate.local", planTier: "pro")
@@ -76,7 +74,7 @@ struct APIClient {
             formattingWarnings: result.formattingWarnings,
             componentScores: result.componentScores,
             analysisStatus: "complete",
-            aiModelName: "Llama 3.2 1B (On-Device)",
+            aiModelName: "Local Suggestion Engine",
             bulletCount: result.bulletCount,
             keywordCoverage: result.keywordCoverage,
             sections: result.sections
@@ -89,7 +87,7 @@ struct APIClient {
             success: true,
             originalBullet: bullet,
             rewrittenBullets: rewrites,
-            aiModelName: LocalAIService.shared.modelExists ? "Llama 3.2 1B (On-Device)" : "Rules-Based Engine (Local)"
+            aiModelName: "Local Suggestion Engine"
         )
     }
 
@@ -139,7 +137,7 @@ struct APIClient {
             formattingWarnings: result.formattingWarnings,
             componentScores: result.componentScores,
             analysisStatus: "complete",
-            aiModelName: "Llama 3.2 1B (On-Device)",
+            aiModelName: "Local Suggestion Engine",
             bulletCount: result.bulletCount,
             keywordCoverage: result.keywordCoverage,
             sections: result.sections
@@ -147,7 +145,7 @@ struct APIClient {
     }
 
     func acceptRewrite(variantId: UUID, originalBullet: String, rewrittenBullet: String, token: String) async throws -> AcceptRewriteResponse {
-        var list = LocalStorageManager.shared.loadHistory()
+        let list = LocalStorageManager.shared.loadHistory()
         guard var v = list.first(where: { $0.id == variantId }) else {
             throw APIClientError.server("Variant not found.")
         }
@@ -171,17 +169,77 @@ struct APIClient {
         return AcceptRewriteResponse(success: true, variantId: v.id, updatedResumeText: updatedText)
     }
 
+    func improveResume(variantId: UUID, token: String) async throws -> ImproveResumeResponse {
+        let list = LocalStorageManager.shared.loadHistory()
+        guard var variant = list.first(where: { $0.id == variantId }) else {
+            throw APIClientError.server("Variant not found.")
+        }
+
+        let feedback = variant.analysisFeedback
+        let weakPoints = uniqueItems(feedback.weakBullets + feedback.bulletsWithoutMeasurableImpact)
+        let optimizedText = try await LocalAIService.shared.improveResume(
+            variant.tailoredContent,
+            weakBullets: weakPoints,
+            focusKeywords: feedback.missingKeywords
+        )
+
+        variant.tailoredContent = optimizedText
+        let updatedFeedback = ATSScoringService.analyzeResume(
+            resumeText: optimizedText,
+            jobDescription: feedback.jdKeywords.joined(separator: " ")
+        )
+        variant.atsScore = updatedFeedback.score
+        variant.analysisFeedback = updatedFeedback
+        variant.updatedAt = Date()
+        LocalStorageManager.shared.saveVariant(variant)
+
+        let updatedAnalysis = AnalyzeResponse(
+            success: true,
+            variantId: variant.id,
+            score: updatedFeedback.score,
+            matchedKeywords: updatedFeedback.matchedKeywords,
+            missingKeywords: updatedFeedback.missingKeywords,
+            weakBullets: updatedFeedback.weakBullets,
+            bulletsWithoutMeasurableImpact: updatedFeedback.bulletsWithoutMeasurableImpact,
+            formattingWarnings: updatedFeedback.formattingWarnings,
+            componentScores: updatedFeedback.componentScores,
+            analysisStatus: "complete",
+            aiModelName: "Local Suggestion Engine",
+            bulletCount: updatedFeedback.bulletCount,
+            keywordCoverage: updatedFeedback.keywordCoverage,
+            sections: updatedFeedback.sections
+        )
+
+        return ImproveResumeResponse(
+            success: true,
+            variantId: variant.id,
+            optimizedResumeText: optimizedText,
+            updatedAnalysis: updatedAnalysis
+        )
+    }
+
     func exportVariant(id: UUID, token: String) async throws -> URL {
         let list = LocalStorageManager.shared.loadHistory()
         guard let v = list.first(where: { $0.id == id }) else {
             throw APIClientError.server("Variant not found.")
         }
-        
-        let text = v.tailoredContent
-        let pdfData = PDFExportService.generateATSPDF(textContent: text)
-        
+
+        let doc = ResumeParser.parse(v.tailoredContent)
+        let pdfData = LaTeXStylePDFRenderer.render(doc)
+
         let outputURL = FileManager.default.temporaryDirectory.appendingPathComponent("rezumate-\(id.uuidString).pdf")
         try pdfData.write(to: outputURL, options: .atomic)
         return outputURL
+    }
+
+    private func uniqueItems(_ values: [String]) -> [String] {
+        var seen: Set<String> = []
+        var result: [String] = []
+        for value in values {
+            if seen.insert(value).inserted {
+                result.append(value)
+            }
+        }
+        return result
     }
 }
