@@ -1,6 +1,7 @@
 import Link from "next/link";
 
 import { FaqList } from "./components/FaqList";
+import { ScrollReveal } from "./components/ScrollReveal";
 import { featuredFaqItems } from "./components/faq-data";
 import { SiteChrome } from "./components/SiteChrome";
 
@@ -114,8 +115,8 @@ export default function Home() {
 
         <section id="features" className="band">
           <div className="shell">
-            <h2>Every feature runs locally on your iPhone</h2>
-            <div className="grid">
+            <ScrollReveal><h2>Every feature runs locally on your iPhone</h2></ScrollReveal>
+            <ScrollReveal stagger className="grid">
               {features.map(([title, copy], index) => (
                 <article className="card" key={title}>
                   <span className="card-index">{String(index + 1).padStart(2, "0")}</span>
@@ -123,22 +124,28 @@ export default function Home() {
                   <p>{copy}</p>
                 </article>
               ))}
-            </div>
+            </ScrollReveal>
           </div>
         </section>
 
         <section id="faq" className="band faq-band">
           <div className="shell">
-            <p className="eyebrow">FAQ</p>
-            <h2>Questions about Rezumate</h2>
-            <p className="lead faq-lead">
-              Rezumate is built for one workflow: upload, analyze, improve, and export —
-              without compromising your privacy, showing ads, or uploading your CV to a cloud server.
-            </p>
-            <FaqList items={featuredFaqItems} idPrefix="home-faq" />
-            <div className="faq-more">
-              <Link className="button secondary" href="/faq">View all questions</Link>
-            </div>
+            <ScrollReveal>
+              <p className="eyebrow">FAQ</p>
+              <h2>Questions about Rezumate</h2>
+              <p className="lead faq-lead">
+                Rezumate is built for one workflow: upload, analyze, improve, and export —
+                without compromising your privacy, showing ads, or uploading your CV to a cloud server.
+              </p>
+            </ScrollReveal>
+            <ScrollReveal delay={100}>
+              <FaqList items={featuredFaqItems} idPrefix="home-faq" />
+            </ScrollReveal>
+            <ScrollReveal delay={200}>
+              <div className="faq-more">
+                <Link className="button secondary" href="/faq">View all questions</Link>
+              </div>
+            </ScrollReveal>
           </div>
         </section>
       </main>
