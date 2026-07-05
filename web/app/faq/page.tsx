@@ -12,7 +12,7 @@ export default function FaqPage() {
         <p className="eyebrow">FAQ</p>
         <h1>Frequently asked questions</h1>
         <p className="lead faq-lead">
-          Everything you need to know about Rezumate — the workflow, analysis, AI rewrites, plans,
+          Everything you need to know about Rezumate — the workflow, analysis, local suggestions, plans,
           privacy, and launch timeline.
         </p>
         <FaqList sections={faqSections} idPrefix="faq" />
@@ -20,7 +20,7 @@ export default function FaqPage() {
           <p>Still have a question?</p>
           <div className="actions">
             <Link className="button" href="/support">Contact Support</Link>
-            <Link className="button secondary" href="/waitlist">Join Waitlist</Link>
+            <Link className="button secondary" href="/privacy">Privacy Policy</Link>
           </div>
         </div>
       </main>

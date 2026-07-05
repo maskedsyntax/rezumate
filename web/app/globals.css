@@ -315,11 +315,24 @@ h3 {
   text-transform: uppercase;
 }
 
+.optimized-badge {
+  background: #16a34a;
+  color: #fff;
+  border-color: #15803d;
+}
+
 .score-card {
   padding: 14px;
   border: 2px solid var(--line);
   border-radius: var(--radius-lg);
   box-shadow: var(--shadow);
+}
+
+.score-header-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
 }
 
 .score-label {
@@ -333,13 +346,33 @@ h3 {
 .score-row {
   display: flex;
   align-items: baseline;
-  gap: 3px;
+  gap: 4px;
   margin: 6px 0 10px;
+  flex-wrap: wrap;
+}
+
+.score-before {
+  font-family: var(--font-mono);
+  font-size: 22px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+  color: var(--subtle);
+  text-decoration: line-through;
+  text-decoration-color: var(--subtle);
+}
+
+.score-arrow {
+  font-family: var(--font-mono);
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--subtle);
+  align-self: center;
 }
 
 .score-row strong {
   font-family: var(--font-mono);
-  font-size: 40px;
+  font-size: 36px;
   font-weight: 700;
   font-variant-numeric: tabular-nums;
   line-height: 1;
@@ -353,6 +386,19 @@ h3 {
   font-weight: 500;
   font-variant-numeric: tabular-nums;
   color: var(--subtle);
+}
+
+.score-delta {
+  align-self: center;
+  padding: 2px 6px;
+  border-radius: 4px;
+  background: #dcfce7;
+  border: 1.5px solid #16a34a;
+  color: #16a34a;
+  font-family: var(--font-mono);
+  font-size: 8px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
 }
 
 .phone-home-indicator {
@@ -405,6 +451,12 @@ h3 {
   letter-spacing: 0.02em;
 }
 
+.chip-added {
+  background: #dcfce7;
+  border-color: #16a34a;
+  color: #15803d;
+}
+
 .stack {
   display: grid;
   gap: 8px;
@@ -432,6 +484,16 @@ h3 {
   line-height: 1.45;
   text-transform: none;
   letter-spacing: 0;
+}
+
+.mini-card-export {
+  background: var(--ink);
+  color: var(--paper);
+  border-color: var(--ink);
+}
+
+.mini-card-export span {
+  color: rgba(255, 255, 255, 0.7);
 }
 
 /* ── Features band ── */

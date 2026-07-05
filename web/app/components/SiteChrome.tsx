@@ -16,7 +16,6 @@ export function SiteChrome({ children }: Props) {
         <nav className="navlinks">
           <a href="/#features">Features</a>
           <a href="/#faq">FAQ</a>
-          <Link href="/waitlist">Waitlist</Link>
           <Link href="/privacy">Privacy</Link>
           <Link href="/support">Support</Link>
         </nav>

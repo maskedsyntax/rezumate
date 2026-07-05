@@ -4,7 +4,7 @@ export default function manifest(): MetadataRoute.Manifest {
   return {
     name: "Rezumate",
     short_name: "Rezumate",
-    description: "Native iOS resume optimization with ATS scoring and AI-assisted improvements.",
+    description: "Native iOS resume optimization with ATS scoring and local writing suggestions.",
     start_url: "/",
     scope: "/",
     display: "standalone",

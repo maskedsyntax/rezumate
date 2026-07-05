@@ -29,7 +29,7 @@ export const metadata: Metadata = {
     "resume optimizer",
     "ATS resume checker",
     "iOS resume app",
-    "AI resume feedback",
+    "resume feedback",
     "job description matching",
     "resume bullet rewrite"
   ],

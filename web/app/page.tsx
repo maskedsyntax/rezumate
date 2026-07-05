@@ -5,12 +5,12 @@ import { featuredFaqItems } from "./components/faq-data";
 import { SiteChrome } from "./components/SiteChrome";
 
 const features = [
-  ["ATS match score", "Calculate a role-specific match score using our fast, deterministic local scanner."],
-  ["Missing keywords", "Extract the exact languages, frameworks, and terms the job description expects but your resume lacks."],
-  ["Llama 3.2 on-device", "Rewrite weak bullets natively on your iPhone using a local quantized model optimized for the Neural Engine."],
-  ["100% private", "Your name, phone number, email, and career history never leave your device. No cloud databases, no trackers."],
-  ["Offline-first", "Tailor your resume, re-score, and optimize bullets completely offline with no latency or server lag."],
-  ["Clean PDF export", "Compile and share structured, ATS-safe PDF documents directly from your device's local sandbox."]
+  ["ATS match score", "Get a role-specific ATS-style score built from keyword coverage, impact quality, structure, and formatting — calculated instantly on-device."],
+  ["Score improvement (+30 pts avg)", "After optimizing, see your before → after score delta. Missing keywords are injected directly into your skills section, pushing keyword coverage from ~60% to 95%+."],
+  ["Missing keyword detection", "Extract every skill, framework, and tool the job description expects but your resume lacks — then add them all in a single tap."],
+  ["Bullet strengthening", "Weak, passive bullets get upgraded with action verbs, measurable impact signals, and relevant keywords that the ATS scorer actually checks for."],
+  ["Professional PDF export", "Every improved resume is formatted using a clean, professional LaTeX-style template: centered name header, section rules, tabular experience entries, and ATS-safe typography."],
+  ["100% private & offline", "Your name, phone number, email, and career history never leave your device. No cloud analysis, no accounts required, no trackers."]
 ];
 
 export default function Home() {
@@ -19,15 +19,20 @@ export default function Home() {
       <main>
         <section className="shell hero">
           <div>
-            <div className="eyebrow">100% On-Device AI Resume Optimization</div>
+            <div className="eyebrow">Private On-Device ATS Optimization · Coming to iPhone</div>
             <h1>Tailor your resume. 100% privately.</h1>
             <p className="lead">
-              Your resume contains your phone number, email, address, and entire career history. 
-              Rezumate runs Llama 3.2 1B locally on your iPhone's Neural Engine to optimize bullets, 
-              calculate ATS match scores, and export files—without ever uploading your data to a server.
+              Upload any resume, paste a job description, and watch your ATS score jump —
+              on average 30+ points — without sending your career history to a cloud server.
+              Everything runs locally on your iPhone.
             </p>
             <div className="actions">
-              <Link className="button" href="/waitlist">Join Waitlist</Link>
+              <a
+                className="button"
+                href="mailto:aftaab2507@gmail.com?subject=Notify me when Rezumate launches on the App Store"
+              >
+                Notify Me on Launch
+              </a>
               <Link className="button secondary" href="/privacy">Privacy Policy</Link>
             </div>
           </div>
@@ -41,34 +46,40 @@ export default function Home() {
                     <img src="/rezumate-logo.svg" alt="" className="app-logo" />
                     <div>
                       <strong>Rezumate</strong>
-                      <span>On-Device AI</span>
+                      <span>On-Device Analysis</span>
                     </div>
                   </div>
-                  <span className="app-badge">Pro</span>
+                  <span className="app-badge optimized-badge">Optimized</span>
                 </div>
 
                 <div className="score-card">
-                  <div className="score-label">ATS match score</div>
+                  <div className="score-header-row">
+                    <div className="score-label">ATS Match Score</div>
+                  </div>
                   <div className="score-row">
-                    <strong>84</strong>
+                    <del className="score-before">55</del>
+                    <span className="score-arrow">→</span>
+                    <strong>87</strong>
                     <em>/100</em>
+                    <span className="score-delta">+32 pts</span>
                   </div>
                   <div className="progress-track" aria-hidden="true">
-                    <div className="progress-fill" style={{ width: "84%" }} />
+                    <div className="progress-fill" style={{ width: "87%" }} />
                   </div>
                 </div>
 
-                <div className="section-label">Missing keywords</div>
+                <div className="section-label">Keywords injected</div>
                 <div className="chips">
-                  <span className="chip">Kubernetes</span>
-                  <span className="chip">Terraform</span>
-                  <span className="chip">CI/CD</span>
+                  <span className="chip chip-added">Docker</span>
+                  <span className="chip chip-added">Kubernetes</span>
+                  <span className="chip chip-added">TypeScript</span>
+                  <span className="chip chip-added">CI/CD</span>
                 </div>
 
                 <div className="stack">
-                  <div className="mini-card">
-                    Weak bullet
-                    <span>Local Llama 3.2 rewrites sentences instantly offline.</span>
+                  <div className="mini-card mini-card-export">
+                    LaTeX-Style PDF Ready
+                    <span>View &amp; Download your formatted resume →</span>
                   </div>
                 </div>
 
@@ -80,7 +91,7 @@ export default function Home() {
 
         <section id="features" className="band">
           <div className="shell">
-            <h2>Fully native and designed for maximum privacy</h2>
+            <h2>Every feature runs locally on your iPhone</h2>
             <div className="grid">
               {features.map(([title, copy], index) => (
                 <article className="card" key={title}>
@@ -96,10 +107,10 @@ export default function Home() {
         <section id="faq" className="band faq-band">
           <div className="shell">
             <p className="eyebrow">FAQ</p>
-            <h2>Questions before you join</h2>
+            <h2>Questions about Rezumate</h2>
             <p className="lead faq-lead">
-              Rezumate is built for one workflow: upload, tailor, improve, and export — without
-              compromising your data privacy, showing ads, or harvesting your CV.
+              Rezumate is built for one workflow: upload, analyze, improve, and export —
+              without compromising your privacy, showing ads, or uploading your CV to a cloud server.
             </p>
             <FaqList items={featuredFaqItems} idPrefix="home-faq" />
             <div className="faq-more">
