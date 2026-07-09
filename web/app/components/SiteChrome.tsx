@@ -1,6 +1,8 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
 
+import { ScrollTopButton } from "./ScrollTopButton";
+
 type Props = {
   children: ReactNode;
 };
@@ -14,10 +16,11 @@ export function SiteChrome({ children }: Props) {
           Rezumate
         </Link>
         <nav className="navlinks">
+          <a href="/#how-it-works">How it works</a>
           <a href="/#features">Features</a>
+          <a href="/#pricing">Pricing</a>
           <a href="/#faq">FAQ</a>
-          <Link href="/privacy">Privacy</Link>
-          <Link href="/support">Support</Link>
+          <Link className="nav-cta" href="/waitlist">Claim $7.99</Link>
         </nav>
       </header>
 
@@ -29,6 +32,8 @@ export function SiteChrome({ children }: Props) {
           <Link href="/faq">FAQ</Link> · <Link href="/terms">Terms</Link> · <Link href="/privacy">Privacy</Link> · <Link href="/support">Support</Link>
         </span>
       </footer>
+
+      <ScrollTopButton />
     </>
   );
 }

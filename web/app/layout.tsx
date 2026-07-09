@@ -21,10 +21,10 @@ export const metadata: Metadata = {
   metadataBase: new URL("https://rezumate.app"),
   applicationName: "Rezumate",
   title: {
-    default: "Rezumate - Native iOS resume optimizer",
+    default: "Rezumate - Private ATS resume optimizer for iPhone",
     template: "%s | Rezumate"
   },
-  description: "Upload a resume, paste a job description, and get ATS scoring, missing keywords, bullet rewrites, and export-ready improvements on iPhone.",
+  description: "Private iPhone resume optimizer with ATS scoring, missing keyword detection, bullet improvements, and LaTeX-style PDF export. Launch price: $7.99 one-time.",
   keywords: [
     "resume optimizer",
     "ATS resume checker",
@@ -51,8 +51,8 @@ export const metadata: Metadata = {
     type: "website",
     url: "/",
     siteName: "Rezumate",
-    title: "Rezumate - Native iOS resume optimizer",
-    description: "ATS scoring, missing keywords, bullet rewrites, and export-ready resume improvements on iPhone.",
+    title: "Rezumate - Private ATS resume optimizer for iPhone",
+    description: "ATS scoring, missing keywords, bullet rewrites, and export-ready resume improvements on iPhone. $7.99 one-time launch offer.",
     images: [
       {
         url: "/rezumate-logo.png",
@@ -64,8 +64,8 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary",
-    title: "Rezumate - Native iOS resume optimizer",
-    description: "ATS scoring, missing keywords, bullet rewrites, and export-ready resume improvements on iPhone.",
+    title: "Rezumate - Private ATS resume optimizer for iPhone",
+    description: "ATS scoring, missing keywords, bullet rewrites, and export-ready resume improvements on iPhone. $7.99 one-time launch offer.",
     images: ["/rezumate-logo.png"]
   },
   appleWebApp: {
@@ -78,7 +78,7 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: Readonly<{ children: ReactNode }>) {
   return (
-    <html lang="en" className={`${plexSans.variable} ${jetbrainsMono.variable}`}>
+    <html lang="en" data-scroll-behavior="smooth" className={`${plexSans.variable} ${jetbrainsMono.variable}`}>
       <body>{children}</body>
     </html>
   );
