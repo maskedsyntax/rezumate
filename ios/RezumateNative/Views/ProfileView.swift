@@ -50,6 +50,51 @@ struct ProfileView: View {
                     }
 
                     RezCard {
+                        VStack(alignment: .leading, spacing: 14) {
+                            HStack {
+                                SectionTitle("Rezumate Pro", subtitle: "Pay once. Optimize unlimited resumes privately on your iPhone.")
+                                Spacer()
+                                RezStatusPill(text: appState.isPro ? "ACTIVE" : "ONE-TIME", color: appState.isPro ? RezTheme.success : RezTheme.warning)
+                            }
+
+                            VStack(alignment: .leading, spacing: 8) {
+                                PlanFeatureRow(text: "Unlimited analyses")
+                                PlanFeatureRow(text: "Unlimited resume improvements")
+                                PlanFeatureRow(text: "Unlimited saved variants")
+                                PlanFeatureRow(text: "Full ATS diagnosis and keyword insights")
+                            }
+
+                            Text(appState.isPro ? "Lifetime Pro is active on this device." : "Launch price: $7.99. Regular price: $14.99.")
+                                .font(.caption.weight(.semibold))
+                                .foregroundStyle(RezTheme.muted)
+
+                            if let purchaseMessage = appState.purchaseMessage {
+                                Text(purchaseMessage)
+                                    .font(.caption.weight(.semibold))
+                                    .foregroundStyle(RezTheme.muted)
+                            }
+
+                            if !appState.isPro {
+                                Button {
+                                    Task { await appState.purchasePro() }
+                                } label: {
+                                    Label(appState.isPurchasing ? "Unlocking..." : "Unlock Pro", systemImage: "sparkles")
+                                }
+                                .buttonStyle(RezPrimaryButtonStyle())
+                                .disabled(appState.isPurchasing)
+                            }
+
+                            Button {
+                                Task { await appState.restorePurchases() }
+                            } label: {
+                                Label("Restore Purchase", systemImage: "arrow.clockwise")
+                            }
+                            .buttonStyle(RezSecondaryButtonStyle(fill: RezTheme.surface))
+                            .disabled(appState.isPurchasing)
+                        }
+                    }
+                    
+                    RezCard {
                         VStack(alignment: .leading, spacing: 12) {
                             SectionTitle("Local Data")
                             Button(role: .destructive) {
@@ -65,6 +110,22 @@ struct ProfileView: View {
             }
             .rezScreenBackground()
             .navigationTitle("Profile")
+        }
+    }
+}
+
+private struct PlanFeatureRow: View {
+    let text: String
+
+    var body: some View {
+        HStack(spacing: 8) {
+            Image(systemName: "checkmark.circle.fill")
+                .font(.system(size: 13, weight: .black))
+                .foregroundStyle(RezTheme.success)
+            Text(text)
+                .font(.caption.weight(.semibold))
+                .foregroundStyle(RezTheme.ink)
+            Spacer(minLength: 0)
         }
     }
 }

@@ -14,12 +14,11 @@ final class LocalAIService {
     func improveResume(_ resumeText: String, weakBullets: [String], focusKeywords: [String]) async throws -> String {
         var text = resumeText
 
-        // Step 1 — inject ALL missing keywords into the skills section.
+        // Step 1 - inject missing keywords into the skills section.
         // keyword_coverage is 45% of the ATS score; this is the highest-leverage move.
         text = injectKeywordsIntoSkillsSection(text, keywords: focusKeywords)
 
-        // Step 2 — strengthen weak bullets: upgrade passive verbs, weave in keywords,
-        // and add measurable impact signals (required by the impact_quality scorer).
+        // Step 2 - strengthen weak bullets without inventing metrics or experience.
         let unique = uniqued(weakBullets)
         for bullet in unique {
             guard text.contains(bullet) else { continue }
@@ -67,7 +66,7 @@ final class LocalAIService {
             }
         }
 
-        let injected = "Additional Technologies: " + keywords.map(\.capitalized).joined(separator: ", ")
+        let injected = "Additional Technologies: " + keywords.map(displayKeyword).joined(separator: ", ")
 
         if let idx = lastContentLineIdx {
             lines.insert(injected, at: idx + 1)
@@ -108,23 +107,6 @@ final class LocalAIService {
             }
         }
 
-        // Pick an unused keyword to mention in the bullet for additional keyword coverage
-        let unusedKeyword = keywords.first { !b.lowercased().contains($0.lowercased()) }
-
-        // Add an impact signal. The ATS scorer checks for \d+ in bullets (impact_quality = 25% of score).
-        let hasNumber = b.range(of: #"\d+"#, options: .regularExpression) != nil
-
-        switch (hasNumber, unusedKeyword) {
-        case (false, let kw?):
-            b += " using \(kw.capitalized) across 3+ production environments, improving delivery speed by 25%"
-        case (false, nil):
-            b += ", reducing manual effort across 5+ workflows and improving team throughput by 20%"
-        case (true, let kw?):
-            b += " leveraging \(kw.capitalized)"
-        case (true, nil):
-            break
-        }
-
         return b
     }
 
@@ -146,13 +128,13 @@ final class LocalAIService {
 
         let base = replaceable.contains(firstWord.lowercased()) && !rest.isEmpty ? rest : b
 
-        let kw1 = focusKeywords.first.map { " with \($0.capitalized)" } ?? ""
-        let kw2 = focusKeywords.dropFirst().first.map { " and \($0.capitalized)" } ?? ""
+        let keywordContext = focusKeywords.prefix(2).map(displayKeyword).joined(separator: " and ")
+        let keywordPhrase = keywordContext.isEmpty ? "" : " with relevant \(keywordContext) context"
 
         return [
-            "Engineered \(base)\(kw1), cutting delivery time by 35% across 3+ production environments",
-            "Built and shipped \(base)\(kw1)\(kw2), serving 500+ users with zero downtime during rollout",
-            "Delivered \(base)\(kw1), achieving a 40% reduction in manual overhead and improving system reliability",
+            "Engineered \(base)\(keywordPhrase), clarifying scope, implementation details, and user impact",
+            "Built and shipped \(base)\(keywordPhrase), emphasizing ownership, delivery, and technical depth",
+            "Delivered \(base)\(keywordPhrase), connecting the work to reliability, usability, or business outcomes",
         ]
     }
 
@@ -161,5 +143,40 @@ final class LocalAIService {
     private func uniqued(_ values: [String]) -> [String] {
         var seen = Set<String>()
         return values.filter { seen.insert($0).inserted }
+    }
+
+    private func displayKeyword(_ keyword: String) -> String {
+        let normalized = keyword.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
+        let displayNames: [String: String] = [
+            "api": "API",
+            "rest api": "REST API",
+            "ci/cd": "CI/CD",
+            "css": "CSS",
+            "html": "HTML",
+            "json": "JSON",
+            "ui": "UI",
+            "ml": "ML",
+            "ai": "AI",
+            "llm": "LLM",
+            "nlp": "NLP",
+            "aws": "AWS",
+            "gcp": "GCP",
+            "sql": "SQL",
+            "nosql": "NoSQL",
+            "graphql": "GraphQL",
+            "next.js": "Next.js",
+            "node.js": "Node.js",
+            "tailwind css": "Tailwind CSS",
+            "pytorch": "PyTorch",
+            "tensorflow": "TensorFlow",
+            "scikit-learn": "scikit-learn"
+        ]
+        if let display = displayNames[normalized] {
+            return display
+        }
+        return normalized
+            .split(separator: " ")
+            .map { part in part.prefix(1).uppercased() + String(part.dropFirst()) }
+            .joined(separator: " ")
     }
 }

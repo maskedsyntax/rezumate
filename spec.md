@@ -1,4 +1,4 @@
-# Rezumate — Product Specification
+# Rezumate - Product Specification
 
 > Version: 1.0  
 > Platform: iOS + Android  
@@ -151,7 +151,7 @@ Instead focus on:
 # Fast Value Delivery
 
 The user should get meaningful feedback within:
-- 30–60 seconds
+- 30-60 seconds
 
 after uploading a resume.
 
@@ -318,7 +318,7 @@ Included:
 
 Suggested limits:
 - 3 analyses/day
-- 3 rewrites/day
+- 3 improvements/day
 - 2 saved resumes
 
 ---
@@ -327,31 +327,21 @@ Suggested limits:
 
 Unlocks:
 - unlimited analyses
-- unlimited rewrites
+- unlimited improvements
 - unlimited resume variants
 - deeper ATS insights
-- premium AI suggestions
-- priority processing
+- full keyword insights
+- lifetime App Store restore
 
 ---
 
 # Suggested Pricing
 
-## India
-₹299/month
+## Early launch one-time price
+- Fixed worldwide: $7.99
 
-OR
-
-₹2499/year
-
----
-
-## Global
-$4.99/month
-
-OR
-
-$39/year
+## Regular one-time price
+- Fixed worldwide: $14.99
 
 ---
 
@@ -361,6 +351,7 @@ Avoid:
 - aggressive AI pricing
 - token systems
 - confusing credits
+- subscriptions while AI runs on-device
 
 The app should feel:
 - fair
@@ -407,21 +398,22 @@ Only use AI for:
 
 ## Free Users
 Use:
-- Gemini Flash
-- GPT-4o Mini
-- Groq-hosted models
+- local ATS scoring
+- local keyword extraction
+- limited local rewrite/improvement runs
 
 ---
 
 ## Pro Users
 Use:
-- higher-quality models selectively
+- unlimited local analysis and improvement runs
+- full local diagnosis and keyword insight surfaces
 
 ---
 
 # Important Cost Rule
 
-Cache outputs aggressively.
+Keep all expensive processing local and predictable.
 
 Never regenerate analysis unnecessarily.
 
@@ -513,7 +505,7 @@ Manage variants
 ---
 
 ### Profile
-Settings + subscription
+Settings + one-time Pro purchase
 
 ---
 
@@ -606,7 +598,7 @@ Suggested:
 
 # 14. Suggested Development Roadmap
 
-# Phase 1 — Foundation
+# Phase 1 - Foundation
 
 Build:
 - auth
@@ -622,7 +614,7 @@ Ship MVP quickly.
 
 ---
 
-# Phase 2 — Polish
+# Phase 2 - Polish
 
 Improve:
 - animations
@@ -633,7 +625,7 @@ Improve:
 
 ---
 
-# Phase 3 — Validation
+# Phase 3 - Validation
 
 Focus on:
 - retention

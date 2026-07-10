@@ -15,7 +15,7 @@ function FaqAccordionItem({ item, id }: { item: FaqItem; id: string }) {
         aria-expanded={open}
       >
         <span>{item.question}</span>
-        <span className="faq-icon" aria-hidden="true">{open ? '−' : '+'}</span>
+        <span className="faq-icon" aria-hidden="true">{open ? '-' : '+'}</span>
       </button>
       <div className="faq-body">
         <div className="faq-body-inner">

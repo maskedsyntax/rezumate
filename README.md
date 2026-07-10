@@ -8,7 +8,7 @@
 
 </div>
 
-Rezumate helps job seekers upload a resume, paste a job description, get instant ATS-focused matching, rewrite weak bullet points, and export an ATS-safe PDF—processed entirely locally on their iPhone.
+Rezumate helps job seekers upload a resume, paste a job description, get instant ATS-focused matching, rewrite weak bullet points, and export an ATS-safe PDF, processed entirely locally on their iPhone.
 
 ---
 

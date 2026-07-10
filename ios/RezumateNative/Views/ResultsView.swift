@@ -26,8 +26,11 @@ struct ResultsView: View {
                 refinementNotice
                 scoreHeader
                 componentScores
-                keywordSection(title: "Matched keywords", items: currentResult.matchedKeywords, color: RezTheme.success)
-                keywordSection(title: "Missing keywords", items: currentResult.missingKeywords, color: RezTheme.warning)
+                if !appState.isPro {
+                    proInsightsCard
+                }
+                keywordSection(title: "Matched keywords", items: currentResult.matchedKeywords, color: RezTheme.success, limitForFree: 6)
+                keywordSection(title: "Missing keywords", items: currentResult.missingKeywords, color: RezTheme.warning, limitForFree: 6)
                 improveResumeSection
 
                 if let errorMessage {
@@ -168,19 +171,26 @@ struct ResultsView: View {
     }
 
     private var componentScores: some View {
-        RezCard {
+        return RezCard {
             VStack(alignment: .leading, spacing: 16) {
-                SectionTitle("Score breakdown", subtitle: "Tap a score for details & diagnosis")
+                SectionTitle(
+                    "Score breakdown",
+                    subtitle: appState.isPro ? "Tap a score for details & diagnosis" : "Free includes the score breakdown. Pro unlocks full diagnosis."
+                )
                 ForEach(currentResult.componentScores.sorted(by: { $0.key < $1.key }), id: \.key) { key, value in
                     let isExpanded = expandedScores.contains(key)
                     VStack(alignment: .leading, spacing: 6) {
                         Button {
-                            withAnimation(.easeInOut(duration: 0.2)) {
-                                if isExpanded {
-                                    expandedScores.remove(key)
-                                } else {
-                                    expandedScores.insert(key)
+                            if appState.isPro {
+                                withAnimation(.easeInOut(duration: 0.2)) {
+                                    if isExpanded {
+                                        expandedScores.remove(key)
+                                    } else {
+                                        expandedScores.insert(key)
+                                    }
                                 }
+                            } else {
+                                errorMessage = "Detailed diagnosis is included with Rezumate Pro."
                             }
                         } label: {
                             VStack(alignment: .leading, spacing: 6) {
@@ -193,7 +203,7 @@ struct ResultsView: View {
                                         Text("\(value)")
                                             .font(.caption.weight(.bold))
                                             .foregroundStyle(RezTheme.ink)
-                                        Image(systemName: isExpanded ? "chevron.up" : "chevron.down")
+                                        Image(systemName: appState.isPro ? (isExpanded ? "chevron.up" : "chevron.down") : "lock.fill")
                                             .font(.system(size: 10, weight: .bold))
                                             .foregroundStyle(RezTheme.muted)
                                     }
@@ -208,7 +218,7 @@ struct ResultsView: View {
                         }
                         .buttonStyle(.plain)
                         
-                        if isExpanded {
+                        if appState.isPro && isExpanded {
                             VStack(alignment: .leading, spacing: 10) {
                                 let (importance, explanation) = scoreDetails(for: key)
                                 
@@ -251,6 +261,34 @@ struct ResultsView: View {
                             .padding(.vertical, 4)
                     }
                 }
+            }
+        }
+    }
+
+    private var proInsightsCard: some View {
+        RezCard(padding: 14) {
+            VStack(alignment: .leading, spacing: 12) {
+                HStack(spacing: 10) {
+                    Image(systemName: "lock.open.fill")
+                        .font(.system(size: 18, weight: .black))
+                        .foregroundStyle(RezTheme.ink)
+                        .frame(width: 38, height: 38)
+                        .background(RezTheme.violet, in: RoundedRectangle(cornerRadius: 6))
+                        .overlay {
+                            RoundedRectangle(cornerRadius: 6)
+                                .stroke(RezTheme.ink, lineWidth: 2)
+                        }
+
+                    SectionTitle("Unlock full diagnosis", subtitle: "Get every keyword, detailed score reasoning, and unlimited local improvements.")
+                }
+
+                Button {
+                    Task { await appState.purchasePro() }
+                } label: {
+                    Label(appState.isPurchasing ? "Unlocking..." : "Unlock Pro - $7.99 launch", systemImage: "sparkles")
+                }
+                .buttonStyle(RezSecondaryButtonStyle(fill: RezTheme.warning))
+                .disabled(appState.isPurchasing)
             }
         }
     }
@@ -315,16 +353,19 @@ struct ResultsView: View {
         }
     }
 
-    private func keywordSection(title: String, items: [String], color: Color) -> some View {
-        RezCard {
+    private func keywordSection(title: String, items: [String], color: Color, limitForFree: Int? = nil) -> some View {
+        let visibleItems = appState.isPro || limitForFree == nil ? items : Array(items.prefix(limitForFree ?? items.count))
+        let hiddenCount = max(0, items.count - visibleItems.count)
+
+        return RezCard {
             VStack(alignment: .leading, spacing: 12) {
                 SectionTitle(title)
-                if items.isEmpty {
+                if visibleItems.isEmpty {
                     Text("Nothing to show yet.")
                         .font(.subheadline)
                         .foregroundStyle(RezTheme.muted)
                 } else {
-                    FlowLayout(items: items) { item in
+                    FlowLayout(items: visibleItems) { item in
                         Text(item)
                             .font(.caption.weight(.black))
                             .lineLimit(2)
@@ -339,6 +380,11 @@ struct ResultsView: View {
                                     .stroke(RezTheme.ink, lineWidth: 2)
                             }
                     }
+                    if hiddenCount > 0 {
+                        Text("+\(hiddenCount) more included with Pro")
+                            .font(.caption.weight(.black))
+                            .foregroundStyle(RezTheme.muted)
+                    }
                 }
             }
         }
@@ -350,13 +396,29 @@ struct ResultsView: View {
                 SectionTitle("Improve Resume", subtitle: "Optimize content and format in the standard resume template.")
 
                 if optimizedResumeText == nil {
+                    if !appState.isPro {
+                        Text("\(appState.remainingImprovements) free improvements left today.")
+                            .font(.caption.weight(.semibold))
+                            .foregroundStyle(RezTheme.muted)
+                    }
+
                     Button {
                         Task { await improveResume() }
                     } label: {
                         Label(isWorking ? "Improving..." : "Improve Resume", systemImage: "wand.and.stars")
                     }
                     .buttonStyle(RezPrimaryButtonStyle())
-                    .disabled(isWorking)
+                    .disabled(isWorking || !appState.canImprove)
+
+                    if !appState.canImprove {
+                        Button {
+                            Task { await appState.purchasePro() }
+                        } label: {
+                            Label("Unlock unlimited improvements", systemImage: "lock.open")
+                        }
+                        .buttonStyle(RezSecondaryButtonStyle(fill: RezTheme.warning))
+                        .disabled(appState.isPurchasing)
+                    }
                 } else {
                     VStack(alignment: .leading, spacing: 12) {
                         HStack(spacing: 8) {
@@ -374,7 +436,7 @@ struct ResultsView: View {
                                 Text("Score")
                                     .font(.caption.weight(.semibold))
                                     .foregroundStyle(RezTheme.muted)
-                                Text("\(orig) → \(currentResult.score)")
+                                Text("\(orig) to \(currentResult.score)")
                                     .font(.caption.weight(.black))
                                     .foregroundStyle(RezTheme.ink)
                                 if delta > 0 {
@@ -389,7 +451,7 @@ struct ResultsView: View {
                             }
                         }
 
-                        Text("Laid out in the standard Rezumate template — ready to download as PDF.")
+                        Text("Laid out in the standard Rezumate template, ready to download as PDF.")
                             .font(.caption)
                             .foregroundStyle(RezTheme.muted)
 
@@ -457,6 +519,11 @@ struct ResultsView: View {
 
     private func improveResume() async {
         guard let token = appState.token else { return }
+        guard appState.canImprove else {
+            errorMessage = "Free improvements are used for today. Unlock Pro once for unlimited improvements."
+            return
+        }
+
         isWorking = true
         errorMessage = nil
         exportedURL = nil
@@ -467,6 +534,7 @@ struct ResultsView: View {
                 variantId: currentResult.variantId,
                 token: token
             )
+            appState.recordSuccessfulImprovement()
             originalScore = priorScore
             optimizedResumeText = response.optimizedResumeText
             currentResult = response.updatedAnalysis
@@ -491,6 +559,10 @@ struct ResultsView: View {
         guard let token = appState.token,
               let upload = appState.upload,
               !isRefreshingAnalysis else { return }
+        guard appState.canAnalyze else {
+            errorMessage = "Free analyses are used for today. Unlock Pro once for unlimited analyses."
+            return
+        }
         
         isRefreshingAnalysis = true
         errorMessage = nil
@@ -498,15 +570,21 @@ struct ResultsView: View {
         do {
             let variantDetail = try await appState.api.variant(id: currentResult.variantId, token: token)
             let currentResumeText = variantDetail.tailoredContent.rawText ?? ""
+            let shouldSave = appState.canSaveNewVariant
             
             let result = try await appState.api.analyzeResume(
                 resumeId: upload.resumeId,
                 resumeText: currentResumeText,
                 jobDescription: appState.jobDescription,
-                token: token
+                token: token,
+                shouldSave: shouldSave
             )
+            appState.recordSuccessfulAnalysis()
             currentResult = result
             appState.latestAnalysis = result
+            if !shouldSave {
+                errorMessage = "History is full on Free. This refreshed result is usable now, but it was not saved."
+            }
         } catch {
             errorMessage = error.localizedDescription
         }

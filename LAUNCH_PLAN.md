@@ -4,11 +4,11 @@
 
 Current status: Rezumate is a functional native iOS MVP with PDF/DOCX import, local ATS-style scoring, missing keyword detection, weak bullet detection, local history, rewrite acceptance, and PDF export. It is not App Store ready yet.
 
-Estimated distance to first release: about 2-4 focused weeks if v1 ships free with honest "local resume optimization" positioning. Longer if real on-device Llama inference, subscriptions, or polished analytics are added before launch.
+Estimated distance to first release: about 2-4 focused weeks if v1 ships with a useful Free plan, a one-time Pro unlock, and honest "local resume optimization" positioning. Longer if real on-device Llama inference or polished analytics are added before launch.
 
 Primary launch strategy:
 
-- Ship `Rezumate` as a free v1 worldwide English app.
+- Ship `Rezumate` as a freemium worldwide English app with a one-time Pro unlock.
 - Do not claim real Llama/Neural Engine AI until actual inference is integrated and verified.
 - Position v1 around private, on-device ATS scoring, keyword gaps, bullet improvement suggestions, and PDF export.
 
@@ -243,7 +243,7 @@ Use this only if the release build truly has no analytics, no backend uploads, n
 
 ## Assumptions
 
-- v1 is free, with no StoreKit subscription or paywall.
+- v1 uses a useful Free plan plus a one-time StoreKit Pro unlock: $7.99 launch price, then $14.99 regular price worldwide.
 - Launch is worldwide English.
 - The app will not claim real Llama/on-device AI until actual inference exists.
 - App Store metadata should prioritize compliance and trust over aggressive claims.

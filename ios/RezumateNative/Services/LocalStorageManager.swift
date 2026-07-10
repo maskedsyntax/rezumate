@@ -15,6 +15,8 @@ class LocalStorageManager {
     static let shared = LocalStorageManager()
     
     private let fileManager = FileManager.default
+    private var transientVariants: [UUID: LocalVariant] = [:]
+
     private var historyURL: URL {
         let paths = fileManager.urls(for: .documentDirectory, in: .userDomainMask)
         return paths[0].appendingPathComponent("rezumate_history.json")
@@ -28,6 +30,29 @@ class LocalStorageManager {
             currentHistory.insert(variant, at: 0)
         }
         saveHistory(currentHistory)
+    }
+
+    func saveTransientVariant(_ variant: LocalVariant) {
+        transientVariants[variant.id] = variant
+    }
+
+    func loadVariant(id: UUID) -> LocalVariant? {
+        if let transient = transientVariants[id] {
+            return transient
+        }
+        return loadHistory().first(where: { $0.id == id })
+    }
+
+    func updateVariant(_ variant: LocalVariant) {
+        if transientVariants[variant.id] != nil {
+            transientVariants[variant.id] = variant
+        } else {
+            saveVariant(variant)
+        }
+    }
+
+    func clearTransientVariants() {
+        transientVariants.removeAll()
     }
     
     func loadHistory() -> [LocalVariant] {

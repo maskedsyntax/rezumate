@@ -18,7 +18,7 @@ enum APIClientError: Error, LocalizedError {
 struct APIClient {
     func authenticateWithApple(identityToken: String, email: String?, fullName: String?) async throws -> AuthResponse {
         // Return a local guest user session instantly
-        let user = AuthUser(id: UUID(), email: email ?? "local.user@rezumate.local", planTier: "pro")
+        let user = AuthUser(id: UUID(), email: email ?? "local.user@rezumate.local", planTier: "free")
         return AuthResponse(success: true, token: "local-session-token", user: user)
     }
 
@@ -46,7 +46,7 @@ struct APIClient {
         )
     }
 
-    func analyzeResume(resumeId: UUID, resumeText: String, jobDescription: String, token: String) async throws -> AnalyzeResponse {
+    func analyzeResume(resumeId: UUID, resumeText: String, jobDescription: String, token: String, shouldSave: Bool = true) async throws -> AnalyzeResponse {
         let result = ATSScoringService.analyzeResume(resumeText: resumeText, jobDescription: jobDescription)
         let variantId = UUID()
         
@@ -61,7 +61,11 @@ struct APIClient {
             updatedAt: Date()
         )
         
-        LocalStorageManager.shared.saveVariant(localVariant)
+        if shouldSave {
+            LocalStorageManager.shared.saveVariant(localVariant)
+        } else {
+            LocalStorageManager.shared.saveTransientVariant(localVariant)
+        }
         
         return AnalyzeResponse(
             success: true,
@@ -106,8 +110,7 @@ struct APIClient {
     }
 
     func variant(id: UUID, token: String) async throws -> VariantDetail {
-        let list = LocalStorageManager.shared.loadHistory()
-        guard let v = list.first(where: { $0.id == id }) else {
+        guard let v = LocalStorageManager.shared.loadVariant(id: id) else {
             throw APIClientError.server("Variant not found.")
         }
         return VariantDetail(
@@ -121,8 +124,7 @@ struct APIClient {
     }
 
     func analysisResult(id: UUID, token: String) async throws -> AnalyzeResponse {
-        let list = LocalStorageManager.shared.loadHistory()
-        guard let v = list.first(where: { $0.id == id }) else {
+        guard let v = LocalStorageManager.shared.loadVariant(id: id) else {
             throw APIClientError.server("Variant not found.")
         }
         let result = v.analysisFeedback
@@ -145,8 +147,7 @@ struct APIClient {
     }
 
     func acceptRewrite(variantId: UUID, originalBullet: String, rewrittenBullet: String, token: String) async throws -> AcceptRewriteResponse {
-        let list = LocalStorageManager.shared.loadHistory()
-        guard var v = list.first(where: { $0.id == variantId }) else {
+        guard var v = LocalStorageManager.shared.loadVariant(id: variantId) else {
             throw APIClientError.server("Variant not found.")
         }
         
@@ -164,14 +165,13 @@ struct APIClient {
         v.analysisFeedback = result
         v.updatedAt = Date()
         
-        LocalStorageManager.shared.saveVariant(v)
+        LocalStorageManager.shared.updateVariant(v)
         
         return AcceptRewriteResponse(success: true, variantId: v.id, updatedResumeText: updatedText)
     }
 
     func improveResume(variantId: UUID, token: String) async throws -> ImproveResumeResponse {
-        let list = LocalStorageManager.shared.loadHistory()
-        guard var variant = list.first(where: { $0.id == variantId }) else {
+        guard var variant = LocalStorageManager.shared.loadVariant(id: variantId) else {
             throw APIClientError.server("Variant not found.")
         }
 
@@ -191,7 +191,7 @@ struct APIClient {
         variant.atsScore = updatedFeedback.score
         variant.analysisFeedback = updatedFeedback
         variant.updatedAt = Date()
-        LocalStorageManager.shared.saveVariant(variant)
+        LocalStorageManager.shared.updateVariant(variant)
 
         let updatedAnalysis = AnalyzeResponse(
             success: true,
@@ -219,8 +219,7 @@ struct APIClient {
     }
 
     func exportVariant(id: UUID, token: String) async throws -> URL {
-        let list = LocalStorageManager.shared.loadHistory()
-        guard let v = list.first(where: { $0.id == id }) else {
+        guard let v = LocalStorageManager.shared.loadVariant(id: id) else {
             throw APIClientError.server("Variant not found.")
         }
 

@@ -13,6 +13,7 @@ struct AnalyzeView: View {
             ScrollView {
                 VStack(alignment: .leading, spacing: 24) {
                     introHeader
+                    planUsageCard
                     uploadStep
                     jobDescriptionStep
                     analyzeButton
@@ -124,6 +125,26 @@ struct AnalyzeView: View {
                 Label(warning, systemImage: "exclamationmark.triangle")
                     .font(.caption)
                     .foregroundStyle(RezTheme.warning)
+            }
+        }
+    }
+
+    private var planUsageCard: some View {
+        RezCard(padding: 14) {
+            VStack(alignment: .leading, spacing: 10) {
+                HStack {
+                    SectionTitle(appState.planName, subtitle: appState.isPro ? "Unlimited analyses, improvements, and saved variants." : "3 analyses/day, 3 improvements/day, 2 saved variants.")
+                    Spacer()
+                    RezStatusPill(text: appState.isPro ? "PRO" : "FREE", color: appState.isPro ? RezTheme.success : RezTheme.warning)
+                }
+
+                if !appState.isPro {
+                    HStack(spacing: 8) {
+                        UsageChip(label: "\(appState.remainingAnalyses)", detail: "analyses left")
+                        UsageChip(label: "\(appState.remainingImprovements)", detail: "rewrites left")
+                        UsageChip(label: "\(appState.savedVariantCount)/\(UsageLimiter.freeSavedVariants)", detail: "saved")
+                    }
+                }
             }
         }
     }
@@ -303,13 +324,29 @@ struct AnalyzeView: View {
     }
 
     private var analyzeButton: some View {
-        Button {
-            Task { await analyze() }
-        } label: {
-            Label(isAnalyzing ? "Analyzing..." : "Analyze Resume", systemImage: "sparkles")
+        VStack(alignment: .leading, spacing: 10) {
+            Button {
+                Task { await analyze() }
+            } label: {
+                Label(isAnalyzing ? "Analyzing..." : "Analyze Resume", systemImage: "sparkles")
+            }
+            .buttonStyle(RezPrimaryButtonStyle())
+            .disabled(appState.upload == nil || appState.jobDescription.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || isAnalyzing || !appState.canAnalyze)
+
+            if !appState.canAnalyze {
+                Text("Free analyses are used for today.")
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(RezTheme.muted)
+
+                Button {
+                    Task { await appState.purchasePro() }
+                } label: {
+                    Label("Unlock unlimited analyses", systemImage: "lock.open")
+                }
+                .buttonStyle(RezSecondaryButtonStyle(fill: RezTheme.warning))
+                .disabled(appState.isPurchasing)
+            }
         }
-        .buttonStyle(RezPrimaryButtonStyle())
-        .disabled(appState.upload == nil || appState.jobDescription.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || isAnalyzing)
     }
 
     private func upload(url: URL) async {
@@ -331,21 +368,58 @@ struct AnalyzeView: View {
 
     private func analyze() async {
         guard let token = appState.token, let upload = appState.upload else { return }
+        guard appState.canAnalyze else {
+            errorMessage = "Free analyses are used for today. Unlock Pro once for unlimited analyses."
+            return
+        }
+
         isAnalyzing = true
         errorMessage = nil
         do {
+            let shouldSave = appState.canSaveNewVariant
             let result = try await appState.api.analyzeResume(
                 resumeId: upload.resumeId,
                 resumeText: upload.extractedText,
                 jobDescription: appState.jobDescription,
-                token: token
+                token: token,
+                shouldSave: shouldSave
             )
+            appState.recordSuccessfulAnalysis()
             appState.latestAnalysis = result
+            if !shouldSave {
+                errorMessage = "History is full on Free. This result is usable now and exportable, but it was not saved."
+            }
             resultForSheet = result
         } catch {
             errorMessage = error.localizedDescription
         }
         isAnalyzing = false
+    }
+}
+
+private struct UsageChip: View {
+    let label: String
+    let detail: String
+
+    var body: some View {
+        VStack(spacing: 2) {
+            Text(label)
+                .font(.headline.weight(.black))
+                .foregroundStyle(RezTheme.ink)
+                .lineLimit(1)
+                .minimumScaleFactor(0.8)
+            Text(detail)
+                .font(.system(size: 9, weight: .black))
+                .foregroundStyle(RezTheme.muted)
+                .lineLimit(1)
+                .minimumScaleFactor(0.75)
+        }
+        .frame(maxWidth: .infinity, minHeight: 48)
+        .background(RezTheme.appBackground, in: RoundedRectangle(cornerRadius: 6))
+        .overlay {
+            RoundedRectangle(cornerRadius: 6)
+                .stroke(RezTheme.ink, lineWidth: 1.5)
+        }
     }
 }
 
@@ -369,7 +443,7 @@ private struct AnalyzeNoticeView: View {
                 }
 
             VStack(alignment: .leading, spacing: 4) {
-                Text("Backend unavailable")
+                Text("Heads up")
                     .font(.subheadline.weight(.black))
                     .foregroundStyle(RezTheme.ink)
                 Text(message)

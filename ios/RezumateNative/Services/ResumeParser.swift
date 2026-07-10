@@ -196,7 +196,7 @@ struct ResumeParser {
         if knownLocations.contains(lower) { return true }
         // "City, ST" pattern
         if lower.range(of: #"^[a-z\s]+,\s*[a-z]{2}$"#, options: .regularExpression) != nil { return true }
-        // Short, title-cased, no special chars → likely a city/country
+        // Short, title-cased, no special chars means likely a city/country.
         let words = text.components(separatedBy: .whitespaces).filter { !$0.isEmpty }
         if words.count <= 3 && !text.contains("@") && !text.contains(".") && !text.contains("/") {
             let allCapped = words.allSatisfy { $0.first?.isUppercase == true }
@@ -252,6 +252,10 @@ struct ResumeParser {
                 current!.title = title
                 current!.location = loc
                 expectTitle = false
+            } else if shouldContinuePreviousBullet(line, current: current) {
+                var updated = current!
+                appendToLastBullet(line, entry: &updated)
+                current = updated
             } else {
                 entries.append(current!)
                 var e = ExperienceEntry()
@@ -279,6 +283,13 @@ struct ResumeParser {
             if let bullet = asBullet(line) {
                 if current == nil { current = ProjectEntry(name: "") }
                 current!.bullets.append(bullet)
+                continue
+            }
+
+            if shouldContinuePreviousProjectBullet(line, current: current) {
+                var updated = current!
+                appendToLastProjectBullet(line, entry: &updated)
+                current = updated
                 continue
             }
 
@@ -369,7 +380,37 @@ struct ResumeParser {
         return nil
     }
 
-    // Splits "Company Name Feb. 2026 -- Present" → ("Company Name", "Feb. 2026 -- Present")
+    private static func shouldContinuePreviousBullet(_ line: String, current: ExperienceEntry?) -> Bool {
+        guard let current, !current.bullets.isEmpty else { return false }
+        let (_, date) = splitNameAndDate(line)
+        return date.isEmpty
+    }
+
+    private static func appendToLastBullet(_ line: String, entry: inout ExperienceEntry) {
+        guard !entry.bullets.isEmpty else { return }
+        let continuation = line.trimmingCharacters(in: .whitespaces)
+        guard !continuation.isEmpty else { return }
+        entry.bullets[entry.bullets.count - 1] += " " + continuation
+    }
+
+    private static func shouldContinuePreviousProjectBullet(_ line: String, current: ProjectEntry?) -> Bool {
+        guard let current, !current.bullets.isEmpty else { return false }
+        let trimmed = line.trimmingCharacters(in: .whitespaces)
+        guard !trimmed.isEmpty else { return false }
+        if splitNameAndDate(trimmed).1.isEmpty == false { return false }
+        if trimmed.count > 38 { return true }
+        if let first = trimmed.first, first.isLowercase || "(),;:/".contains(first) { return true }
+        return false
+    }
+
+    private static func appendToLastProjectBullet(_ line: String, entry: inout ProjectEntry) {
+        guard !entry.bullets.isEmpty else { return }
+        let continuation = line.trimmingCharacters(in: .whitespaces)
+        guard !continuation.isEmpty else { return }
+        entry.bullets[entry.bullets.count - 1] += " " + continuation
+    }
+
+    // Splits "Company Name Feb. 2026 -- Present" -> ("Company Name", "Feb. 2026 -- Present")
     private static func splitNameAndDate(_ line: String) -> (String, String) {
         guard let regex = dateRegex else { return (line, "") }
 
@@ -387,7 +428,7 @@ struct ResumeParser {
         return name.isEmpty ? (line, "") : (name, date)
     }
 
-    // Splits "Founder & Lead Engineer Remote" → ("Founder & Lead Engineer", "Remote")
+    // Splits "Founder & Lead Engineer Remote" -> ("Founder & Lead Engineer", "Remote")
     private static func splitTitleAndLocation(_ line: String) -> (String, String) {
         let words = line.components(separatedBy: .whitespaces).filter { !$0.isEmpty }
         guard words.count > 1 else { return (line, "") }

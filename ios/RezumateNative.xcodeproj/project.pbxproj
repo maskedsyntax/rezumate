@@ -31,6 +31,7 @@
 		100000000000000000000019 /* ResumeDocument.swift in Sources */ = {isa = PBXBuildFile; fileRef = 20000000000000000000001A /* ResumeDocument.swift */; };
 		10000000000000000000001A /* ResumeParser.swift in Sources */ = {isa = PBXBuildFile; fileRef = 20000000000000000000001B /* ResumeParser.swift */; };
 		10000000000000000000001B /* LaTeXStylePDFRenderer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 20000000000000000000001C /* LaTeXStylePDFRenderer.swift */; };
+		10000000000000000000001C /* UsageLimiter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 20000000000000000000001D /* UsageLimiter.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -60,6 +61,7 @@
 		20000000000000000000001A /* ResumeDocument.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Models/ResumeDocument.swift; sourceTree = "<group>"; };
 		20000000000000000000001B /* ResumeParser.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Services/ResumeParser.swift; sourceTree = "<group>"; };
 		20000000000000000000001C /* LaTeXStylePDFRenderer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Services/LaTeXStylePDFRenderer.swift; sourceTree = "<group>"; };
+		20000000000000000000001D /* UsageLimiter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Services/UsageLimiter.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXGroup section */
@@ -95,6 +97,7 @@
 				200000000000000000000015 /* LocalStorageManager.swift */,
 				200000000000000000000016 /* PDFExportService.swift */,
 				200000000000000000000017 /* LocalAIService.swift */,
+				20000000000000000000001D /* UsageLimiter.swift */,
 				20000000000000000000001A /* ResumeDocument.swift */,
 				20000000000000000000001B /* ResumeParser.swift */,
 				20000000000000000000001C /* LaTeXStylePDFRenderer.swift */,
@@ -211,6 +214,7 @@
 				100000000000000000000015 /* LocalStorageManager.swift in Sources */,
 				100000000000000000000016 /* PDFExportService.swift in Sources */,
 				100000000000000000000017 /* LocalAIService.swift in Sources */,
+				10000000000000000000001C /* UsageLimiter.swift in Sources */,
 				100000000000000000000019 /* ResumeDocument.swift in Sources */,
 				10000000000000000000001A /* ResumeParser.swift in Sources */,
 				10000000000000000000001B /* LaTeXStylePDFRenderer.swift in Sources */,

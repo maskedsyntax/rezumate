@@ -12,7 +12,7 @@ export default function FaqPage() {
         <p className="eyebrow">FAQ</p>
         <h1>Frequently asked questions</h1>
         <p className="lead faq-lead">
-          Everything you need to know about Rezumate — the workflow, analysis, local suggestions, plans,
+          Everything you need to know about Rezumate, including the workflow, analysis, local suggestions, plans,
           privacy, and launch timeline.
         </p>
         <FaqList sections={faqSections} idPrefix="faq" />

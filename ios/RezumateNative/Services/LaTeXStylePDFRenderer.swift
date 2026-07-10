@@ -20,7 +20,7 @@ struct LaTeXStylePDFRenderer {
     private static let cDark  = UIColor(white: 0.30, alpha: 1)  // dark-grey  (dates, locations)
     private static let cText  = UIColor(white: 0.08, alpha: 1)  // text-grey  (body)
 
-    // Fonts approximating the LaTeX template (IBM Plex Sans → San Francisco)
+    // Fonts approximating the LaTeX template (IBM Plex Sans to San Francisco)
     private static let fName:    UIFont = .systemFont(ofSize: 18, weight: .heavy)
     private static let fContact: UIFont = .systemFont(ofSize: 8)
     private static let fSection: UIFont = .systemFont(ofSize: 11, weight: .bold)
@@ -104,7 +104,7 @@ struct LaTeXStylePDFRenderer {
     private static func drawName(_ name: String, ctx: UIGraphicsPDFRendererContext, y: inout CGFloat) {
         guard !name.isEmpty else { return }
         let attrs: [NSAttributedString.Key: Any] = [.font: fName, .foregroundColor: cText]
-        let str = NSAttributedString(string: name, attributes: attrs)
+        let str = NSAttributedString(string: cleanText(name), attributes: attrs)
         let h = strH(str, width: tW)
         let intrinsicW = str.size().width
         let x = mL + max(0, (tW - intrinsicW) / 2)
@@ -114,16 +114,16 @@ struct LaTeXStylePDFRenderer {
 
     private static func drawContactBar(_ doc: ResumeDocument, ctx: UIGraphicsPDFRendererContext, y: inout CGFloat) {
         var parts: [String] = []
-        if let v = doc.email    { parts.append(v) }
-        if let v = doc.website  { parts.append(v) }
-        if let v = doc.github   { parts.append(v) }
-        if let v = doc.linkedin { parts.append(v) }
-        if let v = doc.location { parts.append(v) }
+        if let v = doc.email    { parts.append(cleanText(v)) }
+        if let v = doc.website  { parts.append(cleanText(v)) }
+        if let v = doc.github   { parts.append(cleanText(v)) }
+        if let v = doc.linkedin { parts.append(cleanText(v)) }
+        if let v = doc.location { parts.append(cleanText(v)) }
         guard !parts.isEmpty else { y += 4; return }
 
         let text = parts.joined(separator: "  |  ")
         let attrs: [NSAttributedString.Key: Any] = [.font: fContact, .foregroundColor: cText]
-        let str = NSAttributedString(string: text, attributes: attrs)
+        let str = NSAttributedString(string: cleanText(text), attributes: attrs)
         let h = strH(str, width: tW)
         let intrinsicW = str.size().width
         let x = mL + max(0, (tW - intrinsicW) / 2)
@@ -156,7 +156,7 @@ struct LaTeXStylePDFRenderer {
 
     private static func drawBodyText(_ text: String, ctx: UIGraphicsPDFRendererContext, y: inout CGFloat) {
         let attrs: [NSAttributedString.Key: Any] = [.font: fBody, .foregroundColor: cText]
-        let str = NSAttributedString(string: text, attributes: attrs)
+        let str = NSAttributedString(string: cleanText(text), attributes: attrs)
         let h = strH(str, width: tW)
         breakIfNeeded(h, ctx: ctx, y: &y)
         str.draw(in: CGRect(x: mL, y: y, width: tW, height: h))
@@ -174,21 +174,23 @@ struct LaTeXStylePDFRenderer {
         guard !leftText.isEmpty else { return }
 
         let rightAttrs: [NSAttributedString.Key: Any] = [.font: rightFont, .foregroundColor: cDark]
-        let rightStr = NSAttributedString(string: rightText, attributes: rightAttrs)
-        let rightW = rightText.isEmpty ? 0 : min(rightStr.size().width + 2, tW * 0.42)
+        let safeRightText = cleanText(rightText)
+        let safeLeftText = cleanText(leftText)
+        let rightStr = NSAttributedString(string: safeRightText, attributes: rightAttrs)
+        let rightW = safeRightText.isEmpty ? 0 : min(rightStr.size().width + 2, tW * 0.42)
         let leftW = tW - rightW - (rightW > 0 ? 6 : 0)
 
         let leftAttrs: [NSAttributedString.Key: Any] = [.font: leftFont, .foregroundColor: cText]
-        let leftStr = NSAttributedString(string: leftText, attributes: leftAttrs)
+        let leftStr = NSAttributedString(string: safeLeftText, attributes: leftAttrs)
 
         let leftH = strH(leftStr, width: leftW)
-        let rightH = rightText.isEmpty ? 0 : ceil(rightStr.size().height) + 1
+        let rightH = safeRightText.isEmpty ? 0 : ceil(rightStr.size().height) + 1
         let rowH = max(leftH, rightH)
 
         breakIfNeeded(rowH, ctx: ctx, y: &y)
 
         leftStr.draw(in: CGRect(x: mL, y: y, width: leftW, height: rowH))
-        if !rightText.isEmpty {
+        if !safeRightText.isEmpty {
             rightStr.draw(at: CGPoint(x: mL + tW - rightW, y: y))
         }
         y += rowH + 1
@@ -201,7 +203,7 @@ struct LaTeXStylePDFRenderer {
         let contentW: CGFloat = tW - 12 - 4
 
         let attrs: [NSAttributedString.Key: Any] = [.font: fBody, .foregroundColor: cText]
-        let textStr = NSAttributedString(string: text, attributes: attrs)
+        let textStr = NSAttributedString(string: cleanText(text), attributes: attrs)
         let h = strH(textStr, width: contentW)
 
         breakIfNeeded(h, ctx: ctx, y: &y)
@@ -249,7 +251,7 @@ struct LaTeXStylePDFRenderer {
 
         if !entry.name.isEmpty {
             let attrs: [NSAttributedString.Key: Any] = [.font: fBold, .foregroundColor: cText]
-            let str = NSAttributedString(string: entry.name, attributes: attrs)
+            let str = NSAttributedString(string: cleanText(entry.name), attributes: attrs)
             let h = strH(str, width: tW)
             str.draw(in: CGRect(x: mL, y: y, width: tW, height: h))
             y += h + 2
@@ -295,13 +297,13 @@ struct LaTeXStylePDFRenderer {
             let combined = NSMutableAttributedString()
             if !category.name.isEmpty {
                 combined.append(NSAttributedString(
-                    string: "\(category.name): ",
+                    string: "\(cleanText(category.name)): ",
                     attributes: [.font: fBold, .foregroundColor: cText]
                 ))
             }
             if !category.items.isEmpty {
                 combined.append(NSAttributedString(
-                    string: category.items,
+                    string: cleanText(category.items),
                     attributes: [.font: fBody, .foregroundColor: cText]
                 ))
             }
@@ -323,5 +325,12 @@ struct LaTeXStylePDFRenderer {
             context: nil
         )
         return ceil(rect.height) + 1
+    }
+
+    private static func cleanText(_ text: String) -> String {
+        text
+            .replacingOccurrences(of: "—", with: "-")
+            .replacingOccurrences(of: "–", with: "-")
+            .replacingOccurrences(of: "−", with: "-")
     }
 }
