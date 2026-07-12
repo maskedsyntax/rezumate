@@ -20,7 +20,7 @@ export const faqSections: FaqSection[] = [
       {
         question: "What problem does Rezumate solve?",
         answer:
-          "Most applicants send one generic resume everywhere and never know why they get rejected. Rezumate shows you your exact ATS score, which keywords you're missing, which bullets are weak, and then fixes them, pushing the score from something like 55 to 85-90 in seconds, without uploading your data anywhere."
+          "Most applicants send one generic resume everywhere and never know why it underperforms. Rezumate shows an ATS-style score, missing keywords, weak bullets, and bullets that need measurable impact, then helps you improve them without uploading your data anywhere."
       },
       {
         question: "Who is Rezumate for?",
@@ -30,7 +30,7 @@ export const faqSections: FaqSection[] = [
       {
         question: "How does the core workflow work?",
         answer:
-          "Upload resume (PDF or DOCX), paste a job description, get an ATS-style score with full breakdown, see missing keywords and weak bullets, tap Improve Resume, watch your score jump (+30 pts on average), then view and download a formatted PDF in a professional template."
+          "Upload resume (PDF or DOCX), paste a job description, get an ATS-style score with full breakdown, see missing keywords and weak bullets, tap Improve Resume, then view and download a formatted PDF in a professional template."
       },
       {
         question: "What makes Rezumate different from other resume tools?",
@@ -55,12 +55,12 @@ export const faqSections: FaqSection[] = [
       {
         question: "How much does the score actually improve?",
         answer:
-          "On average 25-35 points. The improvement engine injects all missing JD keywords directly into your skills section (the single biggest lever: keyword coverage is 45% of the score) and adds measurable impact signals to weak bullets (25% of the score). A typical resume goes from ~55 to 85-90."
+          "It depends on the resume and job description. Keyword coverage can improve when missing JD keywords are added to the skills section. Impact quality can improve when task-only bullets are rewritten with clearer outcome, reliability, quality, performance, or delivery signals. Rezumate does not invent fake numbers."
       },
       {
         question: "How do local writing suggestions work?",
         answer:
-          "Rezumate uses local scoring rules and writing patterns. It upgrades passive verbs (for example, \"worked on\" becomes \"Engineered\"), adds numeric signals to bullets without measurable data (e.g. \"across 3+ production environments, improving delivery speed by 25%\"), and injects all missing keywords into the skills section so the ATS word-boundary scanner recognizes them."
+          "Rezumate uses local scoring rules and writing patterns. It upgrades passive verbs (for example, \"worked on\" becomes \"Engineered\"), injects missing keywords into the skills section, and adds clearer outcome language to task-only bullets without inventing metrics."
       },
       {
         question: "Do I need to download a model or connect to a server?",

@@ -87,6 +87,13 @@ struct ATSScoringService {
         pattern: #"(\d+[%+]?|\$[\d,.]+|[<>]\s*\d+|\b\d+\s*(x|k|m|million|billion|users|customers|requests|seconds|minutes|hours|days)\b)"#,
         options: .caseInsensitive
     )
+
+    static let qualitativeImpactSignals: [String] = [
+        "improved", "improving", "reduced", "increased", "optimized",
+        "streamlined", "accelerated", "enabled", "delivered", "supporting",
+        "resulting", "reliability", "performance", "usability", "quality",
+        "efficiency", "accuracy", "scalability", "maintainability"
+    ]
     
     static func analyzeResume(resumeText: String, jobDescription: String) -> ATSAnalysisResult {
         let jdKeywords = extractKeywords(from: jobDescription)
@@ -110,10 +117,7 @@ struct ATSScoringService {
         let bullets = extractBullets(from: resumeText)
         let weakBullets = bullets.filter { isWeakBullet($0) }
         
-        let bulletsWithoutImpact = bullets.filter { bullet in
-            let range = NSRange(location: 0, length: bullet.utf16.count)
-            return measurableImpactRegex.firstMatch(in: bullet, options: [], range: range) == nil
-        }
+        let bulletsWithoutImpact = bullets.filter { !hasImpactSignal($0) }
         
         let sections = detectSections(in: resumeText)
         let formattingWarnings = detectFormattingWarnings(in: resumeText)
@@ -181,6 +185,16 @@ struct ATSScoringService {
         
         return removeRedundantKeywords(found).sorted()
     }
+
+    static func hasImpactSignal(_ bullet: String) -> Bool {
+        let range = NSRange(location: 0, length: bullet.utf16.count)
+        if measurableImpactRegex.firstMatch(in: bullet, options: [], range: range) != nil {
+            return true
+        }
+
+        let lowered = bullet.lowercased()
+        return qualitativeImpactSignals.contains(where: { lowered.contains($0) })
+    }
     
     static func extractBullets(from text: String) -> [String] {
         var bullets: [String] = []
@@ -190,7 +204,7 @@ struct ATSScoringService {
         for line in lines {
             let stripped = line.trimmingCharacters(in: .whitespacesAndNewlines)
             let range = NSRange(location: 0, length: stripped.utf16.count)
-            if let match = bulletPrefixRegex.firstMatch(in: stripped, options: [], range: range) {
+            if bulletPrefixRegex.firstMatch(in: stripped, options: [], range: range) != nil {
                 let bulletText = bulletPrefixRegex.stringByReplacingMatches(
                     in: stripped,
                     options: [],

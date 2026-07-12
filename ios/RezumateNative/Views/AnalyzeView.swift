@@ -345,6 +345,13 @@ struct AnalyzeView: View {
                 }
                 .buttonStyle(RezSecondaryButtonStyle(fill: RezTheme.warning))
                 .disabled(appState.isPurchasing)
+
+                if let purchaseMessage = appState.purchaseMessage {
+                    Text(purchaseMessage)
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(RezTheme.muted)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
             }
         }
     }

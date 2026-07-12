@@ -17,7 +17,7 @@ export default function PrivacyPage() {
             Unlike traditional resume builders or cloud services, <strong>Rezumate does not upload your files, parsed resume text, or pasted job descriptions to a resume analysis server.</strong> Text parsing, keyword extraction, ATS-style scoring, and writing suggestions are processed locally on your iPhone.
           </p>
           <p>
-            <strong>Local Data Storage:</strong> All information, including your resume history, scores, missing keywords, and tailored draft variants, is saved locally on your device in secure, encrypted sandboxed storage. We have no resume-analysis database, run no user tracking analytics, and have zero visibility into your career details.
+            <strong>Local Data Storage:</strong> All information, including your resume history, scores, missing keywords, and tailored draft variants, is saved locally on your device in app sandboxed storage. We have no resume-analysis database, run no user tracking analytics, and have zero visibility into your career details.
           </p>
           <p>
             <strong>Local Suggestions:</strong> Bullet point suggestions are generated locally using scoring rules and writing patterns. The first release does not require a separate model download.

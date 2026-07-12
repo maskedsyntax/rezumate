@@ -9,7 +9,7 @@ const ctaHref = "/waitlist";
 
 const proofStats = [
   ["100% local", "Resume parsing, scoring, keyword checks, rewrites, history, and PDF export run on your iPhone."],
-  ["25-35 pts", "Typical score lift after missing JD keywords and weak bullets are fixed."],
+  ["One-tap improve", "Missing keywords, weak wording, and impact signals are handled in the same resume improvement flow."],
   ["No account", "Open the app, upload a resume, paste a job description, and start tailoring."]
 ];
 
@@ -17,8 +17,8 @@ const features = [
   ["ATS match score", "A role-specific score built from keyword coverage, impact quality, structure, readability, and formatting risk."],
   ["Full score diagnosis", "Pro users can open each score component and see why it matters, what is missing, and what to fix next."],
   ["Missing keyword detection", "Rezumate extracts skills, tools, frameworks, and role terms from the job description and compares them with your resume."],
-  ["Bullet strengthening", "Weak bullets are upgraded with stronger verbs, measurable impact signals, and relevant keywords without changing your career story."],
-  ["Resume improvement engine", "One tap adds missing JD keywords, improves impact quality, refreshes the score, and saves the improved variant."],
+  ["Bullet strengthening", "Weak bullets are upgraded with stronger verbs, clearer outcome language, and relevant keywords without changing your career story."],
+  ["Resume improvement engine", "One tap adds missing JD keywords, strengthens passive bullets, refreshes the score, and saves the improved variant."],
   ["LaTeX-style PDF export", "Export a clean ATS-safe PDF with centered header, section rules, tabular experience entries, and selectable text."],
   ["Private local history", "Saved resume variants and scoring history stay inside local sandboxed storage on your device."],
   ["Free daily usage", "Start with 3 analyses/day, 3 improvements/day, 2 saved variants, and PDF export included."],
@@ -29,7 +29,7 @@ const guideSteps = [
   ["Upload a real resume", "Use a text-based PDF or DOCX. Scanned image resumes can fail because there is no selectable text to analyze."],
   ["Paste the full job description", "The better the JD, the better the keyword extraction. Include responsibilities, requirements, skills, and tools."],
   ["Check the four score areas", "Keyword coverage carries the most weight, then impact quality, structure/readability, and formatting risk."],
-  ["Improve the resume", "Rezumate adds missing JD terms to the right places and strengthens passive bullets with clearer impact language."],
+  ["Improve the resume", "Rezumate adds missing JD terms, strengthens passive bullets, and improves impact signals in one flow."],
   ["Preview before sending", "Open the improved PDF, review every line, keep it truthful, then download and apply."]
 ];
 

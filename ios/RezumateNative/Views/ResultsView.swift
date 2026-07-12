@@ -14,6 +14,7 @@ struct ResultsView: View {
     @State private var optimizedResumeText: String?
     @State private var isShowingPDFPreview = false
     @State private var originalScore: Int?
+    @State private var originalComponentScores: [String: Int]?
 
     init(result: AnalyzeResponse) {
         self.result = result
@@ -203,6 +204,11 @@ struct ResultsView: View {
                                         Text("\(value)")
                                             .font(.caption.weight(.bold))
                                             .foregroundStyle(RezTheme.ink)
+                                        if let delta = componentDelta(for: key), delta != 0 {
+                                            Text(delta > 0 ? "+\(delta)" : "\(delta)")
+                                                .font(.system(size: 9, weight: .black))
+                                                .foregroundStyle(delta > 0 ? RezTheme.success : RezTheme.error)
+                                        }
                                         Image(systemName: appState.isPro ? (isExpanded ? "chevron.up" : "chevron.down") : "lock.fill")
                                             .font(.system(size: 10, weight: .bold))
                                             .foregroundStyle(RezTheme.muted)
@@ -279,16 +285,23 @@ struct ResultsView: View {
                                 .stroke(RezTheme.ink, lineWidth: 2)
                         }
 
-                    SectionTitle("Unlock full diagnosis", subtitle: "Get every keyword, detailed score reasoning, and unlimited local improvements.")
+                    SectionTitle("Unlock full diagnosis", subtitle: "One-time Pro unlock for \(appState.proPriceText). Get every keyword, detailed score reasoning, and unlimited local improvements.")
                 }
 
                 Button {
                     Task { await appState.purchasePro() }
                 } label: {
-                    Label(appState.isPurchasing ? "Unlocking..." : "Unlock Pro - $7.99 launch", systemImage: "sparkles")
+                    Label(appState.isPurchasing ? "Unlocking..." : "Unlock Pro", systemImage: "sparkles")
                 }
                 .buttonStyle(RezSecondaryButtonStyle(fill: RezTheme.warning))
                 .disabled(appState.isPurchasing)
+
+                if let purchaseMessage = appState.purchaseMessage {
+                    Text(purchaseMessage)
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(RezTheme.muted)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
             }
         }
     }
@@ -306,9 +319,9 @@ struct ResultsView: View {
             return (importance, explanation)
             
         case "impact_quality":
-            let importance = "Human recruiters spend only 6 seconds scanning a resume. Bullet points containing metrics (percentages, numbers, scale) capture their attention instantly and prove the outcome of your work, rather than just listing daily tasks."
-            let bulletsWithImpact = currentResult.bulletCount - currentResult.bulletsWithoutMeasurableImpact.count
-            let explanation = "Only \(bulletsWithImpact) out of \(currentResult.bulletCount) bullets contain quantifiable metrics. Add numbers, percentages, or scale units to the remaining \(currentResult.bulletsWithoutMeasurableImpact.count) bullets to improve."
+            let importance = "Strong resume bullets connect work to outcomes. Numbers are best when they are real, but clear outcome, reliability, quality, performance, or delivery signals are also stronger than task-only bullets."
+            let bulletsWithImpact = currentResult.bulletCount - currentResult.bulletsWithoutMeasurableImpactCount
+            let explanation = "\(bulletsWithImpact) out of \(currentResult.bulletCount) bullets contain impact signals. Improve Resume strengthens task-only bullets with clearer outcome language without adding fake numbers."
             return (importance, explanation)
             
         case "keyword_coverage":
@@ -351,6 +364,11 @@ struct ResultsView: View {
         case 60..<80: RezTheme.warning
         default: RezTheme.error
         }
+    }
+
+    private func componentDelta(for key: String) -> Int? {
+        guard let originalComponentScores else { return nil }
+        return currentResult.componentScores[key].map { $0 - (originalComponentScores[key] ?? 0) }
     }
 
     private func keywordSection(title: String, items: [String], color: Color, limitForFree: Int? = nil) -> some View {
@@ -419,6 +437,13 @@ struct ResultsView: View {
                         .buttonStyle(RezSecondaryButtonStyle(fill: RezTheme.warning))
                         .disabled(appState.isPurchasing)
                     }
+
+                    if let purchaseMessage = appState.purchaseMessage {
+                        Text(purchaseMessage)
+                            .font(.caption.weight(.semibold))
+                            .foregroundStyle(RezTheme.muted)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
                 } else {
                     VStack(alignment: .leading, spacing: 12) {
                         HStack(spacing: 8) {
@@ -444,14 +469,14 @@ struct ResultsView: View {
                                         .font(.caption.weight(.bold))
                                         .foregroundStyle(RezTheme.success)
                                 } else if delta == 0 {
-                                    Text("(bullets rewritten, content improved)")
+                                    Text("(wording improved; review before sending)")
                                         .font(.caption)
                                         .foregroundStyle(RezTheme.muted)
                                 }
                             }
                         }
 
-                        Text("Laid out in the standard Rezumate template, ready to download as PDF.")
+                        Text(currentResult.bulletsWithoutMeasurableImpactCount == 0 ? "Keywords, wording, and impact signals are improved. Review and export the final PDF." : "\(currentResult.bulletsWithoutMeasurableImpactCount) bullet(s) may still need stronger impact details. Review before sending.")
                             .font(.caption)
                             .foregroundStyle(RezTheme.muted)
 
@@ -527,7 +552,6 @@ struct ResultsView: View {
         isWorking = true
         errorMessage = nil
         exportedURL = nil
-        let priorScore = currentResult.score
 
         do {
             let response = try await appState.api.improveResume(
@@ -535,24 +559,32 @@ struct ResultsView: View {
                 token: token
             )
             appState.recordSuccessfulImprovement()
-            originalScore = priorScore
+            if originalScore == nil {
+                originalScore = response.originalScore
+            }
+            if originalComponentScores == nil {
+                originalComponentScores = currentResult.componentScores
+            }
             optimizedResumeText = response.optimizedResumeText
             currentResult = response.updatedAnalysis
             appState.latestAnalysis = response.updatedAnalysis
 
-            // Parse improved text into a structured document and render as LaTeX-style PDF
-            let doc = ResumeParser.parse(response.optimizedResumeText)
-            let pdfData = LaTeXStylePDFRenderer.render(doc)
-            let url = FileManager.default.temporaryDirectory
-                .appendingPathComponent("rezumate-\(currentResult.variantId).pdf")
-            try pdfData.write(to: url, options: .atomic)
-            exportedURL = url
+            try refreshExportedPDF(from: response.optimizedResumeText)
             isShowingPDFPreview = true
         } catch {
             errorMessage = error.localizedDescription
         }
 
         isWorking = false
+    }
+
+    private func refreshExportedPDF(from text: String) throws {
+        let doc = ResumeParser.parse(text)
+        let pdfData = LaTeXStylePDFRenderer.render(doc)
+        let url = FileManager.default.temporaryDirectory
+            .appendingPathComponent("rezumate-\(currentResult.variantId).pdf")
+        try pdfData.write(to: url, options: .atomic)
+        exportedURL = url
     }
 
     private func reAnalyze() async {

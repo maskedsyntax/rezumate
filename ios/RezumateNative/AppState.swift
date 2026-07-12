@@ -44,6 +44,10 @@ final class AppState: ObservableObject {
         isPro ? "Pro Lifetime" : "Free"
     }
 
+    var proPriceText: String {
+        proProduct?.displayPrice ?? "$7.99"
+    }
+
     var remainingAnalyses: Int {
         isPro ? Int.max : UsageLimiter.remainingAnalyses(in: usageSnapshot)
     }
@@ -88,16 +92,20 @@ final class AppState: ObservableObject {
     }
 
     func purchasePro() async {
-        guard let proProduct else {
-            purchaseMessage = "Pro purchase is not available yet. Try Restore Purchase later."
-            return
-        }
-
         isPurchasing = true
         purchaseMessage = nil
         defer { isPurchasing = false }
 
         do {
+            if proProduct == nil {
+                proProduct = try await Product.products(for: [Self.proProductId]).first
+            }
+
+            guard let proProduct else {
+                purchaseMessage = "Pro purchase is not available in this build. Check the App Store Connect product or use a StoreKit test configuration in Simulator."
+                return
+            }
+
             let result = try await proProduct.purchase()
             switch result {
             case .success(let verification):

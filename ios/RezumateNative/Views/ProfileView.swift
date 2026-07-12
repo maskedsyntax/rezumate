@@ -64,7 +64,7 @@ struct ProfileView: View {
                                 PlanFeatureRow(text: "Full ATS diagnosis and keyword insights")
                             }
 
-                            Text(appState.isPro ? "Lifetime Pro is active on this device." : "Launch price: $7.99. Regular price: $14.99.")
+                            Text(appState.isPro ? "Lifetime Pro is active on this device." : "One-time purchase: \(appState.proPriceText).")
                                 .font(.caption.weight(.semibold))
                                 .foregroundStyle(RezTheme.muted)
 

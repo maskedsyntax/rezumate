@@ -75,6 +75,7 @@ struct APIClient {
             missingKeywords: result.missingKeywords,
             weakBullets: result.weakBullets,
             bulletsWithoutMeasurableImpact: result.bulletsWithoutMeasurableImpact,
+            bulletsWithoutMeasurableImpactCount: result.bulletsWithoutMeasurableImpactCount,
             formattingWarnings: result.formattingWarnings,
             componentScores: result.componentScores,
             analysisStatus: "complete",
@@ -136,6 +137,7 @@ struct APIClient {
             missingKeywords: result.missingKeywords,
             weakBullets: result.weakBullets,
             bulletsWithoutMeasurableImpact: result.bulletsWithoutMeasurableImpact,
+            bulletsWithoutMeasurableImpactCount: result.bulletsWithoutMeasurableImpactCount,
             formattingWarnings: result.formattingWarnings,
             componentScores: result.componentScores,
             analysisStatus: "complete",
@@ -176,6 +178,8 @@ struct APIClient {
         }
 
         let feedback = variant.analysisFeedback
+        let originalScore = variant.atsScore
+        let originalComponents = feedback.componentScores
         let weakPoints = uniqueItems(feedback.weakBullets + feedback.bulletsWithoutMeasurableImpact)
         let optimizedText = try await LocalAIService.shared.improveResume(
             variant.tailoredContent,
@@ -201,6 +205,7 @@ struct APIClient {
             missingKeywords: updatedFeedback.missingKeywords,
             weakBullets: updatedFeedback.weakBullets,
             bulletsWithoutMeasurableImpact: updatedFeedback.bulletsWithoutMeasurableImpact,
+            bulletsWithoutMeasurableImpactCount: updatedFeedback.bulletsWithoutMeasurableImpactCount,
             formattingWarnings: updatedFeedback.formattingWarnings,
             componentScores: updatedFeedback.componentScores,
             analysisStatus: "complete",
@@ -214,7 +219,11 @@ struct APIClient {
             success: true,
             variantId: variant.id,
             optimizedResumeText: optimizedText,
-            updatedAnalysis: updatedAnalysis
+            updatedAnalysis: updatedAnalysis,
+            originalScore: originalScore,
+            componentDeltas: componentDeltas(from: originalComponents, to: updatedFeedback.componentScores),
+            changedBullets: weakPoints.filter { !optimizedText.contains($0) },
+            remainingBulletsWithoutMeasurableImpact: updatedFeedback.bulletsWithoutMeasurableImpactCount
         )
     }
 
@@ -240,5 +249,13 @@ struct APIClient {
             }
         }
         return result
+    }
+
+    private func componentDeltas(from old: [String: Int], to new: [String: Int]) -> [String: Int] {
+        var deltas: [String: Int] = [:]
+        for key in Set(old.keys).union(new.keys) {
+            deltas[key] = (new[key] ?? 0) - (old[key] ?? 0)
+        }
+        return deltas
     }
 }

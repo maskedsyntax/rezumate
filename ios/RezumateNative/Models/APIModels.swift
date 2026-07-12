@@ -73,6 +73,7 @@ struct AnalyzeResponse: Codable, Equatable, Hashable {
     let missingKeywords: [String]
     let weakBullets: [String]
     let bulletsWithoutMeasurableImpact: [String]
+    let bulletsWithoutMeasurableImpactCount: Int
     let formattingWarnings: [String]
     let componentScores: [String: Int]
     let analysisStatus: String?
@@ -89,6 +90,7 @@ struct AnalyzeResponse: Codable, Equatable, Hashable {
         case missingKeywords = "missing_keywords"
         case weakBullets = "weak_bullets"
         case bulletsWithoutMeasurableImpact = "bullets_without_measurable_impact"
+        case bulletsWithoutMeasurableImpactCount = "bullets_without_measurable_impact_count"
         case formattingWarnings = "formatting_warnings"
         case componentScores = "component_scores"
         case analysisStatus = "analysis_status"
@@ -192,4 +194,8 @@ struct ImproveResumeResponse: Decodable {
     let variantId: UUID
     let optimizedResumeText: String
     let updatedAnalysis: AnalyzeResponse
+    let originalScore: Int
+    let componentDeltas: [String: Int]
+    let changedBullets: [String]
+    let remainingBulletsWithoutMeasurableImpact: Int
 }

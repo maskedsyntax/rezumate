@@ -107,7 +107,28 @@ final class LocalAIService {
             }
         }
 
+        b = addImpactSignalIfNeeded(to: b, keywords: keywords)
+
         return b
+    }
+
+    private func addImpactSignalIfNeeded(to bullet: String, keywords: [String]) -> String {
+        let lowered = bullet.lowercased()
+        let impactSignals = [
+            "improved", "improving", "reduced", "increased", "optimized",
+            "streamlined", "accelerated", "enabled", "delivered", "supporting",
+            "resulting", "reliability", "performance", "usability", "quality"
+        ]
+
+        if impactSignals.contains(where: { lowered.contains($0) }) {
+            return bullet
+        }
+
+        let keywordContext = keywords.prefix(2).map(displayKeyword).joined(separator: " and ")
+        if keywordContext.isEmpty {
+            return bullet + " to improve reliability, usability, and delivery quality"
+        }
+        return bullet + " to improve \(keywordContext) alignment, reliability, and delivery quality"
     }
 
     // MARK: - Bottom-sheet bullet variants
