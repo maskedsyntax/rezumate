@@ -20,7 +20,7 @@ export function SiteChrome({ children }: Props) {
           <a href="/#features">Features</a>
           <a href="/#pricing">Pricing</a>
           <a href="/#faq">FAQ</a>
-          <Link className="nav-cta" href="/waitlist">Claim $7.99</Link>
+          <Link className="nav-cta" href="/waitlist">Join Waitlist</Link>
         </nav>
       </header>
 

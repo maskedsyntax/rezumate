@@ -4,8 +4,9 @@ import { FaqList } from "./components/FaqList";
 import { ScrollReveal } from "./components/ScrollReveal";
 import { featuredFaqItems } from "./components/faq-data";
 import { SiteChrome } from "./components/SiteChrome";
+import { WaitlistForm } from "./components/WaitlistForm";
 
-const ctaHref = "/waitlist";
+const ctaHref = "#waitlist";
 
 const proofStats = [
   ["100% local", "Resume parsing, scoring, keyword checks, rewrites, history, and PDF export run on your iPhone."],
@@ -74,10 +75,12 @@ export default function Home() {
               <span className="offer-label">Launch price</span>
               <strong>$7.99</strong>
               <span className="regular-price">$14.99 regular</span>
-              <span className="offer-note">One-time unlock for RDR users while launch access is open.</span>
+              <span className="offer-note">Not on the App Store yet. Join the waitlist below to lock this price before it becomes $14.99.</span>
+            </div>
+            <div id="waitlist">
+              <WaitlistForm source="hero" />
             </div>
             <div className="actions">
-              <Link className="button" href={ctaHref}>Claim $7.99 Access</Link>
               <a className="button secondary" href="#how-it-works">See How It Works</a>
             </div>
 
@@ -150,8 +153,8 @@ export default function Home() {
         <section className="ticker-band" aria-label="Launch offer details">
           <div className="shell ticker-grid">
             <div>
-              <span className="ticker-kicker">RDR launch</span>
-              <strong>$7.99 today</strong>
+              <span className="ticker-kicker">Waitlist price</span>
+              <strong>$7.99 at launch</strong>
             </div>
             <div>
               <span className="ticker-kicker">Regular price</span>
@@ -177,7 +180,7 @@ export default function Home() {
                 Rezumate is not another template gallery. It is built around the exact sequence job seekers repeat:
                 compare the resume to the job, close the gaps, and export a version ready to submit.
               </p>
-              <Link className="button" href={ctaHref}>Start With Launch Access</Link>
+              <Link className="button" href={ctaHref}>Join the Waitlist</Link>
             </ScrollReveal>
             <ScrollReveal stagger className="guide-list">
               {guideSteps.map(([title, copy], index) => (
@@ -279,7 +282,7 @@ export default function Home() {
                     <li key={feature}>{feature}</li>
                   ))}
                 </ul>
-                <Link className="button pricing-cta" href={ctaHref}>Claim $7.99 RDR Price</Link>
+                <Link className="button pricing-cta" href={ctaHref}>Join Waitlist &mdash; Lock $7.99</Link>
               </article>
             </ScrollReveal>
           </div>
@@ -291,11 +294,11 @@ export default function Home() {
               <p className="eyebrow">Before you apply again</p>
               <h2>Run the resume through Rezumate first.</h2>
               <p className="lead">
-                A generic resume can miss the exact words recruiters search for. Use the launch offer once,
-                then tailor every future application locally on your iPhone.
+                A generic resume can miss the exact words recruiters search for. Join the waitlist now,
+                then tailor every future application locally on your iPhone once Rezumate ships.
               </p>
             </div>
-            <Link className="button final-button" href={ctaHref}>Get Launch Access</Link>
+            <WaitlistForm source="final_cta" className="final-cta-waitlist" />
           </div>
         </section>
 
