@@ -441,6 +441,24 @@ h3 {
   text-transform: none;
 }
 
+.waitlist-closed {
+  display: inline-flex;
+  align-items: center;
+  max-width: 460px;
+  min-height: 48px;
+  padding: 12px 16px;
+  border: 2px solid var(--line);
+  border-radius: var(--radius-lg);
+  background: var(--panel3);
+  box-shadow: var(--shadow);
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: var(--track-ui);
+  line-height: 1.5;
+  text-transform: none;
+}
+
 .proof-grid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);

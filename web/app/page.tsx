@@ -5,6 +5,7 @@ import { ScrollReveal } from "./components/ScrollReveal";
 import { featuredFaqItems } from "./components/faq-data";
 import { SiteChrome } from "./components/SiteChrome";
 import { WaitlistForm } from "./components/WaitlistForm";
+import { WAITLIST_CUTOFF_LABEL } from "../lib/waitlist-config";
 
 const ctaHref = "#waitlist";
 
@@ -75,7 +76,7 @@ export default function Home() {
               <span className="offer-label">Launch price</span>
               <strong>$7.99</strong>
               <span className="regular-price">$14.99 regular</span>
-              <span className="offer-note">Not on the App Store yet. Join the waitlist below to lock this price before it becomes $14.99.</span>
+              <span className="offer-note">Not on the App Store yet. Join the waitlist by {WAITLIST_CUTOFF_LABEL} to lock in $7.99.</span>
             </div>
             <div id="waitlist">
               <WaitlistForm source="hero" />
@@ -294,8 +295,8 @@ export default function Home() {
               <p className="eyebrow">Before you apply again</p>
               <h2>Run the resume through Rezumate first.</h2>
               <p className="lead">
-                A generic resume can miss the exact words recruiters search for. Join the waitlist now,
-                then tailor every future application locally on your iPhone once Rezumate ships.
+                A generic resume can miss the exact words recruiters search for. Join the waitlist by {WAITLIST_CUTOFF_LABEL} to
+                lock in $7.99, then tailor every future application locally on your iPhone once Rezumate ships.
               </p>
             </div>
             <WaitlistForm source="final_cta" className="final-cta-waitlist" />

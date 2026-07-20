@@ -1,9 +1,10 @@
 "use client";
 
-import { useState, type FormEvent } from "react";
+import { useEffect, useState, type FormEvent } from "react";
 import { doc, serverTimestamp, setDoc } from "firebase/firestore";
 
 import { db } from "../../lib/firebase";
+import { WAITLIST_CUTOFF_LABEL, isWaitlistOpen } from "../../lib/waitlist-config";
 
 type Status = "idle" | "loading" | "success" | "duplicate" | "error";
 
@@ -18,6 +19,13 @@ export function WaitlistForm({ source, className }: Props) {
   const [email, setEmail] = useState("");
   const [company, setCompany] = useState("");
   const [status, setStatus] = useState<Status>("idle");
+  // Defaults to open so the statically-built HTML matches the client's first
+  // render; the real cutoff check only matters once it re-runs in the browser.
+  const [waitlistOpen, setWaitlistOpen] = useState(true);
+
+  useEffect(() => {
+    setWaitlistOpen(isWaitlistOpen());
+  }, []);
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -46,6 +54,14 @@ export function WaitlistForm({ source, className }: Props) {
     } catch {
       setStatus("duplicate");
     }
+  }
+
+  if (!waitlistOpen) {
+    return (
+      <div className={`waitlist-form waitlist-closed ${className ?? ""}`}>
+        The waitlist closed on {WAITLIST_CUTOFF_LABEL}. Rezumate is on its way &mdash; check the App Store for availability.
+      </div>
+    );
   }
 
   if (status === "success") {

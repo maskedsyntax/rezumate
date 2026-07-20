@@ -2,6 +2,7 @@ import Link from "next/link";
 
 import { SiteChrome } from "./components/SiteChrome";
 import { WaitlistForm } from "./components/WaitlistForm";
+import { WAITLIST_CUTOFF_LABEL } from "../lib/waitlist-config";
 
 export default function NotFound() {
   return (
@@ -13,7 +14,7 @@ export default function NotFound() {
         <div className="legal-card">
           <p>
             The page you&rsquo;re looking for was moved or never existed. While you&rsquo;re here, join the
-            waitlist to get notified when Rezumate launches on the App Store and lock in the $7.99 launch price.
+            waitlist by {WAITLIST_CUTOFF_LABEL} to get notified when Rezumate launches on the App Store and lock in the $7.99 launch price.
           </p>
           <WaitlistForm source="404" />
         </div>
