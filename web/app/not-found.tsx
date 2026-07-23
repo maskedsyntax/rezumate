@@ -1,8 +1,7 @@
 import Link from "next/link";
 
 import { SiteChrome } from "./components/SiteChrome";
-import { WaitlistForm } from "./components/WaitlistForm";
-import { WAITLIST_CUTOFF_LABEL } from "../lib/waitlist-config";
+import { APP_STORE_URL } from "../lib/app-store";
 
 export default function NotFound() {
   return (
@@ -13,10 +12,10 @@ export default function NotFound() {
         <p className="legal-meta">This page doesn&rsquo;t exist</p>
         <div className="legal-card">
           <p>
-            The page you&rsquo;re looking for was moved or never existed. While you&rsquo;re here, join the
-            waitlist by {WAITLIST_CUTOFF_LABEL} to get notified when Rezumate launches on the App Store and lock in the $7.99 launch price.
+            The page you&rsquo;re looking for was moved or never existed. Rezumate is live on the App Store and ready to help
+            tailor your next resume.
           </p>
-          <WaitlistForm source="404" />
+          <a className="button" href={APP_STORE_URL}>Download on the App Store</a>
         </div>
       </main>
     </SiteChrome>

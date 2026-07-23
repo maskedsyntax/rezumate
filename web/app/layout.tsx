@@ -24,7 +24,7 @@ export const metadata: Metadata = {
     default: "Rezumate - Private ATS resume optimizer for iPhone",
     template: "%s | Rezumate"
   },
-  description: "Private iPhone resume optimizer with ATS scoring, missing keyword detection, bullet improvements, and LaTeX-style PDF export. Launch price: $7.99 one-time.",
+  description: "Available now on the App Store. Private iPhone resume optimizer with ATS scoring, missing keyword detection, bullet improvements, and LaTeX-style PDF export.",
   keywords: [
     "resume optimizer",
     "ATS resume checker",
@@ -52,7 +52,7 @@ export const metadata: Metadata = {
     url: "/",
     siteName: "Rezumate",
     title: "Rezumate - Private ATS resume optimizer for iPhone",
-    description: "ATS scoring, missing keywords, bullet rewrites, and export-ready resume improvements on iPhone. $7.99 one-time launch offer.",
+    description: "Available now on the App Store. ATS scoring, missing keywords, bullet rewrites, and export-ready resume improvements on iPhone.",
     images: [
       {
         url: "/rezumate-logo.png",
@@ -65,7 +65,7 @@ export const metadata: Metadata = {
   twitter: {
     card: "summary",
     title: "Rezumate - Private ATS resume optimizer for iPhone",
-    description: "ATS scoring, missing keywords, bullet rewrites, and export-ready resume improvements on iPhone. $7.99 one-time launch offer.",
+    description: "Available now on the App Store. ATS scoring, missing keywords, bullet rewrites, and export-ready resume improvements on iPhone.",
     images: ["/rezumate-logo.png"]
   },
   appleWebApp: {

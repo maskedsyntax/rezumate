@@ -4,10 +4,9 @@ import { FaqList } from "./components/FaqList";
 import { ScrollReveal } from "./components/ScrollReveal";
 import { featuredFaqItems } from "./components/faq-data";
 import { SiteChrome } from "./components/SiteChrome";
-import { WaitlistForm } from "./components/WaitlistForm";
-import { WAITLIST_CUTOFF_LABEL } from "../lib/waitlist-config";
+import { APP_STORE_URL } from "../lib/app-store";
 
-const ctaHref = "#waitlist";
+const ctaHref = APP_STORE_URL;
 
 const proofStats = [
   ["100% local", "Resume parsing, scoring, keyword checks, rewrites, history, and PDF export run on your iPhone."],
@@ -76,12 +75,10 @@ export default function Home() {
               <span className="offer-label">Launch price</span>
               <strong>$7.99</strong>
               <span className="regular-price">$14.99 regular</span>
-              <span className="offer-note">Not on the App Store yet. Join the waitlist by {WAITLIST_CUTOFF_LABEL} to lock in $7.99.</span>
-            </div>
-            <div id="waitlist">
-              <WaitlistForm source="hero" />
+              <span className="offer-note">Available now on the App Store. Download today to get the $7.99 launch price.</span>
             </div>
             <div className="actions">
+              <a className="button" href={ctaHref}>Download on the App Store</a>
               <a className="button secondary" href="#how-it-works">See How It Works</a>
             </div>
 
@@ -154,8 +151,8 @@ export default function Home() {
         <section className="ticker-band" aria-label="Launch offer details">
           <div className="shell ticker-grid">
             <div>
-              <span className="ticker-kicker">Waitlist price</span>
-              <strong>$7.99 at launch</strong>
+              <span className="ticker-kicker">App Store offer</span>
+              <strong>$7.99 launch price</strong>
             </div>
             <div>
               <span className="ticker-kicker">Regular price</span>
@@ -181,7 +178,7 @@ export default function Home() {
                 Rezumate is not another template gallery. It is built around the exact sequence job seekers repeat:
                 compare the resume to the job, close the gaps, and export a version ready to submit.
               </p>
-              <Link className="button" href={ctaHref}>Join the Waitlist</Link>
+              <a className="button" href={ctaHref}>Download on the App Store</a>
             </ScrollReveal>
             <ScrollReveal stagger className="guide-list">
               {guideSteps.map(([title, copy], index) => (
@@ -249,7 +246,7 @@ export default function Home() {
               <p className="eyebrow">RDR launch pricing</p>
               <h2>Get the lifetime Pro unlock for $7.99 before regular pricing returns.</h2>
               <p className="lead faq-lead">
-                The regular price is $14.99. RDR users can claim the launch price while this early access window is open.
+                The regular price is $14.99. Download Rezumate from the App Store while the $7.99 launch offer is available.
               </p>
             </ScrollReveal>
             <ScrollReveal stagger className="pricing-grid">
@@ -283,7 +280,7 @@ export default function Home() {
                     <li key={feature}>{feature}</li>
                   ))}
                 </ul>
-                <Link className="button pricing-cta" href={ctaHref}>Join Waitlist &mdash; Lock $7.99</Link>
+                <a className="button pricing-cta" href={ctaHref}>Get Rezumate &mdash; $7.99</a>
               </article>
             </ScrollReveal>
           </div>
@@ -295,11 +292,11 @@ export default function Home() {
               <p className="eyebrow">Before you apply again</p>
               <h2>Run the resume through Rezumate first.</h2>
               <p className="lead">
-                A generic resume can miss the exact words recruiters search for. Join the waitlist by {WAITLIST_CUTOFF_LABEL} to
-                lock in $7.99, then tailor every future application locally on your iPhone once Rezumate ships.
+                A generic resume can miss the exact words recruiters search for. Rezumate is available now, so you can tailor
+                every application locally on your iPhone before you submit it.
               </p>
             </div>
-            <WaitlistForm source="final_cta" className="final-cta-waitlist" />
+            <a className="button final-button" href={ctaHref}>Download on the App Store</a>
           </div>
         </section>
 

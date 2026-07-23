@@ -90,7 +90,7 @@ export const faqSections: FaqSection[] = [
       {
         question: "Is there a paid plan?",
         answer:
-          "Yes. Rezumate Pro is a one-time lifetime unlock for unlimited analyses, unlimited improvements, unlimited saved variants, full ATS diagnosis, and full keyword insights. RDR launch users can claim the $7.99 one-time price while launch access is open. The regular price is $14.99."
+          "Yes. Rezumate Pro is a one-time lifetime unlock for unlimited analyses, unlimited improvements, unlimited saved variants, full ATS diagnosis, and full keyword insights. Rezumate is available on the App Store with a $7.99 one-time launch price. The regular price is $14.99."
       },
       {
         question: "How does the pricing compare to cloud-based resume builders?",

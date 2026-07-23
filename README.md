@@ -23,7 +23,7 @@ Rezumate processes everything in-memory and stores history in secure, local sand
 ## Repo Layout
 
 - `ios/` - Native SwiftUI iOS app, built for App Store release.
-- `web/` - Next.js marketing website containing waitlist, privacy, and support pages.
+- `web/` - Next.js marketing website with App Store, privacy, and support links.
 
 ---
 
@@ -54,4 +54,4 @@ npm install
 npm run dev
 ```
 
-The marketing site serves as the landing page and waitlist capture. It can be deployed statically to Vercel, Netlify, or similar hosts.
+The marketing site promotes the live App Store release and hosts the product, privacy, and support pages. It can be deployed statically to Vercel, Netlify, or similar hosts.
