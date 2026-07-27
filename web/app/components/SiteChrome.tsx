@@ -37,7 +37,7 @@ export function SiteChrome({ children }: Props) {
       <footer className="shell footer">
         <span>© {new Date().getFullYear()} Rezumate</span>
         <span>
-          <Link href="/faq">FAQ</Link> · <Link href="/terms">Terms</Link> · <Link href="/privacy">Privacy</Link> · <Link href="/support">Support</Link>
+          <Link href="/faq">FAQ</Link> · <Link href="/blog">Blog</Link> · <Link href="/terms">Terms</Link> · <Link href="/privacy">Privacy</Link> · <Link href="/support">Support</Link>
         </span>
       </footer>
 
