@@ -1,0 +1,23 @@
+displayName: Rezumate payment verification failures
+documentation:
+  content: >-
+    Google Play purchase verification or acknowledgement failed. Check Cloud Run logs,
+    Firestore purchase audit records, Android Publisher access, and RTDN delivery immediately.
+  mimeType: text/markdown
+combiner: OR
+conditions:
+  - displayName: Payment backend error logged
+    conditionThreshold:
+      filter: >-
+        resource.type="cloud_run_revision" AND
+        metric.type="logging.googleapis.com/user/payment-verification-failures"
+      comparison: COMPARISON_GT
+      thresholdValue: 0
+      duration: 0s
+      aggregations:
+        - alignmentPeriod: 300s
+          perSeriesAligner: ALIGN_SUM
+notificationChannels:
+  - projects/rezumate-android-pay-2026/notificationChannels/8868033924937159958
+alertStrategy:
+  autoClose: 86400s

@@ -1,0 +1,6 @@
+# This dedicated payment project must accept Google Play's system publisher identity.
+# Keep IAM bindings in the project narrowly scoped after overriding the inherited legacy DRS rule.
+name: projects/170381053908/policies/iam.allowedPolicyMemberDomains
+spec:
+  rules:
+    - allowAll: true

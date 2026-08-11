@@ -1,0 +1,7 @@
+steps:
+  - name: curlimages/curl:8.15.0
+    args:
+      - --fail
+      - --show-error
+      - --silent
+      - https://google-play-payments-170381053908.us-central1.run.app/healthz
