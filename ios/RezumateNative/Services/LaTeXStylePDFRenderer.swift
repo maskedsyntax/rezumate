@@ -87,6 +87,20 @@ struct LaTeXStylePDFRenderer {
                     drawEducationEntry(entry, ctx: ctx, y: &y)
                 }
             }
+
+            for section in document.additionalSections {
+                breakIfNeeded(36, ctx: ctx, y: &y)
+                drawSectionHeader(section.title.uppercased(), ctx: ctx, y: &y)
+                for line in section.lines {
+                    if let bullet = strippedBullet(line) {
+                        drawBullet(bullet, ctx: ctx, y: &y)
+                    } else {
+                        drawBodyText(line, ctx: ctx, y: &y)
+                        y += 2
+                    }
+                }
+                y += 4
+            }
         }
     }
 
@@ -115,6 +129,7 @@ struct LaTeXStylePDFRenderer {
     private static func drawContactBar(_ doc: ResumeDocument, ctx: UIGraphicsPDFRendererContext, y: inout CGFloat) {
         var parts: [String] = []
         if let v = doc.email    { parts.append(cleanText(v)) }
+        if let v = doc.phone    { parts.append(cleanText(v)) }
         if let v = doc.website  { parts.append(cleanText(v)) }
         if let v = doc.github   { parts.append(cleanText(v)) }
         if let v = doc.linkedin { parts.append(cleanText(v)) }
@@ -332,5 +347,12 @@ struct LaTeXStylePDFRenderer {
             .replacingOccurrences(of: "—", with: "-")
             .replacingOccurrences(of: "–", with: "-")
             .replacingOccurrences(of: "−", with: "-")
+    }
+
+    private static func strippedBullet(_ line: String) -> String? {
+        let trimmed = line.trimmingCharacters(in: .whitespacesAndNewlines)
+        let prefixes = ["• ", "- ", "* "]
+        guard let prefix = prefixes.first(where: { trimmed.hasPrefix($0) }) else { return nil }
+        return String(trimmed.dropFirst(prefix.count)).trimmingCharacters(in: .whitespaces)
     }
 }

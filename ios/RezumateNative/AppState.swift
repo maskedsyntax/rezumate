@@ -1,6 +1,11 @@
 import Combine
 import Foundation
-import StoreKit
+
+enum EntitlementState: Equatable {
+    case loading
+    case free
+    case pro
+}
 
 @MainActor
 final class AppState: ObservableObject {
@@ -21,31 +26,50 @@ final class AppState: ObservableObject {
     @Published var latestAnalysis: AnalyzeResponse?
     @Published var selectedVariant: VariantDetail?
     @Published var usageSnapshot = UsageLimiter.loadSnapshot()
-    @Published var isPro = false
-    @Published var proProduct: Product?
+    @Published private(set) var entitlementState: EntitlementState = .loading
+    @Published private(set) var proProductListing: StoreProductListing?
     @Published var purchaseMessage: String?
     @Published var isPurchasing = false
+    @Published var isRestoring = false
 
     let api = APIClient()
+    private let storeKit: any StoreKitServing
+    private var transactionUpdatesTask: Task<Void, Never>?
 
-    init() {
+    init(storeKit: any StoreKitServing = AppStoreKitService(), automaticallyRefresh: Bool = true) {
+        self.storeKit = storeKit
         let token = KeychainSessionStore.loadToken() ?? "local-session-token"
         session = AuthSession(token: token, user: nil)
-        Task {
-            await refreshProductsAndEntitlements()
+        transactionUpdatesTask = observeTransactionUpdates()
+        if automaticallyRefresh {
+            Task {
+                await refreshProductsAndEntitlements()
+            }
         }
     }
 
-    var token: String? {
-        session?.token
+    deinit {
+        transactionUpdatesTask?.cancel()
     }
+
+    var token: String? { session?.token }
+    var isPro: Bool { entitlementState == .pro }
+    var entitlementsLoaded: Bool { entitlementState != .loading }
 
     var planName: String {
-        isPro ? "Pro Lifetime" : "Free"
+        switch entitlementState {
+        case .loading: "Checking purchase..."
+        case .free: "Free"
+        case .pro: "Pro Lifetime"
+        }
     }
 
-    var proPriceText: String {
-        proProduct?.displayPrice ?? "$7.99"
+    var proPriceText: String? { proProductListing?.displayPrice }
+    var canPurchasePro: Bool {
+        entitlementState == .free
+            && proProductListing != nil
+            && !isPurchasing
+            && !isRestoring
     }
 
     var remainingAnalyses: Int {
@@ -56,23 +80,18 @@ final class AppState: ObservableObject {
         isPro ? Int.max : UsageLimiter.remainingImprovements(in: usageSnapshot)
     }
 
-    var canAnalyze: Bool {
-        isPro || remainingAnalyses > 0
-    }
-
-    var canImprove: Bool {
-        isPro || remainingImprovements > 0
-    }
+    var canAnalyze: Bool { entitlementsLoaded && (isPro || remainingAnalyses > 0) }
+    var canImprove: Bool { entitlementsLoaded && (isPro || remainingImprovements > 0) }
 
     var canSaveNewVariant: Bool {
-        isPro || LocalStorageManager.shared.loadHistory().count < UsageLimiter.freeSavedVariants
+        entitlementsLoaded
+            && (isPro || LocalStorageManager.shared.loadHistory().count < UsageLimiter.freeSavedVariants)
     }
 
-    var savedVariantCount: Int {
-        LocalStorageManager.shared.loadHistory().count
-    }
+    var savedVariantCount: Int { LocalStorageManager.shared.loadHistory().count }
 
     func recordSuccessfulAnalysis() {
+        ReviewPromptTracker.recordSuccessfulAnalysis()
         guard !isPro else { return }
         usageSnapshot = UsageLimiter.recordAnalysis()
     }
@@ -82,13 +101,40 @@ final class AppState: ObservableObject {
         usageSnapshot = UsageLimiter.recordImprovement()
     }
 
+    func recordSuccessfulExport() {
+        ReviewPromptTracker.recordSuccessfulExport()
+    }
+
+    func shouldRequestReview() -> Bool {
+        ReviewPromptTracker.isEligible(marketingVersion: Self.marketingVersion)
+            && !isPurchasing
+            && !isRestoring
+            && purchaseMessage == nil
+    }
+
+    func markReviewRequested() {
+        ReviewPromptTracker.markPrompted(marketingVersion: Self.marketingVersion)
+    }
+
     func refreshProductsAndEntitlements() async {
         do {
-            proProduct = try await Product.products(for: [Self.proProductId]).first
+            proProductListing = try await storeKit.productListing(for: Self.proProductId)
+            if proProductListing == nil {
+                purchaseMessage = "Pro pricing is temporarily unavailable."
+            }
         } catch {
+            proProductListing = nil
             purchaseMessage = "Unable to load Pro purchase options right now."
         }
         await refreshEntitlements()
+        if isPro, proProductListing == nil {
+            purchaseMessage = nil
+        }
+    }
+
+    func refreshForActiveScene() async {
+        usageSnapshot = UsageLimiter.loadSnapshot()
+        await refreshProductsAndEntitlements()
     }
 
     func purchasePro() async {
@@ -97,28 +143,23 @@ final class AppState: ObservableObject {
         defer { isPurchasing = false }
 
         do {
-            if proProduct == nil {
-                proProduct = try await Product.products(for: [Self.proProductId]).first
+            if proProductListing == nil {
+                proProductListing = try await storeKit.productListing(for: Self.proProductId)
             }
 
-            guard let proProduct else {
-                purchaseMessage = "Pro purchase is not available in this build. Check the App Store Connect product or use a StoreKit test configuration in Simulator."
+            guard proProductListing != nil else {
+                purchaseMessage = "Pro pricing is unavailable right now. Please try again later."
                 return
             }
 
-            let result = try await proProduct.purchase()
-            switch result {
-            case .success(let verification):
-                let transaction = try checkVerified(verification)
-                isPro = true
-                await transaction.finish()
+            switch try await storeKit.purchase(productID: Self.proProductId) {
+            case .purchased:
+                await refreshEntitlements()
                 purchaseMessage = "Rezumate Pro unlocked."
-            case .userCancelled:
+            case .cancelled:
                 break
             case .pending:
                 purchaseMessage = "Purchase pending approval."
-            @unknown default:
-                purchaseMessage = "Purchase could not be completed."
             }
         } catch {
             purchaseMessage = error.localizedDescription
@@ -126,9 +167,11 @@ final class AppState: ObservableObject {
     }
 
     func restorePurchases() async {
+        isRestoring = true
         purchaseMessage = nil
+        defer { isRestoring = false }
         do {
-            try await AppStore.sync()
+            try await storeKit.sync()
             await refreshEntitlements()
             purchaseMessage = isPro ? "Rezumate Pro restored." : "No Pro purchase found for this Apple ID."
         } catch {
@@ -136,24 +179,19 @@ final class AppState: ObservableObject {
         }
     }
 
-    private func refreshEntitlements() async {
-        var hasPro = false
-        for await entitlement in Transaction.currentEntitlements {
-            guard let transaction = try? checkVerified(entitlement) else { continue }
-            if transaction.productID == Self.proProductId {
-                hasPro = true
+    private func observeTransactionUpdates() -> Task<Void, Never> {
+        let updates = storeKit.transactionUpdates(for: Self.proProductId)
+        return Task { [weak self] in
+            for await hasPro in updates {
+                guard !Task.isCancelled, let self else { return }
+                self.entitlementState = hasPro ? .pro : .free
             }
         }
-        isPro = hasPro
     }
 
-    private func checkVerified<T>(_ result: VerificationResult<T>) throws -> T {
-        switch result {
-        case .verified(let safe):
-            return safe
-        case .unverified:
-            throw APIClientError.server("Purchase could not be verified.")
-        }
+    private func refreshEntitlements() async {
+        let hasPro = await storeKit.hasActiveEntitlement(for: Self.proProductId)
+        entitlementState = hasPro ? .pro : .free
     }
 
     func importResumeFromExternalURL(_ url: URL) {
@@ -181,5 +219,9 @@ final class AppState: ObservableObject {
         latestAnalysis = nil
         selectedVariant = nil
         LocalStorageManager.shared.clearTransientVariants()
+    }
+
+    private static var marketingVersion: String {
+        Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "unknown"
     }
 }

@@ -35,7 +35,7 @@ export const faqSections: FaqSection[] = [
       {
         question: "What makes Rezumate different from other resume tools?",
         answer:
-          "Privacy and effectiveness. Standard resume tools upload your phone number, email, work history, and addresses to third-party cloud databases. Rezumate does not. It processes everything in-memory and in local sandboxed storage. And unlike template-builders that only change formatting, Rezumate actually moves the needle on your ATS score by injecting missing keywords and strengthening impact signals."
+          "Privacy and useful feedback. Standard resume tools upload your phone number, email, work history, and addresses to third-party cloud databases. Rezumate does not. It processes everything in-memory and in local sandboxed storage, identifies role-specific gaps, and improves supported wording without inventing qualifications."
       }
     ]
   },
@@ -55,12 +55,12 @@ export const faqSections: FaqSection[] = [
       {
         question: "How much does the score actually improve?",
         answer:
-          "It depends on the resume and job description. Keyword coverage can improve when missing JD keywords are added to the skills section. Impact quality can improve when task-only bullets are rewritten with clearer outcome, reliability, quality, performance, or delivery signals. Rezumate does not invent fake numbers."
+          "It depends on the resume and job description. Rezumate identifies missing keywords as recommendations and makes conservative wording changes only when the source resume supports them. It never inserts unsupported skills, outcomes, or numbers."
       },
       {
         question: "How do local writing suggestions work?",
         answer:
-          "Rezumate uses local scoring rules and writing patterns. It upgrades passive verbs (for example, \"worked on\" becomes \"Engineered\"), injects missing keywords into the skills section, and adds clearer outcome language to task-only bullets without inventing metrics."
+          "Rezumate uses local scoring rules and conservative writing patterns. It can strengthen weak phrasing while preserving the facts already in the resume. Missing job-description keywords remain recommendations instead of being inserted automatically."
       },
       {
         question: "Do I need to download a model or connect to a server?",
@@ -70,12 +70,12 @@ export const faqSections: FaqSection[] = [
       {
         question: "Will Rezumate invent experience or metrics for me?",
         answer:
-          "No. Rezumate is designed to improve phrasing and inject real keywords from the job description. It does not fabricate employers, credentials, or metrics. You remain responsible for keeping your resume truthful."
+          "No. Rezumate improves supported phrasing but does not insert missing skills or fabricate employers, credentials, outcomes, achievements, or metrics. You remain responsible for reviewing every suggestion."
       },
       {
         question: "Can I export my resume?",
         answer:
-          "Yes. After improving your resume, Rezumate formats it using a clean, professional LaTeX-style PDF template: centered name header, pipe-separated contact bar, bold section headers with a light rule, two-column tabular experience entries, and ATS-safe typography. The PDF is generated on-device and shared directly from your device."
+          "Yes. You can export from Results before or after an improvement and re-export saved versions from History. Rezumate uses a clean ATS-friendly PDF template, preserves supported and additional resume sections, and generates the PDF entirely on-device."
       }
     ]
   },
@@ -90,7 +90,7 @@ export const faqSections: FaqSection[] = [
       {
         question: "Is there a paid plan?",
         answer:
-          "Yes. Rezumate Pro is a one-time lifetime unlock for unlimited analyses, unlimited improvements, unlimited saved variants, full ATS diagnosis, and full keyword insights. Rezumate is available on the App Store with a $7.99 one-time launch price. The regular price is $14.99."
+          "Yes. Rezumate Pro is a $14.99 one-time lifetime unlock for unlimited analyses, unlimited improvements, unlimited saved variants, full ATS diagnosis, and full keyword insights. Localized App Store pricing may vary."
       },
       {
         question: "How does the pricing compare to cloud-based resume builders?",

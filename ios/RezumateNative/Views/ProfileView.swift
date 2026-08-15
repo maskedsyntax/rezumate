@@ -1,4 +1,5 @@
 import SwiftUI
+import UIKit
 
 struct ProfileView: View {
     @EnvironmentObject private var appState: AppState
@@ -54,7 +55,7 @@ struct ProfileView: View {
                             HStack {
                                 SectionTitle("Rezumate Pro", subtitle: "Pay once. Optimize unlimited resumes privately on your iPhone.")
                                 Spacer()
-                                RezStatusPill(text: appState.isPro ? "ACTIVE" : "ONE-TIME", color: appState.isPro ? RezTheme.success : RezTheme.warning)
+                                RezStatusPill(text: proStatusText, color: appState.isPro ? RezTheme.success : RezTheme.warning)
                             }
 
                             VStack(alignment: .leading, spacing: 8) {
@@ -64,7 +65,7 @@ struct ProfileView: View {
                                 PlanFeatureRow(text: "Full ATS diagnosis and keyword insights")
                             }
 
-                            Text(appState.isPro ? "Lifetime Pro is active on this device." : "One-time purchase: \(appState.proPriceText).")
+                            Text(proPriceMessage)
                                 .font(.caption.weight(.semibold))
                                 .foregroundStyle(RezTheme.muted)
 
@@ -74,23 +75,36 @@ struct ProfileView: View {
                                     .foregroundStyle(RezTheme.muted)
                             }
 
-                            if !appState.isPro {
+                            if appState.entitlementState == .free {
                                 Button {
                                     Task { await appState.purchasePro() }
                                 } label: {
                                     Label(appState.isPurchasing ? "Unlocking..." : "Unlock Pro", systemImage: "sparkles")
                                 }
                                 .buttonStyle(RezPrimaryButtonStyle())
-                                .disabled(appState.isPurchasing)
+                                .disabled(!appState.canPurchasePro)
                             }
 
                             Button {
                                 Task { await appState.restorePurchases() }
                             } label: {
-                                Label("Restore Purchase", systemImage: "arrow.clockwise")
+                                Label(appState.isRestoring ? "Restoring..." : "Restore Purchase", systemImage: "arrow.clockwise")
                             }
                             .buttonStyle(RezSecondaryButtonStyle(fill: RezTheme.surface))
-                            .disabled(appState.isPurchasing)
+                            .disabled(appState.isPurchasing || appState.isRestoring)
+                        }
+                    }
+
+                    RezCard {
+                        VStack(alignment: .leading, spacing: 12) {
+                            SectionTitle("Help & Feedback", subtitle: "Contact us without attaching any resume or job-description data.")
+                            profileLink("Email Feedback", icon: "envelope", url: emailURL(subject: "Rezumate Feedback"))
+                            profileLink("Report a Problem", icon: "exclamationmark.bubble", url: emailURL(subject: "Rezumate Problem Report"))
+                            profileLink("Request a Feature", icon: "lightbulb", url: emailURL(subject: "Rezumate Feature Request"))
+                            Divider()
+                            profileLink("Support", icon: "questionmark.circle", url: URL(string: "https://rezumate.app/support")!)
+                            profileLink("Privacy Policy", icon: "hand.raised", url: URL(string: "https://rezumate.app/privacy")!)
+                            profileLink("Terms", icon: "doc.text", url: URL(string: "https://rezumate.app/terms")!)
                         }
                     }
                     
@@ -111,6 +125,57 @@ struct ProfileView: View {
             .rezScreenBackground()
             .navigationTitle("Profile")
         }
+    }
+
+    private var proStatusText: String {
+        switch appState.entitlementState {
+        case .loading: "CHECKING"
+        case .free: "ONE-TIME"
+        case .pro: "ACTIVE"
+        }
+    }
+
+    private var proPriceMessage: String {
+        switch appState.entitlementState {
+        case .loading:
+            return "Checking your App Store purchase..."
+        case .pro:
+            return "Lifetime Pro is active on this device."
+        case .free:
+            if let price = appState.proPriceText {
+                return "One-time purchase: \(price)."
+            }
+            return "Price unavailable. Restore Purchase remains available."
+        }
+    }
+
+    private func profileLink(_ title: String, icon: String, url: URL) -> some View {
+        Link(destination: url) {
+            HStack {
+                Label(title, systemImage: icon)
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(RezTheme.ink)
+                Spacer()
+                Image(systemName: "arrow.up.right")
+                    .font(.caption.weight(.bold))
+                    .foregroundStyle(RezTheme.muted)
+            }
+            .padding(.vertical, 4)
+        }
+    }
+
+    private func emailURL(subject: String) -> URL {
+        let version = Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "Unknown"
+        let build = Bundle.main.object(forInfoDictionaryKey: "CFBundleVersion") as? String ?? "Unknown"
+        let body = "\n\nApp: Rezumate \(version) (\(build))\niOS: \(UIDevice.current.systemVersion)"
+        var components = URLComponents()
+        components.scheme = "mailto"
+        components.path = "aftaab@aftaab.dev"
+        components.queryItems = [
+            URLQueryItem(name: "subject", value: subject),
+            URLQueryItem(name: "body", value: body),
+        ]
+        return components.url!
     }
 }
 

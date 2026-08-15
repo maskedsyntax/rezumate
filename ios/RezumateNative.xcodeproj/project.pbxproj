@@ -32,7 +32,23 @@
 		10000000000000000000001A /* ResumeParser.swift in Sources */ = {isa = PBXBuildFile; fileRef = 20000000000000000000001B /* ResumeParser.swift */; };
 		10000000000000000000001B /* LaTeXStylePDFRenderer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 20000000000000000000001C /* LaTeXStylePDFRenderer.swift */; };
 		10000000000000000000001C /* UsageLimiter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 20000000000000000000001D /* UsageLimiter.swift */; };
+		10000000000000000000001D /* AnalysisInputValidator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 20000000000000000000001E /* AnalysisInputValidator.swift */; };
+		10000000000000000000001E /* ReviewPromptTracker.swift in Sources */ = {isa = PBXBuildFile; fileRef = 20000000000000000000001F /* ReviewPromptTracker.swift */; };
+		10000000000000000000001F /* ResumePDFPreview.swift in Sources */ = {isa = PBXBuildFile; fileRef = 200000000000000000000020 /* ResumePDFPreview.swift */; };
+		100000000000000000000020 /* StoreKitService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 200000000000000000000021 /* StoreKitService.swift */; };
+		900000000000000000000001 /* RezumateNativeTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 900000000000000000000002 /* RezumateNativeTests.swift */; };
+		90000000000000000000000E /* fake-resume-v1.0.3.pdf in Resources */ = {isa = PBXBuildFile; fileRef = 90000000000000000000000D /* fake-resume-v1.0.3.pdf */; };
 /* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		900000000000000000000004 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 600000000000000000000000 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 400000000000000000000000;
+			remoteInfo = RezumateNative;
+		};
+/* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
 		200000000000000000000000 /* RezumateNative.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = RezumateNative.app; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -62,6 +78,13 @@
 		20000000000000000000001B /* ResumeParser.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Services/ResumeParser.swift; sourceTree = "<group>"; };
 		20000000000000000000001C /* LaTeXStylePDFRenderer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Services/LaTeXStylePDFRenderer.swift; sourceTree = "<group>"; };
 		20000000000000000000001D /* UsageLimiter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Services/UsageLimiter.swift; sourceTree = "<group>"; };
+		20000000000000000000001E /* AnalysisInputValidator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Services/AnalysisInputValidator.swift; sourceTree = "<group>"; };
+		20000000000000000000001F /* ReviewPromptTracker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Services/ReviewPromptTracker.swift; sourceTree = "<group>"; };
+		200000000000000000000020 /* ResumePDFPreview.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Views/ResumePDFPreview.swift; sourceTree = "<group>"; };
+		200000000000000000000021 /* StoreKitService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Services/StoreKitService.swift; sourceTree = "<group>"; };
+		900000000000000000000002 /* RezumateNativeTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RezumateNativeTests.swift; sourceTree = "<group>"; };
+		900000000000000000000003 /* RezumateNativeTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = RezumateNativeTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		90000000000000000000000D /* fake-resume-v1.0.3.pdf */ = {isa = PBXFileReference; lastKnownFileType = image.pdf; name = "fake-resume-v1.0.3.pdf"; path = "../../output/pdf/fake-resume-v1.0.3.pdf"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXGroup section */
@@ -69,6 +92,7 @@
 			isa = PBXGroup;
 			children = (
 				300000000000000000000001 /* RezumateNative */,
+				900000000000000000000005 /* RezumateNativeTests */,
 				300000000000000000000002 /* Products */,
 			);
 			sourceTree = "<group>";
@@ -98,10 +122,14 @@
 				200000000000000000000016 /* PDFExportService.swift */,
 				200000000000000000000017 /* LocalAIService.swift */,
 				20000000000000000000001D /* UsageLimiter.swift */,
+				20000000000000000000001E /* AnalysisInputValidator.swift */,
+				20000000000000000000001F /* ReviewPromptTracker.swift */,
+				200000000000000000000021 /* StoreKitService.swift */,
 				20000000000000000000001A /* ResumeDocument.swift */,
 				20000000000000000000001B /* ResumeParser.swift */,
 				20000000000000000000001C /* LaTeXStylePDFRenderer.swift */,
 				200000000000000000000018 /* PrivacyInfo.xcprivacy */,
+				200000000000000000000020 /* ResumePDFPreview.swift */,
 			);
 			path = RezumateNative;
 			sourceTree = "<group>";
@@ -110,8 +138,18 @@
 			isa = PBXGroup;
 			children = (
 				200000000000000000000000 /* RezumateNative.app */,
+				900000000000000000000003 /* RezumateNativeTests.xctest */,
 			);
 			name = Products;
+			sourceTree = "<group>";
+		};
+		900000000000000000000005 /* RezumateNativeTests */ = {
+			isa = PBXGroup;
+			children = (
+				900000000000000000000002 /* RezumateNativeTests.swift */,
+				90000000000000000000000D /* fake-resume-v1.0.3.pdf */,
+			);
+			path = RezumateNativeTests;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -134,6 +172,24 @@
 			productReference = 200000000000000000000000 /* RezumateNative.app */;
 			productType = "com.apple.product-type.application";
 		};
+		900000000000000000000000 /* RezumateNativeTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 90000000000000000000000C /* Build configuration list for PBXNativeTarget "RezumateNativeTests" */;
+			buildPhases = (
+				900000000000000000000006 /* Sources */,
+				900000000000000000000007 /* Frameworks */,
+				900000000000000000000008 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				900000000000000000000009 /* PBXTargetDependency */,
+			);
+			name = RezumateNativeTests;
+			productName = RezumateNativeTests;
+			productReference = 900000000000000000000003 /* RezumateNativeTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
@@ -146,6 +202,10 @@
 				TargetAttributes = {
 					400000000000000000000000 = {
 						CreatedOnToolsVersion = 26.5;
+					};
+					900000000000000000000000 = {
+						CreatedOnToolsVersion = 26.5;
+						TestTargetID = 400000000000000000000000;
 					};
 				};
 			};
@@ -164,6 +224,7 @@
 			projectRoot = "";
 			targets = (
 				400000000000000000000000 /* RezumateNative */,
+				900000000000000000000000 /* RezumateNativeTests */,
 			);
 		};
 /* End PBXProject section */
@@ -178,10 +239,25 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		900000000000000000000008 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				90000000000000000000000E /* fake-resume-v1.0.3.pdf in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXFrameworksBuildPhase section */
 		500000000000000000000002 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		900000000000000000000007 /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -215,13 +291,33 @@
 				100000000000000000000016 /* PDFExportService.swift in Sources */,
 				100000000000000000000017 /* LocalAIService.swift in Sources */,
 				10000000000000000000001C /* UsageLimiter.swift in Sources */,
+				10000000000000000000001D /* AnalysisInputValidator.swift in Sources */,
+				10000000000000000000001E /* ReviewPromptTracker.swift in Sources */,
+				10000000000000000000001F /* ResumePDFPreview.swift in Sources */,
+				100000000000000000000020 /* StoreKitService.swift in Sources */,
 				100000000000000000000019 /* ResumeDocument.swift in Sources */,
 				10000000000000000000001A /* ResumeParser.swift in Sources */,
 				10000000000000000000001B /* LaTeXStylePDFRenderer.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		900000000000000000000006 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				900000000000000000000001 /* RezumateNativeTests.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		900000000000000000000009 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 400000000000000000000000 /* RezumateNative */;
+			targetProxy = 900000000000000000000004 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
 
 /* Begin XCBuildConfiguration section */
 		800000000000000000000000 /* Debug */ = {
@@ -310,12 +406,12 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 4;
+				CURRENT_PROJECT_VERSION = 5;
 				DEVELOPMENT_TEAM = GVGJLY2H53;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = RezumateNative/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
-				MARKETING_VERSION = 1.0.2;
+				MARKETING_VERSION = 1.0.3;
 				PRODUCT_BUNDLE_IDENTIFIER = com.aftaab.rezumate;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = YES;
@@ -330,17 +426,55 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 4;
+				CURRENT_PROJECT_VERSION = 5;
 				DEVELOPMENT_TEAM = GVGJLY2H53;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = RezumateNative/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
-				MARKETING_VERSION = 1.0.2;
+				MARKETING_VERSION = 1.0.3;
 				PRODUCT_BUNDLE_IDENTIFIER = com.aftaab.rezumate;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1";
+			};
+			name = Release;
+		};
+		90000000000000000000000A /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = GVGJLY2H53;
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.aftaab.rezumate.tests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 1;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/RezumateNative.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/RezumateNative";
+			};
+			name = Debug;
+		};
+		90000000000000000000000B /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = GVGJLY2H53;
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.aftaab.rezumate.tests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 1;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/RezumateNative.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/RezumateNative";
 			};
 			name = Release;
 		};
@@ -361,6 +495,15 @@
 			buildConfigurations = (
 				800000000000000000000002 /* Debug */,
 				800000000000000000000003 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		90000000000000000000000C /* Build configuration list for PBXNativeTarget "RezumateNativeTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				90000000000000000000000A /* Debug */,
+				90000000000000000000000B /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;

@@ -13,10 +13,17 @@ struct ResumeDocument: Equatable {
     var projects: [ProjectEntry] = []
     var skillCategories: [SkillCategory] = []
     var education: [EducationEntry] = []
+    var additionalSections: [AdditionalResumeSection] = []
+    var unmappedContent: [String] = []
 
     var hasContent: Bool {
         !name.isEmpty || !experience.isEmpty || !skillCategories.isEmpty
     }
+}
+
+struct AdditionalResumeSection: Equatable {
+    var title: String
+    var lines: [String]
 }
 
 struct ExperienceEntry: Equatable {

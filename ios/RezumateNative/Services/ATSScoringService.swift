@@ -21,7 +21,7 @@ struct ATSAnalysisResult: Codable, Equatable, Hashable {
 
 struct ATSScoringService {
     
-    static let scoreVersion = "ats-v1"
+    static let scoreVersion = "ats-v2"
     
     static let sectionAliases: [String: [String]] = [
         "summary": ["summary", "profile", "objective"],
@@ -382,7 +382,7 @@ struct ATSScoringService {
     
     private static func calculatePercentage(numerator: Double, denominator: Int) -> Double {
         if denominator <= 0 {
-            return 100.0
+            return 0.0
         }
         return max(0.0, min(100.0, (numerator / Double(denominator)) * 100.0))
     }

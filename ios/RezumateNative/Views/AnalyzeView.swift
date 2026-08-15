@@ -41,33 +41,13 @@ struct AnalyzeView: View {
 
     private var introHeader: some View {
         VStack(alignment: .leading, spacing: 18) {
-            HStack(alignment: .top) {
-                VStack(alignment: .leading, spacing: 4) {
-                    Text("Ready to tailor your resume")
-                        .font(.system(size: 24, weight: .black))
-                        .foregroundStyle(RezTheme.ink)
-                    Text("Let's improve your resume today.")
-                        .font(.subheadline.weight(.semibold))
-                        .foregroundStyle(RezTheme.muted)
-                }
-
-                Spacer()
-
-                Button {
-                } label: {
-                    Image(systemName: "bell")
-                        .font(.system(size: 18, weight: .black))
-                        .foregroundStyle(RezTheme.ink)
-                        .frame(width: 44, height: 44)
-                        .background(RezTheme.surface, in: RoundedRectangle(cornerRadius: 6))
-                        .overlay {
-                            RoundedRectangle(cornerRadius: 6)
-                                .stroke(RezTheme.ink, lineWidth: 2)
-                        }
-                        .rezBrutalShadow(x: 3, y: 3)
-                }
-                .buttonStyle(.plain)
-                .accessibilityLabel("Notifications")
+            VStack(alignment: .leading, spacing: 4) {
+                Text("Ready to tailor your resume")
+                    .font(.system(size: 24, weight: .black))
+                    .foregroundStyle(RezTheme.ink)
+                Text("Let's improve your resume today.")
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(RezTheme.muted)
             }
 
             RezCard(padding: 16) {
@@ -133,12 +113,12 @@ struct AnalyzeView: View {
         RezCard(padding: 14) {
             VStack(alignment: .leading, spacing: 10) {
                 HStack {
-                    SectionTitle(appState.planName, subtitle: appState.isPro ? "Unlimited analyses, improvements, and saved variants." : "3 analyses/day, 3 improvements/day, 2 saved variants.")
+                    SectionTitle(appState.planName, subtitle: planSubtitle)
                     Spacer()
-                    RezStatusPill(text: appState.isPro ? "PRO" : "FREE", color: appState.isPro ? RezTheme.success : RezTheme.warning)
+                    RezStatusPill(text: planStatus, color: appState.isPro ? RezTheme.success : RezTheme.warning)
                 }
 
-                if !appState.isPro {
+                if appState.entitlementState == .free {
                     HStack(spacing: 8) {
                         UsageChip(label: "\(appState.remainingAnalyses)", detail: "analyses left")
                         UsageChip(label: "\(appState.remainingImprovements)", detail: "rewrites left")
@@ -263,6 +243,10 @@ struct AnalyzeView: View {
                         .padding(.trailing, 14)
                         .padding(.bottom, 12)
                 }
+                .onChange(of: appState.jobDescription) { _, value in
+                    guard value.count > AnalysisInputValidator.maximumJobDescriptionCharacters else { return }
+                    appState.jobDescription = String(value.prefix(AnalysisInputValidator.maximumJobDescriptionCharacters))
+                }
         }
     }
 
@@ -334,17 +318,19 @@ struct AnalyzeView: View {
             .disabled(appState.upload == nil || appState.jobDescription.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || isAnalyzing || !appState.canAnalyze)
 
             if !appState.canAnalyze {
-                Text("Free analyses are used for today.")
+                Text(appState.entitlementsLoaded ? "Free analyses are used for today." : "Checking your purchase status...")
                     .font(.caption.weight(.semibold))
                     .foregroundStyle(RezTheme.muted)
 
-                Button {
-                    Task { await appState.purchasePro() }
-                } label: {
-                    Label("Unlock unlimited analyses", systemImage: "lock.open")
+                if appState.entitlementState == .free {
+                    Button {
+                        Task { await appState.purchasePro() }
+                    } label: {
+                        Label("Unlock unlimited analyses", systemImage: "lock.open")
+                    }
+                    .buttonStyle(RezSecondaryButtonStyle(fill: RezTheme.warning))
+                    .disabled(!appState.canPurchasePro)
                 }
-                .buttonStyle(RezSecondaryButtonStyle(fill: RezTheme.warning))
-                .disabled(appState.isPurchasing)
 
                 if let purchaseMessage = appState.purchaseMessage {
                     Text(purchaseMessage)
@@ -376,7 +362,9 @@ struct AnalyzeView: View {
     private func analyze() async {
         guard let token = appState.token, let upload = appState.upload else { return }
         guard appState.canAnalyze else {
-            errorMessage = "Free analyses are used for today. Unlock Pro once for unlimited analyses."
+            errorMessage = appState.entitlementsLoaded
+                ? "Free analyses are used for today. Unlock Pro once for unlimited analyses."
+                : "Rezumate is still checking your App Store purchase. Try again in a moment."
             return
         }
 
@@ -401,6 +389,22 @@ struct AnalyzeView: View {
             errorMessage = error.localizedDescription
         }
         isAnalyzing = false
+    }
+
+    private var planSubtitle: String {
+        switch appState.entitlementState {
+        case .loading: "Verifying your App Store entitlement."
+        case .free: "3 analyses/day, 3 improvements/day, 2 saved variants."
+        case .pro: "Unlimited analyses, improvements, and saved variants."
+        }
+    }
+
+    private var planStatus: String {
+        switch appState.entitlementState {
+        case .loading: "CHECKING"
+        case .free: "FREE"
+        case .pro: "PRO"
+        }
     }
 }
 

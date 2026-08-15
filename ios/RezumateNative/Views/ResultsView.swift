@@ -1,20 +1,26 @@
-import PDFKit
+import StoreKit
 import SwiftUI
 
 struct ResultsView: View {
     @EnvironmentObject private var appState: AppState
+    @Environment(\.requestReview) private var requestReview
     let result: AnalyzeResponse
 
     @State private var currentResult: AnalyzeResponse
-    @State private var exportedURL: URL?
+    @State private var exportArtifact: ExportArtifact?
+    @State private var pendingExportArtifact: ExportArtifact?
+    @State private var isShowingExportWarning = false
+    @State private var isExporting = false
     @State private var isWorking = false
     @State private var isRefreshingAnalysis = false
     @State private var errorMessage: String?
     @State private var expandedScores: Set<String> = []
     @State private var optimizedResumeText: String?
-    @State private var isShowingPDFPreview = false
     @State private var originalScore: Int?
     @State private var originalComponentScores: [String: Int]?
+    @State private var changedBulletCount: Int?
+    @State private var improvementComponentDeltas: [String: Int] = [:]
+    @State private var remainingImpactIssues: Int?
 
     init(result: AnalyzeResponse) {
         self.result = result
@@ -27,11 +33,13 @@ struct ResultsView: View {
                 refinementNotice
                 scoreHeader
                 componentScores
-                if !appState.isPro {
+                resumeIssuesSection
+                if appState.entitlementState == .free {
                     proInsightsCard
                 }
                 keywordSection(title: "Matched keywords", items: currentResult.matchedKeywords, color: RezTheme.success, limitForFree: 6)
-                keywordSection(title: "Missing keywords", items: currentResult.missingKeywords, color: RezTheme.warning, limitForFree: 6)
+                keywordSection(title: "Missing keywords", items: currentResult.missingKeywords, color: RezTheme.warning, limitForFree: 5)
+                exportSection
                 improveResumeSection
 
                 if let errorMessage {
@@ -73,10 +81,18 @@ struct ResultsView: View {
         .task {
             await pollForRefinedAnalysis()
         }
-        .sheet(isPresented: $isShowingPDFPreview) {
-            if let exportedURL {
-                ResumePDFPreview(url: exportedURL)
+        .sheet(item: $exportArtifact, onDismiss: requestReviewIfEligible) { artifact in
+            ResumePDFPreview(url: artifact.url)
+        }
+        .alert("Review before export", isPresented: $isShowingExportWarning) {
+            Button("Cancel", role: .cancel) { pendingExportArtifact = nil }
+            Button("Preview Anyway") {
+                guard let artifact = pendingExportArtifact else { return }
+                pendingExportArtifact = nil
+                presentExport(artifact)
             }
+        } message: {
+            Text(pendingExportArtifact?.warnings.joined(separator: "\n") ?? "Some content may need review.")
         }
     }
 
@@ -285,7 +301,7 @@ struct ResultsView: View {
                                 .stroke(RezTheme.ink, lineWidth: 2)
                         }
 
-                    SectionTitle("Unlock full diagnosis", subtitle: "One-time Pro unlock for \(appState.proPriceText). Get every keyword, detailed score reasoning, and unlimited local improvements.")
+                    SectionTitle("Unlock full diagnosis", subtitle: proSubtitle)
                 }
 
                 Button {
@@ -294,7 +310,7 @@ struct ResultsView: View {
                     Label(appState.isPurchasing ? "Unlocking..." : "Unlock Pro", systemImage: "sparkles")
                 }
                 .buttonStyle(RezSecondaryButtonStyle(fill: RezTheme.warning))
-                .disabled(appState.isPurchasing)
+                .disabled(!appState.canPurchasePro)
 
                 if let purchaseMessage = appState.purchaseMessage {
                     Text(purchaseMessage)
@@ -321,7 +337,7 @@ struct ResultsView: View {
         case "impact_quality":
             let importance = "Strong resume bullets connect work to outcomes. Numbers are best when they are real, but clear outcome, reliability, quality, performance, or delivery signals are also stronger than task-only bullets."
             let bulletsWithImpact = currentResult.bulletCount - currentResult.bulletsWithoutMeasurableImpactCount
-            let explanation = "\(bulletsWithImpact) out of \(currentResult.bulletCount) bullets contain impact signals. Improve Resume strengthens task-only bullets with clearer outcome language without adding fake numbers."
+            let explanation = "\(bulletsWithImpact) out of \(currentResult.bulletCount) bullets contain impact signals. Rezumate only makes conservative wording changes and never invents outcomes or numbers."
             return (importance, explanation)
             
         case "keyword_coverage":
@@ -408,13 +424,90 @@ struct ResultsView: View {
         }
     }
 
+    private var resumeIssuesSection: some View {
+        let issues = bulletIssues
+        let visibleIssues = appState.isPro ? issues : Array(issues.prefix(2))
+        let hiddenCount = max(0, issues.count - visibleIssues.count)
+        let missingSections = currentResult.sections
+            .filter { !$0.value }
+            .map { $0.key.replacingOccurrences(of: "_", with: " ").capitalized }
+            .sorted()
+
+        return RezCard {
+            VStack(alignment: .leading, spacing: 14) {
+                SectionTitle("Resume issues", subtitle: "Specific items to review before sending this resume.")
+
+                if visibleIssues.isEmpty && currentResult.formattingWarnings.isEmpty && missingSections.isEmpty {
+                    Label("No major resume issues detected.", systemImage: "checkmark.circle.fill")
+                        .font(.subheadline.weight(.semibold))
+                        .foregroundStyle(RezTheme.ink)
+                }
+
+                ForEach(visibleIssues) { issue in
+                    VStack(alignment: .leading, spacing: 6) {
+                        Text(issue.text)
+                            .font(.caption)
+                            .foregroundStyle(RezTheme.ink)
+                            .fixedSize(horizontal: false, vertical: true)
+                        HStack(spacing: 6) {
+                            ForEach(issue.labels, id: \.self) { label in
+                                Text(label.uppercased())
+                                    .font(.system(size: 8, weight: .black))
+                                    .padding(.horizontal, 6)
+                                    .padding(.vertical, 3)
+                                    .background(RezTheme.warning, in: RoundedRectangle(cornerRadius: 3))
+                                    .foregroundStyle(RezTheme.ink)
+                            }
+                        }
+                    }
+                    .padding(10)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .background(RezTheme.appBackground, in: RoundedRectangle(cornerRadius: 6))
+                }
+
+                if hiddenCount > 0 {
+                    Text("+\(hiddenCount) more bullet issues included with Pro")
+                        .font(.caption.weight(.black))
+                        .foregroundStyle(RezTheme.muted)
+                }
+
+                ForEach(currentResult.formattingWarnings, id: \.self) { warning in
+                    Label(warning, systemImage: "exclamationmark.triangle.fill")
+                        .font(.caption)
+                        .foregroundStyle(RezTheme.ink)
+                }
+
+                if !missingSections.isEmpty {
+                    Label("Missing or unrecognized sections: \(missingSections.joined(separator: ", "))", systemImage: "doc.badge.ellipsis")
+                        .font(.caption)
+                        .foregroundStyle(RezTheme.ink)
+                }
+            }
+        }
+    }
+
+    private var exportSection: some View {
+        RezCard {
+            VStack(alignment: .leading, spacing: 12) {
+                SectionTitle("Export PDF", subtitle: "Preview a clean ATS-friendly PDF before sharing it.")
+                Button {
+                    Task { await prepareExport() }
+                } label: {
+                    Label(isExporting ? "Preparing PDF..." : "Preview & Export PDF", systemImage: "doc.richtext")
+                }
+                .buttonStyle(RezSecondaryButtonStyle(fill: RezTheme.blueWash))
+                .disabled(isExporting || isWorking)
+            }
+        }
+    }
+
     private var improveResumeSection: some View {
         RezCard {
             VStack(alignment: .leading, spacing: 14) {
                 SectionTitle("Improve Resume", subtitle: "Optimize content and format in the standard resume template.")
 
                 if optimizedResumeText == nil {
-                    if !appState.isPro {
+                    if appState.entitlementState == .free {
                         Text("\(appState.remainingImprovements) free improvements left today.")
                             .font(.caption.weight(.semibold))
                             .foregroundStyle(RezTheme.muted)
@@ -428,14 +521,18 @@ struct ResultsView: View {
                     .buttonStyle(RezPrimaryButtonStyle())
                     .disabled(isWorking || !appState.canImprove)
 
-                    if !appState.canImprove {
+                    if appState.entitlementState == .free && !appState.canImprove {
                         Button {
                             Task { await appState.purchasePro() }
                         } label: {
                             Label("Unlock unlimited improvements", systemImage: "lock.open")
                         }
                         .buttonStyle(RezSecondaryButtonStyle(fill: RezTheme.warning))
-                        .disabled(appState.isPurchasing)
+                        .disabled(!appState.canPurchasePro)
+                    } else if appState.entitlementState == .loading {
+                        Text("Checking your purchase status...")
+                            .font(.caption.weight(.semibold))
+                            .foregroundStyle(RezTheme.muted)
                     }
 
                     if let purchaseMessage = appState.purchaseMessage {
@@ -476,68 +573,31 @@ struct ResultsView: View {
                             }
                         }
 
-                        Text(currentResult.bulletsWithoutMeasurableImpactCount == 0 ? "Keywords, wording, and impact signals are improved. Review and export the final PDF." : "\(currentResult.bulletsWithoutMeasurableImpactCount) bullet(s) may still need stronger impact details. Review before sending.")
+                        if let changedBulletCount {
+                            Text("\(changedBulletCount) bullet\(changedBulletCount == 1 ? "" : "s") safely changed")
+                                .font(.caption.weight(.black))
+                                .foregroundStyle(RezTheme.ink)
+                        }
+
+                        if !improvementComponentDeltas.isEmpty {
+                            VStack(alignment: .leading, spacing: 4) {
+                                ForEach(improvementComponentDeltas.sorted(by: { $0.key < $1.key }), id: \.key) { key, delta in
+                                    Text("\(key.replacingOccurrences(of: "_", with: " ").capitalized): \(delta >= 0 ? "+" : "")\(delta)")
+                                        .font(.caption)
+                                        .foregroundStyle(delta > 0 ? RezTheme.success : RezTheme.muted)
+                                }
+                            }
+                        }
+
+                        Text((remainingImpactIssues ?? currentResult.bulletsWithoutMeasurableImpactCount) == 0 ? "No remaining impact warnings were detected." : "\(remainingImpactIssues ?? currentResult.bulletsWithoutMeasurableImpactCount) bullet(s) may still need factual impact details.")
                             .font(.caption)
                             .foregroundStyle(RezTheme.muted)
 
-                        Button {
-                            isShowingPDFPreview = true
-                        } label: {
-                            Label("View & Download Resume", systemImage: "doc.richtext")
-                        }
-                        .buttonStyle(RezPrimaryButtonStyle())
-                        .disabled(exportedURL == nil)
+                        Label("No skills, metrics, experience, or achievements were added.", systemImage: "checkmark.shield.fill")
+                            .font(.caption.weight(.semibold))
+                            .foregroundStyle(RezTheme.ink)
                     }
                 }
-            }
-        }
-    }
-
-    private struct ResumePDFPreview: View {
-        let url: URL
-        @Environment(\.dismiss) private var dismiss
-
-        var body: some View {
-            NavigationStack {
-                PDFKitPreview(url: url)
-                    .navigationTitle("Resume Preview")
-                    .navigationBarTitleDisplayMode(.inline)
-                    .toolbar {
-                        ToolbarItem(placement: .cancellationAction) {
-                            Button("Done") {
-                                dismiss()
-                            }
-                            .font(.body.weight(.bold))
-                            .foregroundStyle(RezTheme.ink)
-                        }
-                        ToolbarItem(placement: .primaryAction) {
-                            ShareLink(item: url) {
-                                Label("Download", systemImage: "square.and.arrow.down")
-                            }
-                            .foregroundStyle(RezTheme.ink)
-                        }
-                    }
-            }
-            .preferredColorScheme(.light)
-        }
-    }
-
-    private struct PDFKitPreview: UIViewRepresentable {
-        let url: URL
-
-        func makeUIView(context: Context) -> PDFView {
-            let view = PDFView()
-            view.autoScales = true
-            view.displayMode = .singlePageContinuous
-            view.displayDirection = .vertical
-            view.backgroundColor = UIColor(RezTheme.appBackground)
-            view.document = PDFDocument(url: url)
-            return view
-        }
-
-        func updateUIView(_ uiView: PDFView, context: Context) {
-            if uiView.document?.documentURL != url {
-                uiView.document = PDFDocument(url: url)
             }
         }
     }
@@ -545,13 +605,15 @@ struct ResultsView: View {
     private func improveResume() async {
         guard let token = appState.token else { return }
         guard appState.canImprove else {
-            errorMessage = "Free improvements are used for today. Unlock Pro once for unlimited improvements."
+            errorMessage = appState.entitlementsLoaded
+                ? "Free improvements are used for today. Unlock Pro once for unlimited improvements."
+                : "Rezumate is still checking your App Store purchase. Try again in a moment."
             return
         }
 
         isWorking = true
         errorMessage = nil
-        exportedURL = nil
+        exportArtifact = nil
 
         do {
             let response = try await appState.api.improveResume(
@@ -568,9 +630,9 @@ struct ResultsView: View {
             optimizedResumeText = response.optimizedResumeText
             currentResult = response.updatedAnalysis
             appState.latestAnalysis = response.updatedAnalysis
-
-            try refreshExportedPDF(from: response.optimizedResumeText)
-            isShowingPDFPreview = true
+            changedBulletCount = response.changedBullets.count
+            improvementComponentDeltas = response.componentDeltas
+            remainingImpactIssues = response.remainingBulletsWithoutMeasurableImpact
         } catch {
             errorMessage = error.localizedDescription
         }
@@ -578,13 +640,58 @@ struct ResultsView: View {
         isWorking = false
     }
 
-    private func refreshExportedPDF(from text: String) throws {
-        let doc = ResumeParser.parse(text)
-        let pdfData = LaTeXStylePDFRenderer.render(doc)
-        let url = FileManager.default.temporaryDirectory
-            .appendingPathComponent("rezumate-\(currentResult.variantId).pdf")
-        try pdfData.write(to: url, options: .atomic)
-        exportedURL = url
+    private func prepareExport() async {
+        guard let token = appState.token else { return }
+        isExporting = true
+        errorMessage = nil
+        defer { isExporting = false }
+
+        do {
+            let artifact = try await appState.api.exportVariant(id: currentResult.variantId, token: token)
+            if artifact.warnings.isEmpty {
+                presentExport(artifact)
+            } else {
+                pendingExportArtifact = artifact
+                isShowingExportWarning = true
+            }
+        } catch {
+            errorMessage = error.localizedDescription
+        }
+    }
+
+    private func presentExport(_ artifact: ExportArtifact) {
+        appState.recordSuccessfulExport()
+        exportArtifact = artifact
+    }
+
+    private func requestReviewIfEligible() {
+        guard errorMessage == nil, appState.shouldRequestReview() else { return }
+        appState.markReviewRequested()
+        Task {
+            try? await Task.sleep(nanoseconds: 2_000_000_000)
+            requestReview()
+        }
+    }
+
+    private var proSubtitle: String {
+        if let price = appState.proPriceText {
+            return "One-time Pro unlock for \(price). Get every keyword, detailed score reasoning, and unlimited local improvements."
+        }
+        return "Get every keyword, detailed score reasoning, and unlimited local improvements. Price unavailable right now."
+    }
+
+    private var bulletIssues: [BulletIssue] {
+        var order: [String] = []
+        var labels: [String: Set<String>] = [:]
+        for text in currentResult.weakBullets {
+            if labels[text] == nil { order.append(text) }
+            labels[text, default: []].insert("Weak wording")
+        }
+        for text in currentResult.bulletsWithoutMeasurableImpact {
+            if labels[text] == nil { order.append(text) }
+            labels[text, default: []].insert("Missing impact")
+        }
+        return order.map { BulletIssue(text: $0, labels: Array(labels[$0] ?? []).sorted()) }
     }
 
     private func reAnalyze() async {
@@ -592,7 +699,9 @@ struct ResultsView: View {
               let upload = appState.upload,
               !isRefreshingAnalysis else { return }
         guard appState.canAnalyze else {
-            errorMessage = "Free analyses are used for today. Unlock Pro once for unlimited analyses."
+            errorMessage = appState.entitlementsLoaded
+                ? "Free analyses are used for today. Unlock Pro once for unlimited analyses."
+                : "Rezumate is still checking your App Store purchase. Try again in a moment."
             return
         }
         
@@ -650,6 +759,12 @@ struct ResultsView: View {
             }
         }
     }
+}
+
+private struct BulletIssue: Identifiable {
+    let text: String
+    let labels: [String]
+    var id: String { text }
 }
 
 struct FlowLayout<Data: RandomAccessCollection, Content: View>: View where Data.Element: Hashable {

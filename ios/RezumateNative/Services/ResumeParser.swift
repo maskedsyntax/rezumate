@@ -2,6 +2,11 @@ import Foundation
 
 struct ResumeParser {
 
+    private struct DetectedSection {
+        let key: String
+        let title: String
+    }
+
     private static let sectionAliases: [String: String] = [
         "summary": "summary",
         "objective": "summary",
@@ -75,20 +80,22 @@ struct ResumeParser {
         while idx < lines.count {
             let line = lines[idx]
             if line.isEmpty { idx += 1; continue }
-            if sectionName(for: line) != nil { break }
-            parseContactLine(line, into: &doc)
+            if detectedSection(for: line) != nil { break }
+            if !parseContactLine(line, into: &doc) {
+                doc.unmappedContent.append(line)
+            }
             idx += 1
         }
 
         // Section parsing via FSM
-        var currentSection: String? = nil
+        var currentSection: DetectedSection? = nil
         var sectionContent: [String] = []
 
         while idx < lines.count {
             let line = lines[idx]
             idx += 1
 
-            if let section = sectionName(for: line) {
+            if let section = detectedSection(for: line) {
                 if let prev = currentSection {
                     processSection(prev, lines: sectionContent, into: &doc)
                 }
@@ -108,12 +115,14 @@ struct ResumeParser {
 
     // MARK: - Section detection
 
-    private static func sectionName(for line: String) -> String? {
+    private static func detectedSection(for line: String) -> DetectedSection? {
         let trimmed = line.trimmingCharacters(in: .whitespaces)
         guard !trimmed.isEmpty, trimmed.count >= 3, trimmed.count <= 50 else { return nil }
 
         let lower = trimmed.lowercased()
-        if let canonical = sectionAliases[lower] { return canonical }
+        if let canonical = sectionAliases[lower] {
+            return DetectedSection(key: canonical, title: trimmed)
+        }
 
         // All-uppercase line (no digits, only letters and spaces)
         let scalars = trimmed.unicodeScalars
@@ -121,7 +130,7 @@ struct ResumeParser {
         guard !letters.isEmpty else { return nil }
         let allUpper = letters.allSatisfy { CharacterSet.uppercaseLetters.contains($0) }
         if allUpper {
-            return sectionAliases[lower] ?? lower
+            return DetectedSection(key: sectionAliases[lower] ?? lower, title: trimmed)
         }
 
         return nil
@@ -129,32 +138,41 @@ struct ResumeParser {
 
     // MARK: - Contact parsing
 
-    private static func parseContactLine(_ line: String, into doc: inout ResumeDocument) {
+    @discardableResult
+    private static func parseContactLine(_ line: String, into doc: inout ResumeDocument) -> Bool {
         let parts = line
             .components(separatedBy: CharacterSet(charactersIn: "|•·$"))
             .map { $0.trimmingCharacters(in: .whitespaces) }
             .filter { !$0.isEmpty }
 
+        var parsedAny = false
         for part in (parts.count > 1 ? parts : [line]) {
             let lower = part.lowercased()
 
             if doc.email == nil, let email = extractEmail(from: part) {
                 doc.email = email
+                parsedAny = true
             } else if lower.contains("linkedin.com/in/") {
                 doc.linkedin = doc.linkedin ?? (extractLinkedIn(from: part) ?? part)
+                parsedAny = true
             } else if lower.contains("github.com/") {
                 doc.github = doc.github ?? (extractGitHub(from: part) ?? part)
+                parsedAny = true
             } else if lower.hasPrefix("http") || lower.hasPrefix("www.")
                 || lower.contains(".dev") || lower.contains(".io")
                 || (lower.contains(".com") && !lower.contains("@"))
                 || (lower.contains(".app") && !lower.contains("@")) {
                 if doc.website == nil { doc.website = part }
+                parsedAny = true
             } else if doc.phone == nil, let phone = extractPhone(from: part) {
                 doc.phone = phone
+                parsedAny = true
             } else if isLikelyLocation(part) {
                 if doc.location == nil { doc.location = part }
+                parsedAny = true
             }
         }
+        return parsedAny
     }
 
     private static func extractEmail(from text: String) -> String? {
@@ -166,11 +184,18 @@ struct ResumeParser {
     }
 
     private static func extractPhone(from text: String) -> String? {
-        let pattern = #"[\+]?[(]?[0-9]{3}[)]?[-\s\.]?[0-9]{3}[-\s\.]?[0-9]{4,6}"#
-        guard let rx = try? NSRegularExpression(pattern: pattern),
-              let m = rx.firstMatch(in: text, range: NSRange(text.startIndex..., in: text)),
-              let r = Range(m.range, in: text) else { return nil }
-        return String(text[r])
+        let pattern = #"(?<![A-Za-z0-9])\+?[0-9(][0-9\s().-]{8,}[0-9](?![A-Za-z0-9])"#
+        guard let rx = try? NSRegularExpression(pattern: pattern) else { return nil }
+
+        for match in rx.matches(in: text, range: NSRange(text.startIndex..., in: text)) {
+            guard let range = Range(match.range, in: text) else { continue }
+            let candidate = String(text[range]).trimmingCharacters(in: .whitespacesAndNewlines)
+            let digitCount = candidate.unicodeScalars.filter { CharacterSet.decimalDigits.contains($0) }.count
+            if (10...15).contains(digitCount) {
+                return candidate
+            }
+        }
+        return nil
     }
 
     private static func extractLinkedIn(from text: String) -> String? {
@@ -207,8 +232,8 @@ struct ResumeParser {
 
     // MARK: - Section processing
 
-    private static func processSection(_ section: String, lines: [String], into doc: inout ResumeDocument) {
-        switch section {
+    private static func processSection(_ section: DetectedSection, lines: [String], into doc: inout ResumeDocument) {
+        switch section.key {
         case "summary":
             doc.summary = lines.filter { !$0.isEmpty }.joined(separator: " ")
         case "experience":
@@ -220,7 +245,12 @@ struct ResumeParser {
         case "skills":
             doc.skillCategories = parseSkillsSection(lines)
         default:
-            break
+            let meaningfulLines = lines.filter { !$0.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }
+            if !meaningfulLines.isEmpty {
+                doc.additionalSections.append(
+                    AdditionalResumeSection(title: section.title, lines: meaningfulLines)
+                )
+            }
         }
     }
 
@@ -433,6 +463,38 @@ struct ResumeParser {
         let words = line.components(separatedBy: .whitespaces).filter { !$0.isEmpty }
         guard words.count > 1 else { return (line, "") }
 
+        // Preserve a complete "City, ST" suffix. PDF text extraction commonly removes
+        // column spacing, so a row such as "iOS Engineer  San Francisco, CA" arrives as
+        // one line. Prefer a known multi-word city, then fall back to the last word.
+        if let comma = line.lastIndex(of: ",") {
+            let state = line[line.index(after: comma)...].trimmingCharacters(in: .whitespaces)
+            let beforeComma = line[..<comma].trimmingCharacters(in: .whitespaces)
+            if state.range(of: #"^[A-Za-z]{2}$"#, options: .regularExpression) != nil {
+                let lowerBeforeComma = beforeComma.lowercased()
+                let knownCity = knownLocations
+                    .sorted { $0.count > $1.count }
+                    .first { lowerBeforeComma == $0 || lowerBeforeComma.hasSuffix(" \($0)") }
+
+                let city: String
+                let rawTitle: String
+                if let knownCity {
+                    city = String(beforeComma.suffix(knownCity.count))
+                    rawTitle = String(beforeComma.dropLast(knownCity.count))
+                } else if let cityStart = beforeComma.lastIndex(where: { $0.isWhitespace }) {
+                    city = String(beforeComma[beforeComma.index(after: cityStart)...])
+                    rawTitle = String(beforeComma[..<cityStart])
+                } else {
+                    city = ""
+                    rawTitle = ""
+                }
+
+                let title = rawTitle.trimmingCharacters(in: CharacterSet(charactersIn: " |–—-\t"))
+                if !title.isEmpty, !city.isEmpty {
+                    return (title, "\(city), \(state.uppercased())")
+                }
+            }
+        }
+
         if let last = words.last, knownLocations.contains(last.lowercased()) {
             let title = words.dropLast().joined(separator: " ")
             return (title.isEmpty ? line : title, last)
@@ -443,12 +505,6 @@ struct ResumeParser {
                 let title = words.dropLast(2).joined(separator: " ")
                 return (title.isEmpty ? line : title, lastTwo)
             }
-        }
-        // "Title, ST" state abbreviation
-        if let r = line.range(of: #",\s*[A-Z]{2}$"#, options: .regularExpression) {
-            let loc = String(line[r]).trimmingCharacters(in: CharacterSet(charactersIn: ", "))
-            let title = String(line[..<r.lowerBound]).trimmingCharacters(in: .whitespaces)
-            if !title.isEmpty { return (title, loc) }
         }
         return (line, "")
     }

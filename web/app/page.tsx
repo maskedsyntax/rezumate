@@ -10,7 +10,7 @@ const ctaHref = APP_STORE_URL;
 
 const proofStats = [
   ["100% local", "Resume parsing, scoring, keyword checks, rewrites, history, and PDF export run on your iPhone."],
-  ["One-tap improve", "Missing keywords, weak wording, and impact signals are handled in the same resume improvement flow."],
+  ["Truthful improvements", "Weak wording is strengthened without adding skills, metrics, or achievements that are not already in your resume."],
   ["No account", "Open the app, upload a resume, paste a job description, and start tailoring."]
 ];
 
@@ -18,8 +18,8 @@ const features = [
   ["ATS match score", "A role-specific score built from keyword coverage, impact quality, structure, readability, and formatting risk."],
   ["Full score diagnosis", "Pro users can open each score component and see why it matters, what is missing, and what to fix next."],
   ["Missing keyword detection", "Rezumate extracts skills, tools, frameworks, and role terms from the job description and compares them with your resume."],
-  ["Bullet strengthening", "Weak bullets are upgraded with stronger verbs, clearer outcome language, and relevant keywords without changing your career story."],
-  ["Resume improvement engine", "One tap adds missing JD keywords, strengthens passive bullets, refreshes the score, and saves the improved variant."],
+  ["Bullet strengthening", "Weak bullets receive conservative wording improvements based only on content already present in your resume."],
+  ["Resume improvement engine", "One tap strengthens supported wording, refreshes the score, and saves the improved variant without inventing qualifications."],
   ["LaTeX-style PDF export", "Export a clean ATS-safe PDF with centered header, section rules, tabular experience entries, and selectable text."],
   ["Private local history", "Saved resume variants and scoring history stay inside local sandboxed storage on your device."],
   ["Free daily usage", "Start with 3 analyses/day, 3 improvements/day, 2 saved variants, and PDF export included."],
@@ -30,12 +30,12 @@ const guideSteps = [
   ["Upload a real resume", "Use a text-based PDF or DOCX. Scanned image resumes can fail because there is no selectable text to analyze."],
   ["Paste the full job description", "The better the JD, the better the keyword extraction. Include responsibilities, requirements, skills, and tools."],
   ["Check the four score areas", "Keyword coverage carries the most weight, then impact quality, structure/readability, and formatting risk."],
-  ["Improve the resume", "Rezumate adds missing JD terms, strengthens passive bullets, and improves impact signals in one flow."],
+  ["Improve the resume", "Rezumate strengthens supported wording while keeping missing JD terms visible as recommendations."],
   ["Preview before sending", "Open the improved PDF, review every line, keep it truthful, then download and apply."]
 ];
 
 const comparison = [
-  ["Pricing", "$7.99 once during RDR launch", "$15-30 every month", "Often subscription or per-credit"],
+  ["Pricing", "$14.99 once", "$15-30 every month", "Often subscription or per-credit"],
   ["Privacy", "Runs locally on iPhone", "Uploads resume to servers", "Depends on vendor"],
   ["Workflow", "Upload, analyze, improve, export", "Usually long form builders", "Mostly formatting checks"],
   ["Output", "ATS-safe LaTeX-style PDF", "Template PDF", "Report only"]
@@ -65,17 +65,16 @@ export default function Home() {
       <main>
         <section className="shell hero">
           <div className="hero-left">
-            <div className="eyebrow">RDR launch offer: $7.99 one-time</div>
+            <div className="eyebrow">Private resume tailoring on iPhone</div>
             <h1>Tailor every resume before you apply.</h1>
             <p className="lead">
               Rezumate is the private iPhone resume optimizer that scores your resume against a job description,
-              fixes missing keywords and weak bullets, then exports a polished ATS-safe PDF.
+              identifies missing keywords and weak bullets, then exports a polished ATS-safe PDF.
             </p>
-            <div className="offer-strip" aria-label="Launch pricing">
-              <span className="offer-label">Launch price</span>
-              <strong>$7.99</strong>
-              <span className="regular-price">$14.99 regular</span>
-              <span className="offer-note">Available now on the App Store. Download today to get the $7.99 launch price.</span>
+            <div className="offer-strip" aria-label="Lifetime pricing">
+              <span className="offer-label">Lifetime Pro</span>
+              <strong>$14.99</strong>
+              <span className="offer-note">One-time purchase. Localized App Store pricing may vary.</span>
             </div>
             <div className="actions">
               <a className="button" href={ctaHref}>Download on the App Store</a>
@@ -121,7 +120,7 @@ export default function Home() {
                 </div>
 
                 <div className="screen-section">
-                  <div className="section-label">Keywords injected</div>
+                  <div className="section-label">Missing keyword recommendations</div>
                   <div className="chips" style={{ marginTop: "5px" }}>
                     <span className="chip chip-added">Docker</span>
                     <span className="chip chip-added">Kubernetes</span>
@@ -133,8 +132,8 @@ export default function Home() {
                 <div className="bullet-improve-card">
                   <div className="bi-tag">✦ Bullet strengthened</div>
                   <p className="bi-text">
-                    Engineered backend APIs using Docker across 3+ environments,
-                    improving delivery speed by 25%
+                    Contributed to backend API development using the tools and
+                    experience already documented in the resume
                   </p>
                 </div>
 
@@ -148,15 +147,15 @@ export default function Home() {
           </div>
         </section>
 
-        <section className="ticker-band" aria-label="Launch offer details">
+        <section className="ticker-band" aria-label="Product details">
           <div className="shell ticker-grid">
             <div>
-              <span className="ticker-kicker">App Store offer</span>
-              <strong>$7.99 launch price</strong>
+              <span className="ticker-kicker">Lifetime Pro</span>
+              <strong>$14.99 one-time</strong>
             </div>
             <div>
-              <span className="ticker-kicker">Regular price</span>
-              <strong>$14.99</strong>
+              <span className="ticker-kicker">Suggestions</span>
+              <strong>No invented claims</strong>
             </div>
             <div>
               <span className="ticker-kicker">Billing</span>
@@ -219,7 +218,7 @@ export default function Home() {
               <h2>No monthly resume tax. No cloud AI meter.</h2>
               <p className="lead faq-lead">
                 Most tools charge every month because the product runs on rented servers. Rezumate runs locally,
-                so the launch offer can be a one-time unlock instead of a subscription.
+                so Pro can be a one-time unlock instead of a subscription.
               </p>
             </ScrollReveal>
             <ScrollReveal delay={100}>
@@ -243,10 +242,10 @@ export default function Home() {
         <section id="pricing" className="band pricing-band">
           <div className="shell">
             <ScrollReveal>
-              <p className="eyebrow">RDR launch pricing</p>
-              <h2>Get the lifetime Pro unlock for $7.99 before regular pricing returns.</h2>
+              <p className="eyebrow">Simple lifetime pricing</p>
+              <h2>Get the lifetime Pro unlock for $14.99.</h2>
               <p className="lead faq-lead">
-                The regular price is $14.99. Download Rezumate from the App Store while the $7.99 launch offer is available.
+                Pay once with no subscription or credit packs. Localized App Store pricing may vary.
               </p>
             </ScrollReveal>
             <ScrollReveal stagger className="pricing-grid">
@@ -267,11 +266,10 @@ export default function Home() {
               <article className="pricing-card pricing-card-pro">
                 <div className="pricing-card-head">
                   <h3>Pro lifetime</h3>
-                  <span className="pricing-badge">RDR launch</span>
+                  <span className="pricing-badge">Pay once</span>
                 </div>
                 <div className="price-stack">
-                  <span className="regular-price large">$14.99 regular</span>
-                  <strong className="pricing-price">$7.99</strong>
+                  <strong className="pricing-price">$14.99</strong>
                   <span className="pricing-once">One-time purchase. No subscription.</span>
                 </div>
                 <p>For people who are applying seriously and do not want to ration resume checks.</p>
@@ -280,7 +278,7 @@ export default function Home() {
                     <li key={feature}>{feature}</li>
                   ))}
                 </ul>
-                <a className="button pricing-cta" href={ctaHref}>Get Rezumate &mdash; $7.99</a>
+                <a className="button pricing-cta" href={ctaHref}>Get Rezumate Pro</a>
               </article>
             </ScrollReveal>
           </div>

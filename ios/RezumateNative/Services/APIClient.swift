@@ -35,6 +35,9 @@ struct APIClient {
         guard result.status != "failed" else {
             throw APIClientError.server(result.warnings.first ?? "Failed to extract text from document.")
         }
+        guard result.status != "empty" else {
+            throw AnalysisInputError.resumeHasNoText
+        }
         
         return UploadResponse(
             success: true,
@@ -47,14 +50,16 @@ struct APIClient {
     }
 
     func analyzeResume(resumeId: UUID, resumeText: String, jobDescription: String, token: String, shouldSave: Bool = true) async throws -> AnalyzeResponse {
-        let result = ATSScoringService.analyzeResume(resumeText: resumeText, jobDescription: jobDescription)
+        let validatedResume = try AnalysisInputValidator.validatedResumeText(resumeText)
+        let validatedJobDescription = try AnalysisInputValidator.validatedJobDescription(jobDescription)
+        let result = ATSScoringService.analyzeResume(resumeText: validatedResume, jobDescription: validatedJobDescription)
         let variantId = UUID()
         
         let localVariant = LocalVariant(
             id: variantId,
             resumeId: resumeId,
             variantName: "Analysis \(Date().formatted(date: .abbreviated, time: .shortened))",
-            tailoredContent: resumeText,
+            tailoredContent: validatedResume,
             atsScore: result.score,
             analysisFeedback: result,
             createdAt: Date(),
@@ -184,7 +189,7 @@ struct APIClient {
         let optimizedText = try await LocalAIService.shared.improveResume(
             variant.tailoredContent,
             weakBullets: weakPoints,
-            focusKeywords: feedback.missingKeywords
+            focusKeywords: []
         )
 
         variant.tailoredContent = optimizedText
@@ -227,17 +232,11 @@ struct APIClient {
         )
     }
 
-    func exportVariant(id: UUID, token: String) async throws -> URL {
+    func exportVariant(id: UUID, token: String) async throws -> ExportArtifact {
         guard let v = LocalStorageManager.shared.loadVariant(id: id) else {
             throw APIClientError.server("Variant not found.")
         }
-
-        let doc = ResumeParser.parse(v.tailoredContent)
-        let pdfData = LaTeXStylePDFRenderer.render(doc)
-
-        let outputURL = FileManager.default.temporaryDirectory.appendingPathComponent("rezumate-\(id.uuidString).pdf")
-        try pdfData.write(to: outputURL, options: .atomic)
-        return outputURL
+        return try PDFExportService.prepare(textContent: v.tailoredContent, variantId: id)
     }
 
     private func uniqueItems(_ values: [String]) -> [String] {
