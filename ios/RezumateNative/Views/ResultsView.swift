@@ -21,6 +21,10 @@ struct ResultsView: View {
     @State private var changedBulletCount: Int?
     @State private var improvementComponentDeltas: [String: Int] = [:]
     @State private var remainingImpactIssues: Int?
+    @State private var keywordDraft: KeywordPlacementDraft?
+    @State private var placementUndoStack: [String] = []
+    @State private var isPlacingKeyword = false
+    @State private var lastPlacedKeyword: String?
 
     init(result: AnalyzeResponse) {
         self.result = result
@@ -33,14 +37,30 @@ struct ResultsView: View {
                 refinementNotice
                 scoreHeader
                 componentScores
+                roleFitSection
+                tappableKeywordSection(
+                    title: "Missing hard skills",
+                    subtitle: "Tap a skill you actually have to add it.",
+                    items: currentResult.missingKeywords,
+                    color: RezTheme.warning,
+                    limitForFree: 5,
+                    showsPlacementNotice: true
+                )
+                tappableKeywordSection(
+                    title: "Partial matches",
+                    subtitle: "Close — add the exact term if you have it.",
+                    items: currentResult.partialMatches,
+                    color: RezTheme.blueWash,
+                    limitForFree: 5,
+                    showsPlacementNotice: false
+                )
+                keywordSection(title: "Matched keywords", items: currentResult.matchedKeywords, color: RezTheme.success, limitForFree: 6)
                 resumeIssuesSection
                 if appState.entitlementState == .free {
                     proInsightsCard
                 }
-                keywordSection(title: "Matched keywords", items: currentResult.matchedKeywords, color: RezTheme.success, limitForFree: 6)
-                keywordSection(title: "Missing keywords", items: currentResult.missingKeywords, color: RezTheme.warning, limitForFree: 5)
-                exportSection
                 improveResumeSection
+                exportSection
 
                 if let errorMessage {
                     Label(errorMessage, systemImage: "exclamationmark.triangle.fill")
@@ -56,26 +76,42 @@ struct ResultsView: View {
                 }
             }
             .padding()
-            .padding(.bottom, 180)
+            .padding(.bottom, 100)
         }
         .rezScreenBackground()
         .navigationTitle("Results")
+        .navigationBarTitleDisplayMode(.inline)
+        .toolbarBackground(RezTheme.appBackground, for: .navigationBar)
+        .toolbarBackground(.visible, for: .navigationBar)
         .toolbar {
             ToolbarItem(placement: .navigationBarTrailing) {
-                Button {
-                    Task { await reAnalyze() }
-                } label: {
-                    if isRefreshingAnalysis {
-                        ProgressView()
-                            .tint(RezTheme.ink)
-                    } else {
-                        Image(systemName: "arrow.clockwise")
-                            .font(.system(size: 16, weight: .bold))
-                            .foregroundStyle(RezTheme.ink)
+                HStack(spacing: 12) {
+                    if !placementUndoStack.isEmpty {
+                        Button {
+                            Task { await undoLastPlacement() }
+                        } label: {
+                            Image(systemName: "arrow.uturn.backward")
+                                .font(.system(size: 16, weight: .bold))
+                                .foregroundStyle(RezTheme.ink)
+                        }
+                        .disabled(isPlacingKeyword || isWorking)
+                        .accessibilityLabel("Undo last keyword")
                     }
+                    Button {
+                        Task { await reAnalyze() }
+                    } label: {
+                        if isRefreshingAnalysis {
+                            ProgressView()
+                                .tint(RezTheme.ink)
+                        } else {
+                            Image(systemName: "arrow.clockwise")
+                                .font(.system(size: 16, weight: .bold))
+                                .foregroundStyle(RezTheme.ink)
+                        }
+                    }
+                    .disabled(isRefreshingAnalysis)
+                    .accessibilityLabel("Re-analyze")
                 }
-                .disabled(isRefreshingAnalysis)
-                .accessibilityLabel("Re-analyze")
             }
         }
         .task {
@@ -83,6 +119,17 @@ struct ResultsView: View {
         }
         .sheet(item: $exportArtifact, onDismiss: requestReviewIfEligible) { artifact in
             ResumePDFPreview(url: artifact.url)
+        }
+        .sheet(item: $keywordDraft) { draft in
+            KeywordPlacementSheet(
+                draft: draft,
+                isWorking: isPlacingKeyword,
+                onCancel: { keywordDraft = nil },
+                onConfirm: { bullet in
+                    Task { await confirmPlacement(keyword: draft.keyword, alsoInBullet: bullet) }
+                }
+            )
+            .presentationDetents([.medium, .large])
         }
         .alert("Review before export", isPresented: $isShowingExportWarning) {
             Button("Cancel", role: .cancel) { pendingExportArtifact = nil }
@@ -387,6 +434,52 @@ struct ResultsView: View {
         return currentResult.componentScores[key].map { $0 - (originalComponentScores[key] ?? 0) }
     }
 
+    private var roleFitSection: some View {
+        let rows = roleFitRows
+        return Group {
+            if !rows.isEmpty {
+                RezCard {
+                    VStack(alignment: .leading, spacing: 12) {
+                        SectionTitle("Role fit", subtitle: "Checked against this job description. Not added to your resume automatically.")
+                        ForEach(rows, id: \.label) { row in
+                            HStack(alignment: .top, spacing: 10) {
+                                Image(systemName: row.matched ? "checkmark.circle.fill" : "circle")
+                                    .foregroundStyle(row.matched ? RezTheme.success : RezTheme.muted)
+                                VStack(alignment: .leading, spacing: 2) {
+                                    Text(row.label)
+                                        .font(.caption.weight(.black))
+                                        .foregroundStyle(RezTheme.ink)
+                                    Text(row.value)
+                                        .font(.caption)
+                                        .foregroundStyle(RezTheme.muted)
+                                        .fixedSize(horizontal: false, vertical: true)
+                                }
+                                Spacer(minLength: 0)
+                                Text(row.matched ? "MATCHED" : "MISSING")
+                                    .font(.system(size: 8, weight: .black))
+                                    .padding(.horizontal, 6)
+                                    .padding(.vertical, 3)
+                                    .background(row.matched ? RezTheme.success : RezTheme.warning, in: RoundedRectangle(cornerRadius: 3))
+                                    .foregroundStyle(RezTheme.ink)
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    private var roleFitRows: [(label: String, value: String, matched: Bool)] {
+        var rows: [(label: String, value: String, matched: Bool)] = []
+        if let title = currentResult.jobTitle {
+            rows.append(("Job title", title, currentResult.jobTitleMatched))
+        }
+        if let education = currentResult.educationRequirement {
+            rows.append(("Education", education, currentResult.educationMatched))
+        }
+        return rows
+    }
+
     private func keywordSection(title: String, items: [String], color: Color, limitForFree: Int? = nil) -> some View {
         let visibleItems = appState.isPro || limitForFree == nil ? items : Array(items.prefix(limitForFree ?? items.count))
         let hiddenCount = max(0, items.count - visibleItems.count)
@@ -400,19 +493,7 @@ struct ResultsView: View {
                         .foregroundStyle(RezTheme.muted)
                 } else {
                     FlowLayout(items: visibleItems) { item in
-                        Text(item)
-                            .font(.caption.weight(.black))
-                            .lineLimit(2)
-                            .multilineTextAlignment(.center)
-                            .minimumScaleFactor(0.82)
-                            .padding(.horizontal, 10)
-                            .padding(.vertical, 7)
-                            .background(color, in: RoundedRectangle(cornerRadius: 4))
-                            .foregroundStyle(RezTheme.ink)
-                            .overlay {
-                                RoundedRectangle(cornerRadius: 4)
-                                    .stroke(RezTheme.ink, lineWidth: 2)
-                            }
+                        keywordChip(item, color: color)
                     }
                     if hiddenCount > 0 {
                         Text("+\(hiddenCount) more included with Pro")
@@ -422,6 +503,83 @@ struct ResultsView: View {
                 }
             }
         }
+    }
+
+    private func tappableKeywordSection(
+        title: String,
+        subtitle: String,
+        items: [String],
+        color: Color,
+        limitForFree: Int,
+        showsPlacementNotice: Bool
+    ) -> some View {
+        let visibleItems = appState.isPro ? items : Array(items.prefix(limitForFree))
+        let hiddenCount = max(0, items.count - visibleItems.count)
+
+        return RezCard {
+            VStack(alignment: .leading, spacing: 12) {
+                SectionTitle(title, subtitle: subtitle)
+                if showsPlacementNotice, let lastPlacedKeyword {
+                    Text("Added \(ResumeTailoringService.displayName(for: lastPlacedKeyword)). Score updated.")
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(RezTheme.muted)
+                }
+                if visibleItems.isEmpty {
+                    Text("Nothing to show yet.")
+                        .font(.subheadline)
+                        .foregroundStyle(RezTheme.muted)
+                } else {
+                    FlowLayout(items: visibleItems) { item in
+                        Button {
+                            Task { await presentPlacement(for: item) }
+                        } label: {
+                            HStack(spacing: 4) {
+                                Image(systemName: "plus")
+                                    .font(.system(size: 9, weight: .black))
+                                Text(item)
+                                    .font(.caption.weight(.black))
+                                    .lineLimit(2)
+                                    .multilineTextAlignment(.center)
+                                    .minimumScaleFactor(0.82)
+                            }
+                            .padding(.horizontal, 10)
+                            .padding(.vertical, 7)
+                            .frame(maxWidth: .infinity, minHeight: 34)
+                            .background(color, in: RoundedRectangle(cornerRadius: 4))
+                            .foregroundStyle(RezTheme.ink)
+                            .overlay {
+                                RoundedRectangle(cornerRadius: 4)
+                                    .stroke(RezTheme.ink, lineWidth: 2)
+                            }
+                        }
+                        .buttonStyle(.plain)
+                        .disabled(isPlacingKeyword || isWorking)
+                        .accessibilityLabel("Add \(item)")
+                    }
+                    if hiddenCount > 0 {
+                        Text("+\(hiddenCount) more included with Pro")
+                            .font(.caption.weight(.black))
+                            .foregroundStyle(RezTheme.muted)
+                    }
+                }
+            }
+        }
+    }
+
+    private func keywordChip(_ item: String, color: Color) -> some View {
+        Text(item)
+            .font(.caption.weight(.black))
+            .lineLimit(2)
+            .multilineTextAlignment(.center)
+            .minimumScaleFactor(0.82)
+            .padding(.horizontal, 10)
+            .padding(.vertical, 7)
+            .background(color, in: RoundedRectangle(cornerRadius: 4))
+            .foregroundStyle(RezTheme.ink)
+            .overlay {
+                RoundedRectangle(cornerRadius: 4)
+                    .stroke(RezTheme.ink, lineWidth: 2)
+            }
     }
 
     private var resumeIssuesSection: some View {
@@ -640,6 +798,73 @@ struct ResultsView: View {
         isWorking = false
     }
 
+    private func presentPlacement(for keyword: String) async {
+        guard let token = appState.token else { return }
+        errorMessage = nil
+        do {
+            let detail = try await appState.api.variant(id: currentResult.variantId, token: token)
+            let text = detail.tailoredContent.rawText ?? ""
+            keywordDraft = KeywordPlacementDraft(
+                keyword: keyword,
+                bullets: ResumeTailoringService.proofBullets(from: text)
+            )
+        } catch {
+            errorMessage = error.localizedDescription
+        }
+    }
+
+    private func confirmPlacement(keyword: String, alsoInBullet: String?) async {
+        guard let token = appState.token else { return }
+        isPlacingKeyword = true
+        errorMessage = nil
+        defer { isPlacingKeyword = false }
+
+        do {
+            let detail = try await appState.api.variant(id: currentResult.variantId, token: token)
+            let previousText = detail.tailoredContent.rawText ?? ""
+            let response = try await appState.api.placeKeyword(
+                variantId: currentResult.variantId,
+                keyword: keyword,
+                alsoInBullet: alsoInBullet,
+                token: token
+            )
+            placementUndoStack.append(previousText)
+            if originalScore == nil {
+                originalScore = response.originalScore
+            }
+            if originalComponentScores == nil {
+                originalComponentScores = currentResult.componentScores
+            }
+            currentResult = response.updatedAnalysis
+            appState.latestAnalysis = response.updatedAnalysis
+            lastPlacedKeyword = response.placedKeyword
+            keywordDraft = nil
+        } catch {
+            errorMessage = error.localizedDescription
+        }
+    }
+
+    private func undoLastPlacement() async {
+        guard let token = appState.token, let previous = placementUndoStack.popLast() else { return }
+        isPlacingKeyword = true
+        errorMessage = nil
+        defer { isPlacingKeyword = false }
+
+        do {
+            let updated = try await appState.api.replaceTailoredContent(
+                variantId: currentResult.variantId,
+                resumeText: previous,
+                token: token
+            )
+            currentResult = updated
+            appState.latestAnalysis = updated
+            lastPlacedKeyword = nil
+        } catch {
+            placementUndoStack.append(previous)
+            errorMessage = error.localizedDescription
+        }
+    }
+
     private func prepareExport() async {
         guard let token = appState.token else { return }
         isExporting = true
@@ -723,6 +948,8 @@ struct ResultsView: View {
             appState.recordSuccessfulAnalysis()
             currentResult = result
             appState.latestAnalysis = result
+            placementUndoStack = []
+            lastPlacedKeyword = nil
             if !shouldSave {
                 errorMessage = "History is full on Free. This refreshed result is usable now, but it was not saved."
             }
@@ -765,6 +992,96 @@ private struct BulletIssue: Identifiable {
     let text: String
     let labels: [String]
     var id: String { text }
+}
+
+private struct KeywordPlacementDraft: Identifiable, Equatable {
+    let keyword: String
+    let bullets: [String]
+    var id: String { keyword }
+}
+
+private struct KeywordPlacementSheet: View {
+    let draft: KeywordPlacementDraft
+    let isWorking: Bool
+    let onCancel: () -> Void
+    let onConfirm: (String?) -> Void
+
+    @State private var selectedBullet: String?
+
+    var body: some View {
+        NavigationStack {
+            ScrollView {
+                VStack(alignment: .leading, spacing: 16) {
+                    Text(ResumeTailoringService.displayName(for: draft.keyword))
+                        .font(.title2.weight(.black))
+                        .foregroundStyle(RezTheme.ink)
+
+                    Text("Only add this if you actually have it. Rezumate will put it in Skills and will not invent experience, metrics, or employers.")
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(RezTheme.muted)
+                        .fixedSize(horizontal: false, vertical: true)
+
+                    if !draft.bullets.isEmpty {
+                        VStack(alignment: .leading, spacing: 8) {
+                            Text("Optional proof bullet")
+                                .font(.caption.weight(.black))
+                                .foregroundStyle(RezTheme.ink)
+                            Text("Pick an existing bullet to mention this skill. Skip this to add it only to Skills.")
+                                .font(.caption)
+                                .foregroundStyle(RezTheme.muted)
+
+                            ForEach(draft.bullets, id: \.self) { bullet in
+                                Button {
+                                    selectedBullet = selectedBullet == bullet ? nil : bullet
+                                } label: {
+                                    HStack(alignment: .top, spacing: 8) {
+                                        Image(systemName: selectedBullet == bullet ? "checkmark.square.fill" : "square")
+                                            .foregroundStyle(RezTheme.ink)
+                                        Text(bullet)
+                                            .font(.caption)
+                                            .foregroundStyle(RezTheme.ink)
+                                            .multilineTextAlignment(.leading)
+                                        Spacer(minLength: 0)
+                                    }
+                                    .padding(10)
+                                    .background(
+                                        selectedBullet == bullet ? RezTheme.blueWash : RezTheme.appBackground,
+                                        in: RoundedRectangle(cornerRadius: 6)
+                                    )
+                                    .overlay {
+                                        RoundedRectangle(cornerRadius: 6)
+                                            .stroke(RezTheme.ink, lineWidth: 1.5)
+                                    }
+                                }
+                                .buttonStyle(.plain)
+                            }
+                        }
+                    }
+
+                    Button {
+                        onConfirm(selectedBullet)
+                    } label: {
+                        Label(
+                            isWorking ? "Adding..." : "Add to Skills",
+                            systemImage: "plus"
+                        )
+                    }
+                    .buttonStyle(RezPrimaryButtonStyle())
+                    .disabled(isWorking)
+                }
+                .padding()
+            }
+            .rezScreenBackground()
+            .navigationTitle("Add keyword")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("Cancel", action: onCancel)
+                        .disabled(isWorking)
+                }
+            }
+        }
+    }
 }
 
 struct FlowLayout<Data: RandomAccessCollection, Content: View>: View where Data.Element: Hashable {

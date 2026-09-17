@@ -55,12 +55,12 @@ export const faqSections: FaqSection[] = [
       {
         question: "How much does the score actually improve?",
         answer:
-          "It depends on the resume and job description. Rezumate identifies missing keywords as recommendations and makes conservative wording changes only when the source resume supports them. It never inserts unsupported skills, outcomes, or numbers."
+          "It depends on the resume and job description. Improve Resume only strengthens wording already on the page. If you confirm a missing skill you actually have, you can add it to Skills (and optionally one existing bullet) and the match score updates immediately. Rezumate never invents skills, outcomes, or numbers."
       },
       {
         question: "How do local writing suggestions work?",
         answer:
-          "Rezumate uses local scoring rules and conservative writing patterns. It can strengthen weak phrasing while preserving the facts already in the resume. Missing job-description keywords remain recommendations instead of being inserted automatically."
+          "Rezumate uses local scoring rules and conservative writing patterns. It can strengthen weak phrasing while preserving the facts already in the resume. Missing job-description keywords stay recommendations until you confirm you have that skill and choose to place it."
       },
       {
         question: "Do I need to download a model or connect to a server?",
@@ -70,7 +70,12 @@ export const faqSections: FaqSection[] = [
       {
         question: "Will Rezumate invent experience or metrics for me?",
         answer:
-          "No. Rezumate improves supported phrasing but does not insert missing skills or fabricate employers, credentials, outcomes, achievements, or metrics. You remain responsible for reviewing every suggestion."
+          "No. Improve Resume never inserts missing skills or fabricates employers, credentials, outcomes, achievements, or metrics. You can choose to add a missing keyword yourself after confirming you have it. You remain responsible for reviewing every change."
+      },
+      {
+        question: "Can I add a missing keyword to my resume?",
+        answer:
+          "Yes. On Results, tap a missing hard skill you actually have. Rezumate adds it to the Skills section and can mention it in one existing bullet you pick. It will not add keywords on its own, and it will not invent experience around them.",
       },
       {
         question: "Can I export my resume?",

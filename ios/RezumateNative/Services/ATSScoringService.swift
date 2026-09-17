@@ -95,6 +95,10 @@ struct ATSScoringService {
         "efficiency", "accuracy", "scalability", "maintainability"
     ]
     
+    static func containsKeyword(_ keyword: String, in resumeText: String) -> Bool {
+        keywordInText(keyword, textLower: resumeText.lowercased())
+    }
+
     static func analyzeResume(resumeText: String, jobDescription: String) -> ATSAnalysisResult {
         let jdKeywords = extractKeywords(from: jobDescription)
         let resumeLower = resumeText.lowercased()

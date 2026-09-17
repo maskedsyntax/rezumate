@@ -1,4 +1,5 @@
 import SwiftUI
+import UIKit
 
 struct AnalyzeView: View {
     @EnvironmentObject private var appState: AppState
@@ -10,20 +11,31 @@ struct AnalyzeView: View {
 
     var body: some View {
         NavigationStack {
-            ScrollView {
-                VStack(alignment: .leading, spacing: 24) {
-                    introHeader
-                    planUsageCard
-                    uploadStep
-                    jobDescriptionStep
-                    analyzeButton
-                    scorePreview
+            ScrollViewReader { proxy in
+                ScrollView {
+                    VStack(alignment: .leading, spacing: 24) {
+                        introHeader
+                        planUsageCard
+                        uploadStep
+                        jobDescriptionStep
 
-                    if let errorMessage {
-                        AnalyzeNoticeView(message: errorMessage)
+                        if let errorMessage {
+                            AnalyzeNoticeView(message: errorMessage)
+                                .id("analyze-notice")
+                        }
+
+                        analyzeButton
+                        scorePreview
+                    }
+                    .padding()
+                    .padding(.bottom, 100)
+                }
+                .onChange(of: errorMessage) { _, message in
+                    guard message != nil else { return }
+                    withAnimation(.easeInOut(duration: 0.25)) {
+                        proxy.scrollTo("analyze-notice", anchor: .center)
                     }
                 }
-                .padding()
             }
             .rezScreenBackground()
             .toolbar(.hidden, for: .navigationBar)
@@ -247,7 +259,25 @@ struct AnalyzeView: View {
                     guard value.count > AnalysisInputValidator.maximumJobDescriptionCharacters else { return }
                     appState.jobDescription = String(value.prefix(AnalysisInputValidator.maximumJobDescriptionCharacters))
                 }
+
+            Button {
+                pasteJobDescriptionFromClipboard()
+            } label: {
+                Label("Paste from Clipboard", systemImage: "doc.on.clipboard")
+            }
+            .buttonStyle(RezSecondaryButtonStyle(fill: RezTheme.surface))
         }
+    }
+
+    private func pasteJobDescriptionFromClipboard() {
+        let pasted = UIPasteboard.general.string?
+            .trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        guard !pasted.isEmpty else {
+            errorMessage = "Clipboard is empty. Copy a job description first."
+            return
+        }
+        errorMessage = nil
+        appState.jobDescription = String(pasted.prefix(AnalysisInputValidator.maximumJobDescriptionCharacters))
     }
 
     private var scorePreview: some View {
@@ -443,7 +473,7 @@ private struct AnalyzeNoticeView: View {
 
     var body: some View {
         HStack(alignment: .top, spacing: 12) {
-            Image(systemName: "wifi.exclamationmark")
+            Image(systemName: "exclamationmark.triangle.fill")
                 .font(.system(size: 18, weight: .black))
                 .foregroundStyle(RezTheme.ink)
                 .frame(width: 34, height: 34)
@@ -460,7 +490,7 @@ private struct AnalyzeNoticeView: View {
                 Text(message)
                     .font(.caption.weight(.semibold))
                     .foregroundStyle(RezTheme.muted)
-                    .lineLimit(2)
+                    .fixedSize(horizontal: false, vertical: true)
             }
 
             Spacer(minLength: 0)

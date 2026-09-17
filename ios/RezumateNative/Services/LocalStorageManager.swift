@@ -9,6 +9,60 @@ struct LocalVariant: Codable, Identifiable, Equatable {
     var analysisFeedback: ATSAnalysisResult
     var createdAt: Date
     var updatedAt: Date
+    var jobDescription: String = ""
+
+    var scoringJobDescription: String {
+        jobDescription.isEmpty
+            ? analysisFeedback.jdKeywords.joined(separator: " ")
+            : jobDescription
+    }
+
+    enum CodingKeys: String, CodingKey {
+        case id
+        case resumeId
+        case variantName
+        case tailoredContent
+        case atsScore
+        case analysisFeedback
+        case createdAt
+        case updatedAt
+        case jobDescription
+    }
+
+    init(
+        id: UUID,
+        resumeId: UUID,
+        variantName: String,
+        tailoredContent: String,
+        atsScore: Int,
+        analysisFeedback: ATSAnalysisResult,
+        createdAt: Date,
+        updatedAt: Date,
+        jobDescription: String = ""
+    ) {
+        self.id = id
+        self.resumeId = resumeId
+        self.variantName = variantName
+        self.tailoredContent = tailoredContent
+        self.atsScore = atsScore
+        self.analysisFeedback = analysisFeedback
+        self.createdAt = createdAt
+        self.updatedAt = updatedAt
+        self.jobDescription = jobDescription
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        id = try container.decode(UUID.self, forKey: .id)
+        resumeId = try container.decode(UUID.self, forKey: .resumeId)
+        variantName = try container.decode(String.self, forKey: .variantName)
+        tailoredContent = try container.decode(String.self, forKey: .tailoredContent)
+        atsScore = try container.decode(Int.self, forKey: .atsScore)
+        analysisFeedback = try container.decode(ATSAnalysisResult.self, forKey: .analysisFeedback)
+        createdAt = try container.decode(Date.self, forKey: .createdAt)
+        updatedAt = try container.decode(Date.self, forKey: .updatedAt)
+        jobDescription = try container.decodeIfPresent(String.self, forKey: .jobDescription) ?? ""
+    }
 }
 
 class LocalStorageManager {

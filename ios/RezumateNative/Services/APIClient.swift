@@ -54,16 +54,19 @@ struct APIClient {
         let validatedJobDescription = try AnalysisInputValidator.validatedJobDescription(jobDescription)
         let result = ATSScoringService.analyzeResume(resumeText: validatedResume, jobDescription: validatedJobDescription)
         let variantId = UUID()
-        
+        let fit = JobFitExtractor.extract(jobDescription: validatedJobDescription, resumeText: validatedResume)
+        let variantName = Self.variantName(jobTitle: fit.jobTitle)
+
         let localVariant = LocalVariant(
             id: variantId,
             resumeId: resumeId,
-            variantName: "Analysis \(Date().formatted(date: .abbreviated, time: .shortened))",
+            variantName: variantName,
             tailoredContent: validatedResume,
             atsScore: result.score,
             analysisFeedback: result,
             createdAt: Date(),
-            updatedAt: Date()
+            updatedAt: Date(),
+            jobDescription: validatedJobDescription
         )
         
         if shouldSave {
@@ -72,23 +75,7 @@ struct APIClient {
             LocalStorageManager.shared.saveTransientVariant(localVariant)
         }
         
-        return AnalyzeResponse(
-            success: true,
-            variantId: variantId,
-            score: result.score,
-            matchedKeywords: result.matchedKeywords,
-            missingKeywords: result.missingKeywords,
-            weakBullets: result.weakBullets,
-            bulletsWithoutMeasurableImpact: result.bulletsWithoutMeasurableImpact,
-            bulletsWithoutMeasurableImpactCount: result.bulletsWithoutMeasurableImpactCount,
-            formattingWarnings: result.formattingWarnings,
-            componentScores: result.componentScores,
-            analysisStatus: "complete",
-            aiModelName: "Local Suggestion Engine",
-            bulletCount: result.bulletCount,
-            keywordCoverage: result.keywordCoverage,
-            sections: result.sections
-        )
+        return AnalyzeResponse.from(variant: localVariant)
     }
 
     func rewriteBullet(_ bullet: String, focusKeywords: [String], token: String) async throws -> RewriteBulletResponse {
@@ -133,24 +120,7 @@ struct APIClient {
         guard let v = LocalStorageManager.shared.loadVariant(id: id) else {
             throw APIClientError.server("Variant not found.")
         }
-        let result = v.analysisFeedback
-        return AnalyzeResponse(
-            success: true,
-            variantId: v.id,
-            score: v.atsScore,
-            matchedKeywords: result.matchedKeywords,
-            missingKeywords: result.missingKeywords,
-            weakBullets: result.weakBullets,
-            bulletsWithoutMeasurableImpact: result.bulletsWithoutMeasurableImpact,
-            bulletsWithoutMeasurableImpactCount: result.bulletsWithoutMeasurableImpactCount,
-            formattingWarnings: result.formattingWarnings,
-            componentScores: result.componentScores,
-            analysisStatus: "complete",
-            aiModelName: "Local Suggestion Engine",
-            bulletCount: result.bulletCount,
-            keywordCoverage: result.keywordCoverage,
-            sections: result.sections
-        )
+        return AnalyzeResponse.from(variant: v)
     }
 
     func acceptRewrite(variantId: UUID, originalBullet: String, rewrittenBullet: String, token: String) async throws -> AcceptRewriteResponse {
@@ -166,8 +136,10 @@ struct APIClient {
         let updatedText = text.replacingOccurrences(of: originalBullet, with: rewrittenBullet)
         v.tailoredContent = updatedText
         
-        // Re-analyze with the new text to update score
-        let result = ATSScoringService.analyzeResume(resumeText: updatedText, jobDescription: v.analysisFeedback.jdKeywords.joined(separator: " "))
+        let result = ATSScoringService.analyzeResume(
+            resumeText: updatedText,
+            jobDescription: v.scoringJobDescription
+        )
         v.atsScore = result.score
         v.analysisFeedback = result
         v.updatedAt = Date()
@@ -195,30 +167,14 @@ struct APIClient {
         variant.tailoredContent = optimizedText
         let updatedFeedback = ATSScoringService.analyzeResume(
             resumeText: optimizedText,
-            jobDescription: feedback.jdKeywords.joined(separator: " ")
+            jobDescription: variant.scoringJobDescription
         )
         variant.atsScore = updatedFeedback.score
         variant.analysisFeedback = updatedFeedback
         variant.updatedAt = Date()
         LocalStorageManager.shared.updateVariant(variant)
 
-        let updatedAnalysis = AnalyzeResponse(
-            success: true,
-            variantId: variant.id,
-            score: updatedFeedback.score,
-            matchedKeywords: updatedFeedback.matchedKeywords,
-            missingKeywords: updatedFeedback.missingKeywords,
-            weakBullets: updatedFeedback.weakBullets,
-            bulletsWithoutMeasurableImpact: updatedFeedback.bulletsWithoutMeasurableImpact,
-            bulletsWithoutMeasurableImpactCount: updatedFeedback.bulletsWithoutMeasurableImpactCount,
-            formattingWarnings: updatedFeedback.formattingWarnings,
-            componentScores: updatedFeedback.componentScores,
-            analysisStatus: "complete",
-            aiModelName: "Local Suggestion Engine",
-            bulletCount: updatedFeedback.bulletCount,
-            keywordCoverage: updatedFeedback.keywordCoverage,
-            sections: updatedFeedback.sections
-        )
+        let updatedAnalysis = AnalyzeResponse.from(variant: variant)
 
         return ImproveResumeResponse(
             success: true,
@@ -232,11 +188,80 @@ struct APIClient {
         )
     }
 
+    func placeKeyword(
+        variantId: UUID,
+        keyword: String,
+        alsoInBullet: String?,
+        token: String
+    ) async throws -> TailoringResponse {
+        guard var variant = LocalStorageManager.shared.loadVariant(id: variantId) else {
+            throw APIClientError.server("Variant not found.")
+        }
+
+        let originalScore = variant.atsScore
+        var updatedText = try ResumeTailoringService.placeInSkills(
+            keyword: keyword,
+            in: variant.tailoredContent
+        )
+        if let alsoInBullet, !alsoInBullet.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+            updatedText = try ResumeTailoringService.placeInBullet(
+                keyword: keyword,
+                bullet: alsoInBullet,
+                in: updatedText
+            )
+        }
+
+        variant = rescore(variant, resumeText: updatedText)
+        LocalStorageManager.shared.updateVariant(variant)
+
+        return TailoringResponse(
+            success: true,
+            variantId: variant.id,
+            updatedResumeText: updatedText,
+            updatedAnalysis: AnalyzeResponse.from(variant: variant),
+            originalScore: originalScore,
+            placedKeyword: keyword
+        )
+    }
+
+    func replaceTailoredContent(
+        variantId: UUID,
+        resumeText: String,
+        token: String
+    ) async throws -> AnalyzeResponse {
+        guard var variant = LocalStorageManager.shared.loadVariant(id: variantId) else {
+            throw APIClientError.server("Variant not found.")
+        }
+        variant = rescore(variant, resumeText: resumeText)
+        LocalStorageManager.shared.updateVariant(variant)
+        return AnalyzeResponse.from(variant: variant)
+    }
+
     func exportVariant(id: UUID, token: String) async throws -> ExportArtifact {
         guard let v = LocalStorageManager.shared.loadVariant(id: id) else {
             throw APIClientError.server("Variant not found.")
         }
         return try PDFExportService.prepare(textContent: v.tailoredContent, variantId: id)
+    }
+
+    private func rescore(_ variant: LocalVariant, resumeText: String) -> LocalVariant {
+        var updated = variant
+        let result = ATSScoringService.analyzeResume(
+            resumeText: resumeText,
+            jobDescription: variant.scoringJobDescription
+        )
+        updated.tailoredContent = resumeText
+        updated.atsScore = result.score
+        updated.analysisFeedback = result
+        updated.updatedAt = Date()
+        return updated
+    }
+
+    private static func variantName(jobTitle: String?) -> String {
+        if let jobTitle, !jobTitle.isEmpty {
+            return String(jobTitle.prefix(48))
+        }
+        return "Analysis \(Date().formatted(date: .abbreviated, time: .shortened))"
     }
 
     private func uniqueItems(_ values: [String]) -> [String] {
