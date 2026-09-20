@@ -1,0 +1,26 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="24"
+    android:viewportHeight="24">
+    <!-- Document with a folded corner -->
+    <path
+        android:pathData="M4.9,2.7 L12.2,2.7 L16.6,7.1 L16.6,19.4 Q16.6,21.3 14.7,21.3 L4.9,21.3 Q3,21.3 3,19.4 L3,4.6 Q3,2.7 4.9,2.7 Z"
+        android:strokeColor="#1A1A1A"
+        android:strokeWidth="1.7"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round" />
+    <path
+        android:pathData="M12.2,2.7 L12.2,7.1 L16.6,7.1"
+        android:strokeColor="#1A1A1A"
+        android:strokeWidth="1.7"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round" />
+    <!-- Sparkles -->
+    <path
+        android:pathData="M19.6,2.4 Q19.9,4.7 22.2,5 Q19.9,5.3 19.6,7.6 Q19.3,5.3 17,5 Q19.3,4.7 19.6,2.4 Z"
+        android:fillColor="#1A1A1A" />
+    <path
+        android:pathData="M21.4,9 Q21.6,10.4 23,10.6 Q21.6,10.8 21.4,12.2 Q21.2,10.8 19.8,10.6 Q21.2,10.4 21.4,9 Z"
+        android:fillColor="#1A1A1A" />
+</vector>

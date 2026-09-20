@@ -38,6 +38,7 @@ import com.aftaab.rezumate.ui.designsystem.RezCard
 import com.aftaab.rezumate.ui.designsystem.RezDimens
 import com.aftaab.rezumate.ui.designsystem.RezIconTile
 import com.aftaab.rezumate.ui.designsystem.RezScreen
+import com.aftaab.rezumate.ui.designsystem.rezBottomBarClearance
 import com.aftaab.rezumate.ui.designsystem.RezTitleBar
 import com.aftaab.rezumate.ui.designsystem.rezScoreColor
 import com.aftaab.rezumate.ui.theme.RezColors
@@ -87,7 +88,7 @@ fun HistoryScreen(
                         start = RezDimens.ScreenPadding,
                         top = RezDimens.ScreenPadding,
                         end = RezDimens.ScreenPadding,
-                        bottom = 28.dp,
+                        bottom = rezBottomBarClearance() + 16.dp,
                     ),
                     verticalArrangement = Arrangement.spacedBy(10.dp),
                 ) {
