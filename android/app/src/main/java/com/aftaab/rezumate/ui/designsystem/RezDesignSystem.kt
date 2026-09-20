@@ -433,8 +433,9 @@ fun RezTitleBar(
 }
 
 /**
- * Floating pill-card tab bar: a white rounded card lifted off the content with a soft
- * shadow, tinting the active tab's glyph and label ink-black and the rest gray.
+ * Docked tab bar: full-bleed, anchored to the bottom edge with a hairline top divider and
+ * the system navigation inset below it. The active tab's glyph and label go ink-black, the
+ * rest gray.
  */
 @Composable
 fun RezBottomBar(
@@ -443,80 +444,69 @@ fun RezBottomBar(
     modifier: Modifier = Modifier,
 ) {
     val navBottom = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
-    val card = RoundedCornerShape(BarRadius)
-    Row(
+    Column(
         modifier = modifier
             .fillMaxWidth()
-            .padding(
-                start = BarSideInset,
-                end = BarSideInset,
-                bottom = navBottom + BarBottomGap,
-            )
-            .height(BarHeight)
-            .shadow(
-                elevation = 20.dp,
-                shape = card,
-                ambientColor = Color.Black.copy(alpha = 0.12f),
-                spotColor = Color.Black.copy(alpha = 0.22f),
-            )
-            .background(Color.White, card)
-            // Keeps the card's edge readable where it floats over white content.
-            .border(1.dp, Color.Black.copy(alpha = 0.06f), card)
-            .padding(horizontal = 4.dp),
-        horizontalArrangement = Arrangement.SpaceEvenly,
-        verticalAlignment = Alignment.CenterVertically,
+            .background(Color.White),
     ) {
-        RezMainTab.entries.forEach { tab ->
-            val selected = tab == selectedTab
-            val tint by animateColorAsState(
-                targetValue = if (selected) BarActive else BarInactive,
-                label = "tabTint",
-            )
-            Column(
-                modifier = Modifier
-                    .weight(1f)
-                    .fillMaxHeight()
-                    .clickable(
-                        interactionSource = remember { MutableInteractionSource() },
-                        indication = null,
-                        role = Role.Tab,
-                        onClick = { onTabSelected(tab) },
-                    ),
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.Center,
-            ) {
-                Image(
-                    painter = painterResource(tab.illustration),
-                    contentDescription = tab.label,
-                    modifier = Modifier.size(24.dp),
-                    colorFilter = ColorFilter.tint(tint),
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(1.dp)
+                .background(BarDivider),
+        )
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(BarHeight),
+            horizontalArrangement = Arrangement.SpaceEvenly,
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            RezMainTab.entries.forEach { tab ->
+                val selected = tab == selectedTab
+                val tint by animateColorAsState(
+                    targetValue = if (selected) BarActive else BarInactive,
+                    label = "tabTint",
                 )
-                Spacer(modifier = Modifier.height(6.dp))
-                Text(
-                    text = tab.label,
-                    color = tint,
-                    fontSize = 12.sp,
-                    lineHeight = 14.sp,
-                    fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Normal,
-                    maxLines = 1,
-                )
+                Column(
+                    modifier = Modifier
+                        .weight(1f)
+                        .fillMaxHeight()
+                        .clickable(
+                            interactionSource = remember { MutableInteractionSource() },
+                            indication = null,
+                            role = Role.Tab,
+                            onClick = { onTabSelected(tab) },
+                        ),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.Center,
+                ) {
+                    Image(
+                        painter = painterResource(tab.illustration),
+                        contentDescription = tab.label,
+                        modifier = Modifier.size(24.dp),
+                        colorFilter = ColorFilter.tint(tint),
+                    )
+                    Spacer(modifier = Modifier.height(5.dp))
+                    Text(
+                        text = tab.label,
+                        color = tint,
+                        fontSize = 12.sp,
+                        lineHeight = 14.sp,
+                        fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Normal,
+                        maxLines = 1,
+                    )
+                }
             }
         }
+        Spacer(modifier = Modifier.height(navBottom))
     }
 }
 
-private val BarHeight = 68.dp
-private val BarRadius = 22.dp
-private val BarSideInset = 16.dp
-private val BarBottomGap = 12.dp
+private val BarHeight = 62.dp
 private val BarActive = Color(0xFF0D0D0D)
 private val BarInactive = Color(0xFF939393)
-
-/** Space a scrolling screen must leave at the bottom to clear the floating tab bar. */
-@Composable
-fun rezBottomBarClearance(): Dp =
-    BarHeight + BarBottomGap +
-        WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
+private val BarDivider = Color(0x14000000)
 
 fun rezScoreColor(score: Int?): Color = when (score ?: 0) {
     in 80..100 -> RezColors.Success

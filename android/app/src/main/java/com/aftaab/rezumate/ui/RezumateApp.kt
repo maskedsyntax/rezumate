@@ -127,9 +127,7 @@ fun RezumateApp(
             NavHost(
                 navController = navController,
                 startDestination = Routes.ANALYZE,
-                // Only the top inset is consumed: content runs under the floating tab bar,
-                // which reserves its own clearance via rezBottomBarClearance().
-                modifier = Modifier.padding(top = contentPadding.calculateTopPadding()),
+                modifier = Modifier.padding(contentPadding),
             ) {
                 composable(Routes.ANALYZE) {
                     AnalyzeScreen(

@@ -36,7 +36,6 @@ import com.aftaab.rezumate.ui.designsystem.RezCard
 import com.aftaab.rezumate.ui.designsystem.RezDimens
 import com.aftaab.rezumate.ui.designsystem.RezIconTile
 import com.aftaab.rezumate.ui.designsystem.RezScreen
-import com.aftaab.rezumate.ui.designsystem.rezBottomBarClearance
 import com.aftaab.rezumate.ui.designsystem.RezSectionTitle
 import com.aftaab.rezumate.ui.designsystem.RezStatusPill
 import com.aftaab.rezumate.ui.designsystem.RezTitleBar
@@ -74,7 +73,7 @@ fun ProfileScreen(
                     start = RezDimens.ScreenPadding,
                     top = RezDimens.ScreenPadding,
                     end = RezDimens.ScreenPadding,
-                    bottom = rezBottomBarClearance() + 16.dp,
+                    bottom = 28.dp,
                 ),
                 verticalArrangement = Arrangement.spacedBy(18.dp),
             ) {

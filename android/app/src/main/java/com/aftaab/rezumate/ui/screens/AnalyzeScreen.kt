@@ -49,7 +49,6 @@ import com.aftaab.rezumate.ui.designsystem.RezIconTile
 import com.aftaab.rezumate.ui.designsystem.RezPanel
 import com.aftaab.rezumate.ui.designsystem.RezProgressBar
 import com.aftaab.rezumate.ui.designsystem.RezScreen
-import com.aftaab.rezumate.ui.designsystem.rezBottomBarClearance
 import com.aftaab.rezumate.ui.designsystem.RezSectionTitle
 import com.aftaab.rezumate.ui.designsystem.RezStatusPill
 import com.aftaab.rezumate.ui.designsystem.rezScoreColor
@@ -103,7 +102,7 @@ fun AnalyzeScreen(
                 start = RezDimens.ScreenPadding,
                 top = 10.dp,
                 end = RezDimens.ScreenPadding,
-                bottom = rezBottomBarClearance() + 24.dp,
+                bottom = 88.dp,
             ),
             verticalArrangement = Arrangement.spacedBy(RezDimens.SectionSpacing),
         ) {
