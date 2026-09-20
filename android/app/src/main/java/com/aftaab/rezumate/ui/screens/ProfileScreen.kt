@@ -1,5 +1,9 @@
 package com.aftaab.rezumate.ui.screens
 
+import android.content.Intent
+import android.net.Uri
+import android.os.Build
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -9,16 +13,20 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.OpenInNew
 import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -35,9 +43,13 @@ import com.aftaab.rezumate.ui.theme.RezColors
 
 data class ProfileUiState(
     val isPro: Boolean = false,
-    val proPriceText: String = "",
+    val entitlementLoaded: Boolean = false,
+    val proPriceText: String? = null,
     val isPurchasing: Boolean = false,
+    val isRestoring: Boolean = false,
     val purchaseMessage: String? = null,
+    val appVersion: String = "1.0.0",
+    val appBuild: String = "1",
 )
 
 interface ProfileCallbacks {
@@ -68,6 +80,7 @@ fun ProfileScreen(
                 item { WorkspaceCard() }
                 item { PrivacyCard() }
                 item { ProCard(state, callbacks) }
+                item { HelpCard(state) }
                 item { LocalDataCard(callbacks::onClearCurrentAnalysis) }
             }
         }
@@ -125,7 +138,11 @@ private fun ProCard(state: ProfileUiState, callbacks: ProfileCallbacks) {
             )
             Spacer(Modifier.size(8.dp))
             RezStatusPill(
-                text = if (state.isPro) "ACTIVE" else "ONE-TIME",
+                text = when {
+                    !state.entitlementLoaded -> "CHECKING"
+                    state.isPro -> "ACTIVE"
+                    else -> "ONE-TIME"
+                },
                 color = if (state.isPro) RezColors.Success else RezColors.Warning,
             )
         }
@@ -139,10 +156,11 @@ private fun ProCard(state: ProfileUiState, callbacks: ProfileCallbacks) {
             PlanFeatureRow("Full ATS diagnosis and keyword insights")
         }
         Text(
-            text = if (state.isPro) {
-                "Lifetime Pro is active on this device."
-            } else {
-                "One-time purchase: ${state.proPriceText}."
+            text = when {
+                !state.entitlementLoaded -> "Checking your Play purchase..."
+                state.isPro -> "Lifetime Pro is active on this device."
+                state.proPriceText != null -> "One-time purchase: ${state.proPriceText}."
+                else -> "Price unavailable. Restore Purchase remains available."
             },
             modifier = Modifier.padding(top = 14.dp),
             color = RezColors.Muted,
@@ -165,18 +183,18 @@ private fun ProCard(state: ProfileUiState, callbacks: ProfileCallbacks) {
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(top = 14.dp),
-                enabled = !state.isPurchasing,
+                enabled = !state.isPurchasing && !state.isRestoring && state.proPriceText != null,
                 leadingIcon = Icons.Default.AutoAwesome,
             )
         }
         RezButton(
-            text = "Restore Purchase",
+            text = if (state.isRestoring) "Restoring..." else "Restore Purchase",
             onClick = callbacks::onRestorePurchase,
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(top = 10.dp),
             kind = RezButtonKind.Secondary,
-            enabled = !state.isPurchasing,
+            enabled = !state.isPurchasing && !state.isRestoring,
             leadingIcon = Icons.Default.Refresh,
         )
     }
@@ -199,6 +217,63 @@ private fun PlanFeatureRow(text: String) {
             color = RezColors.Ink,
             fontSize = 12.sp,
             fontWeight = FontWeight.SemiBold,
+        )
+    }
+}
+
+@Composable
+private fun HelpCard(state: ProfileUiState) {
+    val context = LocalContext.current
+    fun sendEmail(subject: String) {
+        val body = "\n\nApp: Rezumate ${state.appVersion} (${state.appBuild})\nAndroid: ${Build.VERSION.RELEASE}"
+        val intent = Intent(Intent.ACTION_SENDTO).apply {
+            data = Uri.parse("mailto:aftaab@aftaab.dev")
+            putExtra(Intent.EXTRA_SUBJECT, subject)
+            putExtra(Intent.EXTRA_TEXT, body)
+        }
+        runCatching { context.startActivity(intent) }
+    }
+    fun openUrl(url: String) {
+        runCatching { context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url))) }
+    }
+    RezCard(modifier = Modifier.fillMaxWidth()) {
+        RezSectionTitle(
+            title = "Help & Feedback",
+            subtitle = "Contact us without attaching any resume or job-description data.",
+        )
+        Column(modifier = Modifier.padding(top = 12.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+            ProfileLink("Email Feedback") { sendEmail("Rezumate Feedback") }
+            ProfileLink("Report a Problem") { sendEmail("Rezumate Problem Report") }
+            ProfileLink("Request a Feature") { sendEmail("Rezumate Feature Request") }
+            HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp), color = RezColors.Ink.copy(alpha = 0.2f))
+            ProfileLink("Support") { openUrl("https://rezumate.app/support") }
+            ProfileLink("Privacy Policy") { openUrl("https://rezumate.app/privacy") }
+            ProfileLink("Terms") { openUrl("https://rezumate.app/terms") }
+        }
+    }
+}
+
+@Composable
+private fun ProfileLink(title: String, onClick: () -> Unit) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(role = Role.Button, onClick = onClick)
+            .padding(vertical = 8.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Text(
+            text = title,
+            modifier = Modifier.weight(1f),
+            color = RezColors.Ink,
+            fontSize = 14.sp,
+            fontWeight = FontWeight.SemiBold,
+        )
+        Icon(
+            imageVector = Icons.AutoMirrored.Filled.OpenInNew,
+            contentDescription = null,
+            tint = RezColors.Muted,
+            modifier = Modifier.size(14.dp),
         )
     }
 }

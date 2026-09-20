@@ -90,13 +90,60 @@ class ResumeParserTest {
     }
 
     @Test
-    fun `unknown uppercase heading ends contact parsing and is ignored`() {
+    fun `parser preserves phone additional sections and unmapped header lines`() {
+        val resume = """
+            Alex Doe
+            alex@example.com | +1 415 555 0123 | San Francisco, CA
+
+            SUMMARY
+            Product-minded engineer focused on clear and accessible experiences.
+
+            EXPERIENCE
+            Acme Inc. | 2022 - Present
+            Software Engineer | Remote
+            • Built accessible onboarding workflows for customers
+
+            EDUCATION
+            State University | 2022
+            B.S. Computer Science
+
+            CERTIFICATIONS
+            AWS Certified Cloud Practitioner
+        """.trimIndent()
+
+        val document = ResumeParser.parse(resume)
+        assertEquals("+1 415 555 0123", document.phone)
+        assertEquals("CERTIFICATIONS", document.additionalSections.first().title)
+        assertEquals(listOf("AWS Certified Cloud Practitioner"), document.additionalSections.first().lines)
+        assertTrue(document.unmappedContent.isEmpty())
+    }
+
+    @Test
+    fun `unmapped header content is collected`() {
+        val text = """
+            Alex Doe
+            Principal Product Engineer
+            alex@example.com
+
+            EXPERIENCE
+            Acme Inc.
+            Engineer
+            • Built accessible onboarding workflows for customers
+        """.trimIndent()
+        val document = ResumeParser.parse(text)
+        assertTrue(document.unmappedContent.contains("Principal Product Engineer"))
+    }
+
+    @Test
+    fun `unknown uppercase heading ends contact parsing and is kept as an extra section`() {
         val document = ResumeParser.parse(
             "Jane Doe\nCERTIFICATIONS\nAWS Certified\nSKILLS\nKotlin",
         )
 
         assertEquals("Jane Doe", document.name)
         assertEquals(listOf(SkillCategory("", "Kotlin")), document.skillCategories)
+        assertEquals("CERTIFICATIONS", document.additionalSections.single().title)
+        assertEquals(listOf("AWS Certified"), document.additionalSections.single().lines)
         assertEquals(null, document.location)
     }
 

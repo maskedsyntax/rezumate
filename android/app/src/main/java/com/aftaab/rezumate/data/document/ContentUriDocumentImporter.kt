@@ -47,6 +47,11 @@ class ContentUriDocumentImporter(
                 extraction.warnings.firstOrNull() ?: "Failed to extract text from document.",
             )
         }
+        if (extraction.status == ExtractionResult.STATUS_EMPTY) {
+            throw DocumentImportException(
+                "No extractable resume text was found. Use a text-based PDF or DOCX file.",
+            )
+        }
 
         ImportedResume(
             filename = validated.filename,

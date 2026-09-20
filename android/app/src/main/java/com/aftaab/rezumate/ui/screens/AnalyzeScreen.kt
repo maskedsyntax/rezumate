@@ -25,7 +25,6 @@ import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Description
 import androidx.compose.material.icons.filled.LockOpen
-import androidx.compose.material.icons.filled.NotificationsNone
 import androidx.compose.material.icons.filled.UploadFile
 import androidx.compose.material.icons.filled.WarningAmber
 import androidx.compose.material3.CircularProgressIndicator
@@ -82,10 +81,10 @@ data class AnalyzeUiState(
 )
 
 interface AnalyzeCallbacks {
-    fun onNotificationsClick()
     fun onPickResume()
     fun onRemoveResume()
     fun onJobDescriptionChange(value: String)
+    fun onPasteFromClipboard()
     fun onAnalyze()
     fun onUnlockPro()
 }
@@ -103,62 +102,40 @@ fun AnalyzeScreen(
                 start = RezDimens.ScreenPadding,
                 top = 10.dp,
                 end = RezDimens.ScreenPadding,
-                bottom = 28.dp,
+                bottom = 88.dp,
             ),
             verticalArrangement = Arrangement.spacedBy(RezDimens.SectionSpacing),
         ) {
-            item { AnalyzeHeader(state, callbacks::onNotificationsClick) }
+            item { AnalyzeHeader(state) }
             item { PlanUsageCard(state) }
             item { UploadSection(state, callbacks) }
-            item { JobDescriptionSection(state, callbacks::onJobDescriptionChange) }
+            item { JobDescriptionSection(state, callbacks) }
+            if (state.noticeMessage != null) {
+                item(key = "analyze-notice") { AnalyzeNotice(state.noticeMessage) }
+            }
             item { AnalyzeActions(state, callbacks) }
             item { ScorePreview(state.latestScore) }
-            if (state.noticeMessage != null) {
-                item { AnalyzeNotice(state.noticeMessage) }
-            }
         }
     }
 }
 
 @Composable
-private fun AnalyzeHeader(state: AnalyzeUiState, onNotificationsClick: () -> Unit) {
+private fun AnalyzeHeader(state: AnalyzeUiState) {
     Column(verticalArrangement = Arrangement.spacedBy(18.dp)) {
-        Row(verticalAlignment = Alignment.Top) {
-            Column(
-                modifier = Modifier.weight(1f),
-                verticalArrangement = Arrangement.spacedBy(4.dp),
-            ) {
-                Text(
-                    text = "Ready to tailor your resume",
-                    color = RezColors.Ink,
-                    fontSize = 24.sp,
-                    lineHeight = 28.sp,
-                    fontWeight = FontWeight.Black,
-                )
-                Text(
-                    text = "Let's improve your resume today.",
-                    color = RezColors.Muted,
-                    fontSize = 14.sp,
-                    fontWeight = FontWeight.SemiBold,
-                )
-            }
-            Spacer(Modifier.width(12.dp))
-            RezPanel(
-                modifier = Modifier
-                    .size(48.dp)
-                    .clickable(role = Role.Button, onClick = onNotificationsClick),
-                cornerRadius = 6.dp,
-                shadowOffset = 3.dp,
-            ) {
-                Icon(
-                    imageVector = Icons.Default.NotificationsNone,
-                    contentDescription = "Notifications",
-                    tint = RezColors.Ink,
-                    modifier = Modifier
-                        .align(Alignment.Center)
-                        .size(21.dp),
-                )
-            }
+        Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+            Text(
+                text = "Ready to tailor your resume",
+                color = RezColors.Ink,
+                fontSize = 24.sp,
+                lineHeight = 28.sp,
+                fontWeight = FontWeight.Black,
+            )
+            Text(
+                text = "Let's improve your resume today.",
+                color = RezColors.Muted,
+                fontSize = 14.sp,
+                fontWeight = FontWeight.SemiBold,
+            )
         }
 
         RezCard(modifier = Modifier.fillMaxWidth()) {
@@ -418,7 +395,7 @@ private fun UploadedFileRow(upload: UploadedResumeUi, onRemove: () -> Unit) {
 }
 
 @Composable
-private fun JobDescriptionSection(state: AnalyzeUiState, onValueChange: (String) -> Unit) {
+private fun JobDescriptionSection(state: AnalyzeUiState, callbacks: AnalyzeCallbacks) {
     Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
         StepTitle("Job Description")
         RezPanel(
@@ -430,7 +407,7 @@ private fun JobDescriptionSection(state: AnalyzeUiState, onValueChange: (String)
             Box(modifier = Modifier.padding(14.dp)) {
                 BasicTextField(
                     value = state.jobDescription,
-                    onValueChange = onValueChange,
+                    onValueChange = callbacks::onJobDescriptionChange,
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(bottom = 24.dp),
@@ -463,6 +440,12 @@ private fun JobDescriptionSection(state: AnalyzeUiState, onValueChange: (String)
                 )
             }
         }
+        RezButton(
+            text = "Paste from Clipboard",
+            onClick = callbacks::onPasteFromClipboard,
+            modifier = Modifier.fillMaxWidth(),
+            kind = RezButtonKind.Secondary,
+        )
     }
 }
 

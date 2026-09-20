@@ -1,13 +1,14 @@
 package com.aftaab.rezumate.ui
 
 import android.app.Activity
+import android.content.ClipboardManager
 import android.content.Context
 import android.content.ContextWrapper
 import android.content.Intent
 import android.net.Uri
+import com.google.android.play.core.review.ReviewManagerFactory
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
@@ -37,7 +38,9 @@ import com.aftaab.rezumate.ui.screens.ProfileCallbacks
 import com.aftaab.rezumate.ui.screens.ProfileScreen
 import com.aftaab.rezumate.ui.screens.ResultsCallbacks
 import com.aftaab.rezumate.ui.screens.ResultsScreen
+import com.aftaab.rezumate.ui.screens.VariantDetailCallbacks
 import com.aftaab.rezumate.ui.screens.VariantDetailScreen
+import com.aftaab.rezumate.ui.theme.RezColors
 import com.aftaab.rezumate.ui.theme.RezumateTheme
 
 @Composable
@@ -72,6 +75,18 @@ fun RezumateApp(
         }
     }
 
+    LaunchedEffect(state.shouldRequestReview) {
+        if (!state.shouldRequestReview) return@LaunchedEffect
+        val activity = context.findActivity() ?: return@LaunchedEffect
+        val manager = ReviewManagerFactory.create(context)
+        manager.requestReviewFlow().addOnCompleteListener { task ->
+            if (task.isSuccessful) {
+                manager.launchReviewFlow(activity, task.result)
+            }
+            appViewModel.reviewPromptShown()
+        }
+    }
+
     LaunchedEffect(state.navigationRequest?.id) {
         val request = state.navigationRequest ?: return@LaunchedEffect
         when (request.destination) {
@@ -98,13 +113,13 @@ fun RezumateApp(
 
     RezumateTheme {
         Scaffold(
+            containerColor = RezColors.Background,
             bottomBar = {
                 val selectedTab = currentRoute.toMainTab()
                 if (selectedTab != null) {
                     RezBottomBar(
                         selectedTab = selectedTab,
                         onTabSelected = { tab -> navController.navigateMainTab(tab.route()) },
-                        modifier = Modifier.navigationBarsPadding(),
                     )
                 }
             },
@@ -118,13 +133,21 @@ fun RezumateApp(
                     AnalyzeScreen(
                         state = state.toAnalyzeUiState(),
                         callbacks = object : AnalyzeCallbacks {
-                            override fun onNotificationsClick() = Unit
                             override fun onPickResume() {
                                 documentPicker.launch(SUPPORTED_DOCUMENT_TYPES)
                             }
                             override fun onRemoveResume() = appViewModel.removeResume()
                             override fun onJobDescriptionChange(value: String) =
                                 appViewModel.updateJobDescription(value)
+                            override fun onPasteFromClipboard() {
+                                val clipboard = context.getSystemService(ClipboardManager::class.java)
+                                val pasted = clipboard?.primaryClip
+                                    ?.takeIf { it.itemCount > 0 }
+                                    ?.getItemAt(0)
+                                    ?.coerceToText(context)
+                                    ?.toString()
+                                appViewModel.pasteJobDescription(pasted)
+                            }
                             override fun onAnalyze() = appViewModel.analyze()
                             override fun onUnlockPro() = launchPurchase()
                         },
@@ -158,11 +181,19 @@ fun RezumateApp(
                             state = resultsState,
                             callbacks = object : ResultsCallbacks {
                                 override fun onRefresh() = appViewModel.reanalyze()
+                                override fun onUndoPlacement() = appViewModel.undoLastPlacement()
                                 override fun onComponentScoreClick(id: String) =
                                     appViewModel.toggleComponentScore(id)
                                 override fun onUnlockPro() = launchPurchase()
                                 override fun onImproveResume() = appViewModel.improveResume()
-                                override fun onViewAndDownloadResume() = appViewModel.viewPdf()
+                                override fun onExport() = appViewModel.exportCurrent()
+                                override fun onKeywordClick(keyword: String) =
+                                    appViewModel.startKeywordPlacement(keyword)
+                                override fun onConfirmPlacement(bullet: String?) =
+                                    appViewModel.confirmKeywordPlacement(bullet)
+                                override fun onCancelPlacement() = appViewModel.cancelKeywordPlacement()
+                                override fun onConfirmExportAnyway() = appViewModel.confirmExportAnyway()
+                                override fun onCancelExportWarning() = appViewModel.cancelExportWarning()
                             },
                         )
                     } else {
@@ -172,7 +203,14 @@ fun RezumateApp(
                 composable(Routes.VARIANT) {
                     val variantState = state.toVariantDetailUiState()
                     if (variantState != null) {
-                        VariantDetailScreen(state = variantState)
+                        VariantDetailScreen(
+                            state = variantState,
+                            callbacks = object : VariantDetailCallbacks {
+                                override fun onExport() = appViewModel.exportSelectedVariant()
+                                override fun onConfirmExportAnyway() = appViewModel.confirmExportAnyway()
+                                override fun onCancelExportWarning() = appViewModel.cancelExportWarning()
+                            },
+                        )
                     } else {
                         LaunchedEffect(Unit) { navController.popBackStack() }
                     }
@@ -182,7 +220,10 @@ fun RezumateApp(
                     if (pdf != null) {
                         PdfPreviewScreen(
                             pdfFile = pdf,
-                            onDone = { navController.popBackStack() },
+                            onDone = {
+                                appViewModel.onPdfPreviewClosed()
+                                navController.popBackStack()
+                            },
                             onShare = appViewModel::sharePdf,
                         )
                     } else {

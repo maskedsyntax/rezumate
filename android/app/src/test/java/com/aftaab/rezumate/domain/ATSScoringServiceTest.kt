@@ -36,7 +36,7 @@ class ATSScoringServiceTest {
             jobDescription = "React REST APIs Docker",
         )
 
-        assertEquals("ats-v1", result.scoreVersion)
+        assertEquals("ats-v2", result.scoreVersion)
         assertEquals(79, result.score)
         assertEquals(listOf("react", "rest api"), result.matchedKeywords)
         assertEquals(listOf("docker"), result.missingKeywords)

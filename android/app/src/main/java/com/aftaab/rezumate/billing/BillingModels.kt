@@ -8,6 +8,8 @@ data class BillingState(
     val price: String? = null,
     val isPro: Boolean = false,
     val isPurchasing: Boolean = false,
+    val isRestoring: Boolean = false,
+    val entitlementLoaded: Boolean = false,
     val message: String? = null,
 )
 
@@ -29,7 +31,8 @@ data class PaymentVerificationResponse(
 object BillingStateLogic {
     fun productLoaded(state: BillingState, price: String): BillingState = state.copy(
         price = price,
-        message = null,
+        entitlementLoaded = true,
+        message = if (state.isPro) null else state.message,
     )
 
     fun purchaseStarted(state: BillingState): BillingState = state.copy(
@@ -39,11 +42,13 @@ object BillingStateLogic {
 
     fun purchaseStopped(state: BillingState, message: String): BillingState = state.copy(
         isPurchasing = false,
+        isRestoring = false,
         message = message,
     )
 
     fun purchasePending(state: BillingState): BillingState = state.copy(
         isPurchasing = false,
+        isRestoring = false,
         message = "Purchase is pending.",
     )
 
@@ -65,6 +70,8 @@ object BillingStateLogic {
         return state.copy(
             isPro = entitled,
             isPurchasing = false,
+            isRestoring = false,
+            entitlementLoaded = true,
             message = response.message?.takeIf(String::isNotBlank) ?: defaultMessage,
         )
     }
@@ -72,6 +79,10 @@ object BillingStateLogic {
     fun noOwnedPurchase(state: BillingState, showMessage: Boolean): BillingState = state.copy(
         isPro = false,
         isPurchasing = false,
+        isRestoring = false,
+        entitlementLoaded = true,
         message = if (showMessage) "No completed purchase was found." else null,
     )
+
+    fun cachedPro(state: BillingState): BillingState = state.copy(isPro = true)
 }

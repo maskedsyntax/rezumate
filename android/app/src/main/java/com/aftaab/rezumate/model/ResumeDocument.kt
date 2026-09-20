@@ -16,6 +16,8 @@ data class ResumeDocument(
     var projects: MutableList<ProjectEntry> = mutableListOf(),
     var skillCategories: MutableList<SkillCategory> = mutableListOf(),
     var education: MutableList<EducationEntry> = mutableListOf(),
+    var additionalSections: MutableList<AdditionalResumeSection> = mutableListOf(),
+    var unmappedContent: MutableList<String> = mutableListOf(),
 ) {
     val hasContent: Boolean
         get() = name.isNotEmpty() || experience.isNotEmpty() || skillCategories.isNotEmpty()
@@ -34,6 +36,12 @@ data class ExperienceEntry(
 data class ProjectEntry(
     var name: String = "",
     var bullets: MutableList<String> = mutableListOf(),
+)
+
+@Serializable
+data class AdditionalResumeSection(
+    var title: String,
+    var lines: MutableList<String> = mutableListOf(),
 )
 
 @Serializable

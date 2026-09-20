@@ -20,6 +20,7 @@ data class AnalyzeResponse(
     val score: Int,
     @SerialName("matched_keywords") val matchedKeywords: List<String>,
     @SerialName("missing_keywords") val missingKeywords: List<String>,
+    @SerialName("partial_matches") val partialMatches: List<String> = emptyList(),
     @SerialName("weak_bullets") val weakBullets: List<String>,
     @SerialName("bullets_without_measurable_impact")
     val bulletsWithoutMeasurableImpact: List<String>,
@@ -32,6 +33,25 @@ data class AnalyzeResponse(
     @SerialName("bullet_count") val bulletCount: Int,
     @SerialName("keyword_coverage") val keywordCoverage: Int,
     val sections: Map<String, Boolean>,
+    @SerialName("job_title") val jobTitle: String? = null,
+    @SerialName("job_title_matched") val jobTitleMatched: Boolean = false,
+    @SerialName("education_requirement") val educationRequirement: String? = null,
+    @SerialName("education_matched") val educationMatched: Boolean = false,
+)
+
+@Serializable
+data class TailoringResponse(
+    val success: Boolean,
+    val variantId: String,
+    val updatedResumeText: String,
+    val updatedAnalysis: AnalyzeResponse,
+    val originalScore: Int,
+    val placedKeyword: String,
+)
+
+data class ExportArtifact(
+    val file: java.io.File,
+    val warnings: List<String> = emptyList(),
 )
 
 @Serializable

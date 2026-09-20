@@ -117,6 +117,7 @@ dependencies {
     implementation(libs.kotlinx.serialization.json)
     implementation(libs.play.billing)
     implementation(libs.play.integrity)
+    implementation(libs.play.review)
     implementation(libs.pdfbox.android)
     implementation(libs.okhttp)
 

@@ -90,6 +90,15 @@ object ResumePdfRenderer {
                 document.education.forEach(::drawEducation)
             }
 
+            document.additionalSections.forEach { extra ->
+                startSection(extra.title.uppercase())
+                extra.lines.filter(String::isNotBlank).forEach { line ->
+                    drawTextBlock(cleanText(line), bodyPaint, MARGIN, contentWidth)
+                    y += 4f
+                }
+                y += 4f
+            }
+
             finishPage()
         }
 
@@ -122,6 +131,7 @@ object ResumePdfRenderer {
         private fun drawContactBar(document: ResumeDocument) {
             val parts = listOfNotNull(
                 document.email,
+                document.phone,
                 document.website,
                 document.github,
                 document.linkedin,

@@ -25,7 +25,7 @@ data class ATSAnalysisResult(
 )
 
 object ATSScoringService {
-    const val scoreVersion = "ats-v1"
+    const val scoreVersion = "ats-v2"
 
     val sectionAliases: Map<String, List<String>> = linkedMapOf(
         "summary" to listOf("summary", "profile", "objective"),
@@ -177,6 +177,9 @@ object ATSScoringService {
         }
         return removeRedundantKeywords(found).sorted()
     }
+
+    fun containsKeyword(keyword: String, resumeText: String): Boolean =
+        keywordInText(keyword, resumeText.lowercase())
 
     fun hasImpactSignal(bullet: String): Boolean {
         if (measurableImpactRegex.containsMatchIn(bullet)) return true

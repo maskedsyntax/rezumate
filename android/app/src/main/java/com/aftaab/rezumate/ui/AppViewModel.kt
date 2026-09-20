@@ -8,15 +8,21 @@ import androidx.lifecycle.DefaultLifecycleObserver
 import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.ProcessLifecycleOwner
 import androidx.lifecycle.viewModelScope
+import com.aftaab.rezumate.BuildConfig
 import com.aftaab.rezumate.billing.BillingState
 import com.aftaab.rezumate.billing.PlayBillingClient
 import com.aftaab.rezumate.data.APIClient
+import com.aftaab.rezumate.data.local.DataStoreReviewPromptStore
 import com.aftaab.rezumate.data.local.UsageLimiter
 import com.aftaab.rezumate.data.local.UsagePolicy
 import com.aftaab.rezumate.data.local.UsageSnapshot
+import com.aftaab.rezumate.domain.AnalysisInputValidator
+import com.aftaab.rezumate.domain.ResumeTailoringService
+import com.aftaab.rezumate.domain.ReviewPromptTracker
 import com.aftaab.rezumate.export.ResumePdfExporter
 import com.aftaab.rezumate.export.ResumePdfShare
 import com.aftaab.rezumate.model.AnalyzeResponse
+import com.aftaab.rezumate.model.ExportArtifact
 import com.aftaab.rezumate.model.UploadResponse
 import com.aftaab.rezumate.model.VariantDetail
 import com.aftaab.rezumate.model.VariantSummary
@@ -24,6 +30,7 @@ import com.aftaab.rezumate.ui.screens.AnalyzeUiState
 import com.aftaab.rezumate.ui.screens.ComponentScoreUi
 import com.aftaab.rezumate.ui.screens.HistoryItemUi
 import com.aftaab.rezumate.ui.screens.HistoryUiState
+import com.aftaab.rezumate.ui.screens.KeywordPlacementDraft
 import com.aftaab.rezumate.ui.screens.ProfileUiState
 import com.aftaab.rezumate.ui.screens.ResultsUiState
 import com.aftaab.rezumate.ui.screens.ResumeBulletIssueUi
@@ -75,17 +82,27 @@ data class RezumateState(
     val resultsError: String? = null,
     val historyError: String? = null,
     val expandedComponentScores: Set<String> = emptySet(),
+    val tailoredResumeText: String? = null,
     val optimizedResumeText: String? = null,
     val originalScore: Int? = null,
     val originalComponentScores: Map<String, Int>? = null,
     val exportedPdf: File? = null,
     val navigationRequest: NavigationRequest? = null,
+    val placementUndoStack: List<String> = emptyList(),
+    val lastPlacedKeyword: String? = null,
+    val isPlacingKeyword: Boolean = false,
+    val keywordDraft: KeywordPlacementDraft? = null,
+    val isExporting: Boolean = false,
+    val exportWarnings: List<String> = emptyList(),
+    val pendingExport: ExportArtifact? = null,
+    val shouldRequestReview: Boolean = false,
 )
 
 class AppViewModel(application: Application) : AndroidViewModel(application) {
     private val api = APIClient(application)
     private val usageLimiter = UsageLimiter(application)
     private val billingClient = PlayBillingClient(application)
+    private val reviewTracker = ReviewPromptTracker(DataStoreReviewPromptStore(application))
     private val _state = MutableStateFlow(RezumateState())
     private var navigationId = 0L
     private var refinementJob: Job? = null
@@ -158,7 +175,24 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     fun updateJobDescription(value: String) {
-        _state.update { it.copy(jobDescription = value) }
+        val clipped = value.take(AnalysisInputValidator.MAXIMUM_JOB_DESCRIPTION_CHARACTERS)
+        _state.update { it.copy(jobDescription = clipped) }
+    }
+
+    fun pasteJobDescription(clipboardText: String?) {
+        val pasted = clipboardText?.trim().orEmpty()
+        if (pasted.isEmpty()) {
+            _state.update {
+                it.copy(analyzeNotice = "Clipboard is empty. Copy a job description first.")
+            }
+            return
+        }
+        _state.update {
+            it.copy(
+                jobDescription = pasted.take(AnalysisInputValidator.MAXIMUM_JOB_DESCRIPTION_CHARACTERS),
+                analyzeNotice = null,
+            )
+        }
     }
 
     fun analyze() {
@@ -193,6 +227,7 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
                 } else {
                     usageLimiter.recordAnalysis()
                 }
+                reviewTracker.recordSuccessfulAnalysis()
                 _state.update {
                     it.copy(
                         latestAnalysis = result,
@@ -201,11 +236,15 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
                         isAnalyzing = false,
                         analyzeNotice = if (shouldSave) null else FREE_HISTORY_NOTICE,
                         resultsError = null,
+                        tailoredResumeText = upload.extractedText,
                         optimizedResumeText = null,
                         originalScore = null,
                         originalComponentScores = null,
                         exportedPdf = null,
                         expandedComponentScores = emptySet(),
+                        placementUndoStack = emptyList(),
+                        lastPlacedKeyword = null,
+                        keywordDraft = null,
                     )
                 }
                 refreshHistorySilently()
@@ -253,14 +292,19 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
                 } else {
                     usageLimiter.recordAnalysis()
                 }
+                reviewTracker.recordSuccessfulAnalysis()
                 _state.update {
                     it.copy(
                         latestAnalysis = result,
                         currentResult = result,
                         usage = usage,
                         isRefreshingAnalysis = false,
+                        tailoredResumeText = currentResumeText(snapshot),
                         resultsError = if (shouldSave) null else FREE_REFRESH_NOTICE,
                         expandedComponentScores = emptySet(),
+                        placementUndoStack = emptyList(),
+                        lastPlacedKeyword = null,
+                        keywordDraft = null,
                     )
                 }
                 refreshHistorySilently()
@@ -296,34 +340,165 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
                         latestAnalysis = response.updatedAnalysis,
                         currentResult = response.updatedAnalysis,
                         usage = usage,
+                        isImproving = false,
+                        tailoredResumeText = response.optimizedResumeText,
                         optimizedResumeText = response.optimizedResumeText,
                         originalScore = it.originalScore ?: response.originalScore,
                         originalComponentScores = it.originalComponentScores ?: current.componentScores,
                     )
                 }
-                runCatching {
-                    withContext(Dispatchers.IO) {
-                        ResumePdfExporter.export(
-                            getApplication(),
-                            response.optimizedResumeText,
-                            response.variantId,
-                        )
-                    }
-                }.onSuccess { pdf ->
-                    _state.update { it.copy(exportedPdf = pdf, isImproving = false) }
-                    refreshHistorySilently()
-                    requestNavigation(AppDestination.PDF)
-                }.onFailure { error ->
-                    _state.update { it.copy(isImproving = false, resultsError = error.userMessage()) }
-                }
+                refreshHistorySilently()
             }.onFailure { error ->
                 _state.update { it.copy(isImproving = false, resultsError = error.userMessage()) }
             }
         }
     }
 
+    fun startKeywordPlacement(keyword: String) {
+        val snapshot = _state.value
+        val result = snapshot.currentResult ?: return
+        if (!ResumeTailoringService.canPlace(keyword, currentResumeText(snapshot))) {
+            _state.update { it.copy(resultsError = "This keyword is already on the resume.") }
+            return
+        }
+        _state.update {
+            it.copy(
+                keywordDraft = KeywordPlacementDraft(
+                    keyword = keyword,
+                    bullets = ResumeTailoringService.proofBullets(currentResumeText(snapshot)),
+                ),
+                resultsError = null,
+            )
+        }
+    }
+
+    fun cancelKeywordPlacement() {
+        _state.update { it.copy(keywordDraft = null, isPlacingKeyword = false) }
+    }
+
+    fun confirmKeywordPlacement(alsoInBullet: String?) {
+        val snapshot = _state.value
+        val draft = snapshot.keywordDraft ?: return
+        val variantId = snapshot.currentResult?.variantId ?: return
+        if (snapshot.isPlacingKeyword) return
+        viewModelScope.launch {
+            _state.update { it.copy(isPlacingKeyword = true, resultsError = null) }
+            val previousText = currentResumeText(snapshot)
+            runCatching {
+                withContext(Dispatchers.Default) {
+                    api.placeKeyword(variantId, draft.keyword, alsoInBullet, TOKEN)
+                }
+            }.onSuccess { response ->
+                _state.update {
+                    it.copy(
+                        latestAnalysis = response.updatedAnalysis,
+                        currentResult = response.updatedAnalysis,
+                        isPlacingKeyword = false,
+                        keywordDraft = null,
+                        lastPlacedKeyword = draft.keyword,
+                        tailoredResumeText = response.updatedResumeText,
+                        placementUndoStack = it.placementUndoStack + previousText,
+                        originalScore = it.originalScore ?: response.originalScore,
+                        originalComponentScores = it.originalComponentScores
+                            ?: snapshot.currentResult?.componentScores,
+                    )
+                }
+            }.onFailure { error ->
+                _state.update {
+                    it.copy(isPlacingKeyword = false, resultsError = error.userMessage())
+                }
+            }
+        }
+    }
+
+    fun undoLastPlacement() {
+        val snapshot = _state.value
+        val previous = snapshot.placementUndoStack.lastOrNull() ?: return
+        val variantId = snapshot.currentResult?.variantId ?: return
+        if (snapshot.isPlacingKeyword) return
+        viewModelScope.launch {
+            _state.update { it.copy(isPlacingKeyword = true, resultsError = null) }
+            runCatching {
+                withContext(Dispatchers.Default) {
+                    api.replaceTailoredContent(variantId, previous, TOKEN)
+                }
+            }.onSuccess { analysis ->
+                _state.update {
+                    it.copy(
+                        latestAnalysis = analysis,
+                        currentResult = analysis,
+                        isPlacingKeyword = false,
+                        lastPlacedKeyword = null,
+                        tailoredResumeText = previous,
+                        placementUndoStack = it.placementUndoStack.dropLast(1),
+                    )
+                }
+            }.onFailure { error ->
+                _state.update {
+                    it.copy(isPlacingKeyword = false, resultsError = error.userMessage())
+                }
+            }
+        }
+    }
+
+    fun exportCurrent(fromVariant: Boolean = false) {
+        val snapshot = _state.value
+        val variantId = if (fromVariant) {
+            snapshot.selectedVariant?.id
+        } else {
+            snapshot.currentResult?.variantId
+        } ?: return
+        if (snapshot.isExporting) return
+        viewModelScope.launch {
+            _state.update { it.copy(isExporting = true, resultsError = null, historyError = null) }
+            runCatching {
+                val plan = withContext(Dispatchers.Default) { api.exportVariant(variantId, TOKEN) }
+                val file = withContext(Dispatchers.IO) {
+                    ResumePdfExporter.export(getApplication(), plan.resumeText, plan.exportId)
+                }
+                ExportArtifact(file, plan.warnings)
+            }.onSuccess { artifact ->
+                if (artifact.warnings.isEmpty()) {
+                    presentExport(artifact)
+                } else {
+                    _state.update {
+                        it.copy(isExporting = false, pendingExport = artifact, exportWarnings = artifact.warnings)
+                    }
+                }
+            }.onFailure { error ->
+                _state.update {
+                    it.copy(
+                        isExporting = false,
+                        resultsError = if (fromVariant) it.resultsError else error.userMessage(),
+                        historyError = if (fromVariant) error.userMessage() else it.historyError,
+                    )
+                }
+            }
+        }
+    }
+
+    fun confirmExportAnyway() {
+        val artifact = _state.value.pendingExport ?: return
+        presentExport(artifact)
+    }
+
+    fun cancelExportWarning() {
+        _state.update { it.copy(pendingExport = null, exportWarnings = emptyList()) }
+    }
+
     fun viewPdf() {
-        if (_state.value.exportedPdf?.isFile == true) requestNavigation(AppDestination.PDF)
+        exportCurrent(fromVariant = false)
+    }
+
+    fun onPdfPreviewClosed() {
+        viewModelScope.launch { maybeRequestReview() }
+    }
+
+    fun reviewPromptShown() {
+        viewModelScope.launch {
+            reviewTracker.markPrompted(BuildConfig.VERSION_NAME)
+            _state.update { it.copy(shouldRequestReview = false) }
+        }
     }
 
     fun sharePdf() {
@@ -332,6 +507,36 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
             .onFailure { error ->
                 _state.update { it.copy(resultsError = error.userMessage()) }
             }
+    }
+
+    fun exportSelectedVariant() = exportCurrent(fromVariant = true)
+
+    private fun presentExport(artifact: ExportArtifact) {
+        viewModelScope.launch { reviewTracker.recordSuccessfulExport() }
+        _state.update {
+            it.copy(
+                exportedPdf = artifact.file,
+                isExporting = false,
+                pendingExport = null,
+                exportWarnings = emptyList(),
+            )
+        }
+        requestNavigation(AppDestination.PDF)
+    }
+
+    private fun currentResumeText(snapshot: RezumateState): String =
+        snapshot.tailoredResumeText
+            ?: snapshot.optimizedResumeText
+            ?: snapshot.selectedVariant?.tailoredContent?.rawText
+            ?: snapshot.upload?.extractedText
+            ?: ""
+
+    private suspend fun maybeRequestReview() {
+        val billing = _state.value.billing
+        if (billing.isPurchasing || billing.isRestoring || billing.message != null) return
+        if (reviewTracker.isEligible(BuildConfig.VERSION_NAME)) {
+            _state.update { it.copy(shouldRequestReview = true) }
+        }
     }
 
     fun toggleComponentScore(id: String) {
@@ -408,10 +613,16 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
                 analyzeNotice = null,
                 resultsError = null,
                 expandedComponentScores = emptySet(),
+                tailoredResumeText = null,
                 optimizedResumeText = null,
                 originalScore = null,
                 originalComponentScores = null,
                 exportedPdf = null,
+                placementUndoStack = emptyList(),
+                lastPlacedKeyword = null,
+                keywordDraft = null,
+                pendingExport = null,
+                exportWarnings = emptyList(),
             )
         }
         viewModelScope.launch { api.clearTransientVariants() }
@@ -534,6 +745,11 @@ fun RezumateState.toResultsUiState(): ResultsUiState? {
             .sorted(),
         matchedKeywords = result.matchedKeywords,
         missingKeywords = result.missingKeywords,
+        partialMatches = result.partialMatches,
+        jobTitle = result.jobTitle,
+        jobTitleMatched = result.jobTitleMatched,
+        educationRequirement = result.educationRequirement,
+        educationMatched = result.educationMatched,
         proPriceText = billing.price ?: "$7.99",
         isPurchasing = billing.isPurchasing,
         purchaseMessage = billing.message,
@@ -542,10 +758,16 @@ fun RezumateState.toResultsUiState(): ResultsUiState? {
         } else {
             UsagePolicy.remainingImprovements(usage)
         },
-        canImprove = canImprove(),
+        canImprove = canImprove() && optimizedResumeText == null,
         isImproving = isImproving,
         remainingImpactIssueCount = result.bulletsWithoutMeasurableImpactCount,
-        canViewExport = exportedPdf?.isFile == true,
+        canExport = !isExporting,
+        isExporting = isExporting,
+        canUndoPlacement = placementUndoStack.isNotEmpty(),
+        lastPlacedKeyword = lastPlacedKeyword,
+        isPlacingKeyword = isPlacingKeyword,
+        keywordDraft = keywordDraft,
+        exportWarnings = exportWarnings,
         errorMessage = resultsError,
     )
 }
@@ -565,9 +787,13 @@ fun RezumateState.toHistoryUiState(): HistoryUiState = HistoryUiState(
 
 fun RezumateState.toProfileUiState(): ProfileUiState = ProfileUiState(
     isPro = billing.isPro,
-    proPriceText = billing.price ?: "$7.99",
+    entitlementLoaded = billing.entitlementLoaded,
+    proPriceText = billing.price,
     isPurchasing = billing.isPurchasing,
+    isRestoring = billing.isRestoring,
     purchaseMessage = billing.message,
+    appVersion = BuildConfig.VERSION_NAME,
+    appBuild = BuildConfig.VERSION_CODE.toString(),
 )
 
 fun RezumateState.toVariantDetailUiState(): VariantDetailUiState? = selectedVariant?.let {
@@ -575,6 +801,9 @@ fun RezumateState.toVariantDetailUiState(): VariantDetailUiState? = selectedVari
         variantName = it.variantName,
         atsScore = it.atsScore,
         resumeText = it.tailoredContent.rawText,
+        isExporting = isExporting,
+        exportWarnings = exportWarnings,
+        errorMessage = historyError,
     )
 }
 

@@ -10,7 +10,11 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
@@ -18,21 +22,30 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowForward
 import androidx.compose.material.icons.automirrored.filled.FormatListBulleted
+import androidx.compose.material.icons.automirrored.filled.Undo
 import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Description
 import androidx.compose.material.icons.filled.ExpandLess
 import androidx.compose.material.icons.filled.ExpandMore
-import androidx.compose.material.icons.filled.FileDownload
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.LockOpen
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.WarningAmber
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.TextButton
+import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.semantics.Role
@@ -50,6 +63,7 @@ import com.aftaab.rezumate.ui.designsystem.RezIconTile
 import com.aftaab.rezumate.ui.designsystem.RezProgressBar
 import com.aftaab.rezumate.ui.designsystem.RezScreen
 import com.aftaab.rezumate.ui.designsystem.RezSectionTitle
+import com.aftaab.rezumate.ui.designsystem.RezStatusPill
 import com.aftaab.rezumate.ui.designsystem.RezTitleBar
 import com.aftaab.rezumate.ui.designsystem.rezScoreColor
 import com.aftaab.rezumate.ui.theme.RezColors
@@ -82,6 +96,11 @@ data class ResultsUiState(
     val missingSections: List<String> = emptyList(),
     val matchedKeywords: List<String> = emptyList(),
     val missingKeywords: List<String> = emptyList(),
+    val partialMatches: List<String> = emptyList(),
+    val jobTitle: String? = null,
+    val jobTitleMatched: Boolean = false,
+    val educationRequirement: String? = null,
+    val educationMatched: Boolean = false,
     val proPriceText: String = "",
     val isPurchasing: Boolean = false,
     val purchaseMessage: String? = null,
@@ -89,49 +108,114 @@ data class ResultsUiState(
     val canImprove: Boolean = true,
     val isImproving: Boolean = false,
     val remainingImpactIssueCount: Int = 0,
-    val canViewExport: Boolean = false,
+    val canExport: Boolean = true,
+    val isExporting: Boolean = false,
+    val canUndoPlacement: Boolean = false,
+    val lastPlacedKeyword: String? = null,
+    val isPlacingKeyword: Boolean = false,
+    val keywordDraft: KeywordPlacementDraft? = null,
+    val exportWarnings: List<String> = emptyList(),
     val errorMessage: String? = null,
+)
+
+data class KeywordPlacementDraft(
+    val keyword: String,
+    val bullets: List<String>,
 )
 
 interface ResultsCallbacks {
     fun onRefresh()
+    fun onUndoPlacement()
     fun onComponentScoreClick(id: String)
     fun onUnlockPro()
     fun onImproveResume()
-    fun onViewAndDownloadResume()
+    fun onExport()
+    fun onKeywordClick(keyword: String)
+    fun onConfirmPlacement(bullet: String?)
+    fun onCancelPlacement()
+    fun onConfirmExportAnyway()
+    fun onCancelExportWarning()
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ResultsScreen(
     state: ResultsUiState,
     callbacks: ResultsCallbacks,
     modifier: Modifier = Modifier,
 ) {
+    if (state.keywordDraft != null) {
+        ModalBottomSheet(
+            onDismissRequest = callbacks::onCancelPlacement,
+            sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
+            containerColor = RezColors.Background,
+        ) {
+            KeywordPlacementSheet(
+                draft = state.keywordDraft,
+                isWorking = state.isPlacingKeyword,
+                onCancel = callbacks::onCancelPlacement,
+                onConfirm = callbacks::onConfirmPlacement,
+            )
+        }
+    }
+    if (state.exportWarnings.isNotEmpty()) {
+        AlertDialog(
+            onDismissRequest = callbacks::onCancelExportWarning,
+            title = { Text("Review before export") },
+            text = { Text(state.exportWarnings.joinToString("\n")) },
+            confirmButton = {
+                TextButton(onClick = callbacks::onConfirmExportAnyway) { Text("Preview Anyway") }
+            },
+            dismissButton = {
+                TextButton(onClick = callbacks::onCancelExportWarning) { Text("Cancel") }
+            },
+        )
+    }
     RezScreen(modifier) {
         Column {
             RezTitleBar(title = "Results") {
-                Box(
-                    modifier = Modifier
-                        .size(44.dp)
-                        .clickable(
-                            enabled = !state.isRefreshing,
-                            role = Role.Button,
-                            onClick = callbacks::onRefresh,
-                        ),
-                    contentAlignment = Alignment.Center,
-                ) {
-                    if (state.isRefreshing) {
-                        CircularProgressIndicator(
-                            modifier = Modifier.size(18.dp),
-                            color = RezColors.Ink,
-                            strokeWidth = 2.dp,
-                        )
-                    } else {
-                        Icon(
-                            imageVector = Icons.Default.Refresh,
-                            contentDescription = "Re-analyze",
-                            tint = RezColors.Ink,
-                        )
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    if (state.canUndoPlacement) {
+                        Box(
+                            modifier = Modifier
+                                .size(44.dp)
+                                .clickable(
+                                    enabled = !state.isPlacingKeyword && !state.isImproving,
+                                    role = Role.Button,
+                                    onClick = callbacks::onUndoPlacement,
+                                ),
+                            contentAlignment = Alignment.Center,
+                        ) {
+                            Icon(
+                                imageVector = Icons.AutoMirrored.Filled.Undo,
+                                contentDescription = "Undo last keyword",
+                                tint = RezColors.Ink,
+                            )
+                        }
+                    }
+                    Box(
+                        modifier = Modifier
+                            .size(44.dp)
+                            .clickable(
+                                enabled = !state.isRefreshing,
+                                role = Role.Button,
+                                onClick = callbacks::onRefresh,
+                            ),
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        if (state.isRefreshing) {
+                            CircularProgressIndicator(
+                                modifier = Modifier.size(18.dp),
+                                color = RezColors.Ink,
+                                strokeWidth = 2.dp,
+                            )
+                        } else {
+                            Icon(
+                                imageVector = Icons.Default.Refresh,
+                                contentDescription = "Re-analyze",
+                                tint = RezColors.Ink,
+                            )
+                        }
                     }
                 }
             }
@@ -150,9 +234,32 @@ fun ResultsScreen(
                 }
                 item { ScoreHeader(state) }
                 item { ComponentScoresCard(state, callbacks::onComponentScoreClick) }
-                item { NeedsAttentionCard(state) }
-                if (!state.isPro) {
-                    item { ProInsightsCard(state, callbacks::onUnlockPro) }
+                if (!state.jobTitle.isNullOrBlank() || !state.educationRequirement.isNullOrBlank()) {
+                    item { RoleFitCard(state) }
+                }
+                item {
+                    TappableKeywordCard(
+                        title = "Missing hard skills",
+                        subtitle = "Tap a skill you actually have to add it.",
+                        items = state.missingKeywords,
+                        color = RezColors.Warning,
+                        isPro = state.isPro,
+                        limitForFree = 5,
+                        lastPlacedKeyword = state.lastPlacedKeyword,
+                        onKeywordClick = callbacks::onKeywordClick,
+                    )
+                }
+                item {
+                    TappableKeywordCard(
+                        title = "Partial matches",
+                        subtitle = "Close — add the exact term if you have it.",
+                        items = state.partialMatches,
+                        color = RezColors.BlueWash,
+                        isPro = state.isPro,
+                        limitForFree = 5,
+                        lastPlacedKeyword = null,
+                        onKeywordClick = callbacks::onKeywordClick,
+                    )
                 }
                 item {
                     KeywordCard(
@@ -162,15 +269,12 @@ fun ResultsScreen(
                         isPro = state.isPro,
                     )
                 }
-                item {
-                    KeywordCard(
-                        title = "Missing keywords",
-                        items = state.missingKeywords,
-                        color = RezColors.Warning,
-                        isPro = state.isPro,
-                    )
+                item { NeedsAttentionCard(state) }
+                if (!state.isPro) {
+                    item { ProInsightsCard(state, callbacks::onUnlockPro) }
                 }
                 item { ImproveResumeCard(state, callbacks) }
+                item { ExportCard(state, callbacks) }
                 if (state.errorMessage != null) {
                     item { ErrorNotice(state.errorMessage) }
                 }
@@ -754,7 +858,7 @@ private fun ImproveResumeCard(state: ResultsUiState, callbacks: ResultsCallbacks
                 }
                 Text(
                     text = if (state.remainingImpactIssueCount == 0) {
-                        "Keywords, wording, and impact signals are improved. Review and export the final PDF."
+                        "Wording is improved. Review and export the final PDF."
                     } else {
                         "${state.remainingImpactIssueCount} bullet(s) may still need stronger impact details. Review before sending."
                     },
@@ -762,15 +866,199 @@ private fun ImproveResumeCard(state: ResultsUiState, callbacks: ResultsCallbacks
                     fontSize = 12.sp,
                     lineHeight = 16.sp,
                 )
-                RezButton(
-                    text = "View & Download Resume",
-                    onClick = callbacks::onViewAndDownloadResume,
-                    modifier = Modifier.fillMaxWidth(),
-                    enabled = state.canViewExport,
-                    leadingIcon = Icons.Default.FileDownload,
+            }
+        }
+    }
+}
+
+@Composable
+private fun RoleFitCard(state: ResultsUiState) {
+    val rows = buildList {
+        state.jobTitle?.takeIf(String::isNotBlank)?.let {
+            add(Triple("Job title", it, state.jobTitleMatched))
+        }
+        state.educationRequirement?.takeIf(String::isNotBlank)?.let {
+            add(Triple("Education", it, state.educationMatched))
+        }
+    }
+    RezCard(modifier = Modifier.fillMaxWidth()) {
+        RezSectionTitle(
+            title = "Role fit",
+            subtitle = "Checked against this job description. Not added to your resume automatically.",
+        )
+        Column(
+            modifier = Modifier.padding(top = 12.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp),
+        ) {
+            rows.forEach { (label, value, matched) ->
+                Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                    Icon(
+                        imageVector = if (matched) Icons.Default.CheckCircle else Icons.Default.WarningAmber,
+                        contentDescription = null,
+                        tint = if (matched) RezColors.Success else RezColors.Muted,
+                        modifier = Modifier.size(16.dp),
+                    )
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(label, color = RezColors.Ink, fontSize = 12.sp, fontWeight = FontWeight.Black)
+                        Text(value, color = RezColors.Muted, fontSize = 12.sp)
+                    }
+                    RezStatusPill(
+                        text = if (matched) "MATCHED" else "MISSING",
+                        color = if (matched) RezColors.Success else RezColors.Warning,
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun TappableKeywordCard(
+    title: String,
+    subtitle: String,
+    items: List<String>,
+    color: androidx.compose.ui.graphics.Color,
+    isPro: Boolean,
+    limitForFree: Int,
+    lastPlacedKeyword: String?,
+    onKeywordClick: (String) -> Unit,
+) {
+    val visibleItems = if (isPro) items else items.take(limitForFree)
+    val hiddenCount = items.size - visibleItems.size
+    RezCard(modifier = Modifier.fillMaxWidth()) {
+        RezSectionTitle(title = title, subtitle = subtitle)
+        if (lastPlacedKeyword != null) {
+            Text(
+                text = "Added ${com.aftaab.rezumate.domain.ResumeTailoringService.displayName(lastPlacedKeyword)}. Score updated.",
+                modifier = Modifier.padding(top = 10.dp),
+                color = RezColors.Muted,
+                fontSize = 12.sp,
+                fontWeight = FontWeight.SemiBold,
+            )
+        }
+        if (visibleItems.isEmpty()) {
+            Text(
+                text = "Nothing to show yet.",
+                modifier = Modifier.padding(top = 12.dp),
+                color = RezColors.Muted,
+                fontSize = 14.sp,
+            )
+        } else {
+            RezChipFlow(
+                items = visibleItems,
+                color = color,
+                modifier = Modifier.padding(top = 12.dp),
+                tappable = true,
+                onItemClick = onKeywordClick,
+            )
+            if (hiddenCount > 0) {
+                Text(
+                    text = "+$hiddenCount more included with Pro",
+                    modifier = Modifier.padding(top = 10.dp),
+                    color = RezColors.Muted,
+                    fontSize = 12.sp,
+                    fontWeight = FontWeight.Black,
                 )
             }
         }
+    }
+}
+
+@Composable
+private fun ExportCard(state: ResultsUiState, callbacks: ResultsCallbacks) {
+    RezCard(modifier = Modifier.fillMaxWidth()) {
+        RezSectionTitle(
+            title = "Export PDF",
+            subtitle = "Preview a clean ATS-friendly PDF before sharing it.",
+        )
+        RezButton(
+            text = if (state.isExporting) "Preparing PDF..." else "Preview & Export PDF",
+            onClick = callbacks::onExport,
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(top = 12.dp),
+            kind = RezButtonKind.Secondary,
+            fill = RezColors.BlueWash,
+            enabled = state.canExport && !state.isExporting && !state.isImproving,
+            leadingIcon = Icons.Default.Description,
+        )
+    }
+}
+
+@Composable
+private fun KeywordPlacementSheet(
+    draft: KeywordPlacementDraft,
+    isWorking: Boolean,
+    onCancel: () -> Unit,
+    onConfirm: (String?) -> Unit,
+) {
+    var selectedBullet by remember(draft.keyword) { mutableStateOf<String?>(null) }
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .navigationBarsPadding()
+            .padding(horizontal = 16.dp)
+            .padding(bottom = 20.dp),
+        verticalArrangement = Arrangement.spacedBy(14.dp),
+    ) {
+        Text(
+            text = com.aftaab.rezumate.domain.ResumeTailoringService.displayName(draft.keyword),
+            color = RezColors.Ink,
+            fontSize = 22.sp,
+            fontWeight = FontWeight.Black,
+        )
+        Text(
+            text = "Only add this if you actually have it. Rezumate will put it in Skills and will not invent experience, metrics, or employers.",
+            color = RezColors.Muted,
+            fontSize = 12.sp,
+            fontWeight = FontWeight.SemiBold,
+        )
+        if (draft.bullets.isNotEmpty()) {
+            Text("Optional proof bullet", color = RezColors.Ink, fontSize = 12.sp, fontWeight = FontWeight.Black)
+            Text(
+                text = "Pick an existing bullet to mention this skill. Skip this to add it only to Skills.",
+                color = RezColors.Muted,
+                fontSize = 12.sp,
+            )
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .heightIn(max = 280.dp)
+                    .verticalScroll(rememberScrollState()),
+                verticalArrangement = Arrangement.spacedBy(16.dp),
+            ) {
+                draft.bullets.forEach { bullet ->
+                    val selected = selectedBullet == bullet
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .background(if (selected) RezColors.BlueWash else RezColors.Background, RoundedCornerShape(6.dp))
+                            .border(1.5.dp, RezColors.Ink, RoundedCornerShape(6.dp))
+                            .clickable(role = Role.Button) {
+                                selectedBullet = if (selected) null else bullet
+                            }
+                            .padding(10.dp),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    ) {
+                        Text(if (selected) "☑" else "☐", color = RezColors.Ink, fontWeight = FontWeight.Black)
+                        Text(bullet, color = RezColors.Ink, fontSize = 12.sp, modifier = Modifier.weight(1f))
+                    }
+                }
+            }
+        }
+        RezButton(
+            text = if (isWorking) "Adding..." else "Add to Skills",
+            onClick = { onConfirm(selectedBullet) },
+            modifier = Modifier.fillMaxWidth(),
+            enabled = !isWorking,
+        )
+        RezButton(
+            text = "Cancel",
+            onClick = onCancel,
+            modifier = Modifier.fillMaxWidth(),
+            kind = RezButtonKind.Secondary,
+            enabled = !isWorking,
+        )
     }
 }
 

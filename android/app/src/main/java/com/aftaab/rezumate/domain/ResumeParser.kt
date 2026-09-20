@@ -1,5 +1,6 @@
 package com.aftaab.rezumate.domain
 
+import com.aftaab.rezumate.model.AdditionalResumeSection
 import com.aftaab.rezumate.model.EducationEntry
 import com.aftaab.rezumate.model.ExperienceEntry
 import com.aftaab.rezumate.model.ProjectEntry
@@ -69,7 +70,9 @@ object ResumeParser {
                 continue
             }
             if (sectionName(line) != null) break
-            parseContactLine(line, document)
+            if (!parseContactLine(line, document)) {
+                document.unmappedContent += line
+            }
             index++
         }
 
@@ -100,39 +103,60 @@ object ResumeParser {
         return if (letters.all(Char::isUpperCase)) sectionAliases[lower] ?: lower else null
     }
 
-    private fun parseContactLine(line: String, document: ResumeDocument) {
+    private fun parseContactLine(line: String, document: ResumeDocument): Boolean {
         val splitParts = line.split(Regex("[|•·${'$'}]"))
             .map { it.trimHorizontalWhitespace() }
             .filter(String::isNotEmpty)
+        var parsedAny = false
         for (part in if (splitParts.size > 1) splitParts else listOf(line)) {
             val lower = part.lowercase()
             val email = extractEmail(part)
             val phone = extractPhone(part)
             when {
-                document.email == null && email != null -> document.email = email
+                document.email == null && email != null -> {
+                    document.email = email
+                    parsedAny = true
+                }
                 "linkedin.com/in/" in lower -> {
                     if (document.linkedin == null) document.linkedin = extractLinkedIn(part) ?: part
+                    parsedAny = true
                 }
                 "github.com/" in lower -> {
                     if (document.github == null) document.github = extractGitHub(part) ?: part
+                    parsedAny = true
                 }
                 lower.startsWith("http") || lower.startsWith("www.") ||
                     ".dev" in lower || ".io" in lower ||
                     (".com" in lower && "@" !in lower) ||
                     (".app" in lower && "@" !in lower) -> {
                     if (document.website == null) document.website = part
+                    parsedAny = true
                 }
-                document.phone == null && phone != null -> document.phone = phone
-                isLikelyLocation(part) -> if (document.location == null) document.location = part
+                document.phone == null && phone != null -> {
+                    document.phone = phone
+                    parsedAny = true
+                }
+                isLikelyLocation(part) -> {
+                    if (document.location == null) document.location = part
+                    parsedAny = true
+                }
             }
         }
+        return parsedAny
     }
 
     private fun extractEmail(text: String): String? =
         Regex("[a-zA-Z0-9._%+\\-]+@[a-zA-Z0-9.\\-]+\\.[a-zA-Z]{2,}").find(text)?.value
 
-    private fun extractPhone(text: String): String? =
-        Regex("[+]?[(]?[0-9]{3}[)]?[-\\s.]?[0-9]{3}[-\\s.]?[0-9]{4,6}").find(text)?.value
+    private fun extractPhone(text: String): String? {
+        val matches = Regex("""(?<![A-Za-z0-9])\+?[0-9(][0-9\s().-]{8,}[0-9](?![A-Za-z0-9])""").findAll(text)
+        for (match in matches) {
+            val candidate = match.value.trim()
+            val digits = candidate.count { it.isDigit() }
+            if (digits in 10..15) return candidate
+        }
+        return null
+    }
 
     private fun extractLinkedIn(text: String): String? =
         Regex("linkedin\\.com/in/([a-zA-Z0-9\\-]+)", RegexOption.IGNORE_CASE)
@@ -161,6 +185,15 @@ object ResumeParser {
             "projects" -> document.projects = parseProjectEntries(lines).toMutableList()
             "education" -> document.education = parseEducationEntries(lines).toMutableList()
             "skills" -> document.skillCategories = parseSkillsSection(lines).toMutableList()
+            else -> {
+                val meaningful = lines.filter { it.isNotBlank() }
+                if (meaningful.isNotEmpty()) {
+                    document.additionalSections += AdditionalResumeSection(
+                        title = section.uppercase(),
+                        lines = meaningful.toMutableList(),
+                    )
+                }
+            }
         }
     }
 

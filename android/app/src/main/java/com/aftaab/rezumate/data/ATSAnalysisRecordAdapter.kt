@@ -17,7 +17,11 @@ data class AnalyzedVariant(
     val analysisFeedback: ATSAnalysisResult,
     val createdAt: String,
     val updatedAt: String,
-)
+    val jobDescription: String = "",
+) {
+    val scoringJobDescription: String
+        get() = jobDescription.ifBlank { analysisFeedback.jdKeywords.joinToString(" ") }
+}
 
 class ATSAnalysisRecordAdapter(
     private val json: Json = Json { ignoreUnknownKeys = true },
@@ -31,6 +35,7 @@ class ATSAnalysisRecordAdapter(
         analysisFeedback = json.encodeToJsonElement(variant.analysisFeedback).jsonObject,
         createdAt = variant.createdAt,
         updatedAt = variant.updatedAt,
+        jobDescription = variant.jobDescription,
     )
 
     override fun fromRecord(record: LocalVariantRecord): AnalyzedVariant = AnalyzedVariant(
@@ -42,5 +47,6 @@ class ATSAnalysisRecordAdapter(
         analysisFeedback = json.decodeFromJsonElement(record.analysisFeedback),
         createdAt = record.createdAt,
         updatedAt = record.updatedAt,
+        jobDescription = record.jobDescription,
     )
 }

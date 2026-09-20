@@ -25,6 +25,7 @@ data class LocalVariantRecord(
     val analysisFeedback: JsonObject,
     val createdAt: String,
     val updatedAt: String,
+    val jobDescription: String = "",
 )
 
 enum class VariantSaveLocation {

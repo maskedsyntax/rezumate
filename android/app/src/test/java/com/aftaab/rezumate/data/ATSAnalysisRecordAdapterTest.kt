@@ -8,7 +8,7 @@ class ATSAnalysisRecordAdapterTest {
     @Test
     fun `round trips current domain analysis through stable JSON record`() {
         val analysis = ATSAnalysisResult(
-            scoreVersion = "ats-v1",
+            scoreVersion = "ats-v2",
             score = 82,
             jdKeywords = listOf("kotlin"),
             matchedKeywords = listOf("kotlin"),
@@ -34,6 +34,7 @@ class ATSAnalysisRecordAdapterTest {
             analysisFeedback = analysis,
             createdAt = "2026-08-04T10:00:00Z",
             updatedAt = "2026-08-04T10:00:00Z",
+            jobDescription = "Seeking Kotlin engineers.",
         )
         val adapter = ATSAnalysisRecordAdapter()
 

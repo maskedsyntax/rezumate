@@ -3,6 +3,7 @@ package com.aftaab.rezumate.billing
 import android.app.Activity
 import android.content.Context
 import androidx.annotation.MainThread
+import com.aftaab.rezumate.data.local.EntitlementStore
 import com.android.billingclient.api.BillingClient
 import com.android.billingclient.api.BillingClientStateListener
 import com.android.billingclient.api.BillingFlowParams
@@ -31,6 +32,7 @@ import kotlinx.coroutines.sync.withLock
 class PlayBillingClient(
     context: Context,
     private val paymentBackend: PaymentBackend = PaymentBackendClient(context.applicationContext),
+    private val entitlementStore: EntitlementStore = EntitlementStore(context.applicationContext),
 ) : PurchasesUpdatedListener, AutoCloseable {
     private val appContext = context.applicationContext
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
@@ -56,6 +58,11 @@ class PlayBillingClient(
 
     init {
         BillingReconciliationScheduler.ensurePeriodic(appContext)
+        scope.launch {
+            if (entitlementStore.loadAcknowledgedPro()) {
+                _state.value = BillingStateLogic.cachedPro(_state.value)
+            }
+        }
         connect()
     }
 
@@ -86,7 +93,7 @@ class PlayBillingClient(
 
     fun restorePurchases() {
         restoreRequested = true
-        _state.value = _state.value.copy(message = "Restoring purchase...")
+        _state.value = _state.value.copy(isRestoring = true, message = "Restoring purchase...")
         if (billingClient.isReady) {
             queryPurchases(showEmptyMessage = true)
         } else {
@@ -206,6 +213,7 @@ class PlayBillingClient(
                 _state.value = BillingStateLogic.purchasePending(_state.value)
             } else {
                 _state.value = BillingStateLogic.noOwnedPurchase(_state.value, showEmptyMessage)
+                scope.launch { entitlementStore.setAcknowledgedPro(false) }
             }
             return
         }
@@ -224,10 +232,19 @@ class PlayBillingClient(
                     rejection = response
                 }
                 if (generation != reconciliationGeneration) return@withLock
-                _state.value = BillingStateLogic.verificationFinished(
-                    _state.value,
-                    accepted ?: rejection ?: PaymentVerificationResponse(),
-                )
+                if (accepted != null) {
+                    val finished = BillingStateLogic.verificationFinished(_state.value, accepted)
+                    _state.value = finished
+                    entitlementStore.setAcknowledgedPro(true)
+                } else {
+                    val failed = rejection ?: PaymentVerificationResponse(
+                        message = "Purchase could not be verified.",
+                    )
+                    _state.value = BillingStateLogic.purchaseStopped(
+                        _state.value.copy(entitlementLoaded = true),
+                        failed.message ?: "Purchase could not be verified.",
+                    )
+                }
             }
         }
     }

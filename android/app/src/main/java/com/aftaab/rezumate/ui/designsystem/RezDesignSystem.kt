@@ -1,6 +1,8 @@
 package com.aftaab.rezumate.ui.designsystem
 
 import androidx.compose.animation.animateColorAsState
+import androidx.annotation.DrawableRes
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -25,12 +27,12 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.asPaddingValues
+import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.AccessTime
 import androidx.compose.material.icons.filled.AutoAwesome
-import androidx.compose.material.icons.filled.Person
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -41,10 +43,13 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.graphics.PathEffect
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -52,6 +57,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.aftaab.rezumate.R
 import com.aftaab.rezumate.ui.theme.RezColors
 
 object RezDimens {
@@ -71,10 +77,13 @@ enum class RezButtonKind {
     Secondary,
 }
 
-enum class RezMainTab(val label: String, val icon: ImageVector) {
-    Analyze("Analyze", Icons.Default.AutoAwesome),
-    History("History", Icons.Default.AccessTime),
-    Profile("Profile", Icons.Default.Person),
+enum class RezMainTab(
+    val label: String,
+    @DrawableRes val illustration: Int,
+) {
+    Analyze("Analyze", R.drawable.tab_analyze),
+    History("History", R.drawable.tab_history),
+    Profile("Profile", R.drawable.tab_profile),
 }
 
 @Composable
@@ -358,6 +367,8 @@ fun RezChipFlow(
     items: List<String>,
     color: Color,
     modifier: Modifier = Modifier,
+    tappable: Boolean = false,
+    onItemClick: (String) -> Unit = {},
 ) {
     FlowRow(
         modifier = modifier,
@@ -366,12 +377,19 @@ fun RezChipFlow(
     ) {
         items.forEach { item ->
             Text(
-                text = item,
+                text = if (tappable) "+ $item" else item,
                 modifier = Modifier
                     .defaultMinSize(minHeight = 34.dp)
                     .background(color, RoundedCornerShape(4.dp))
                     .border(RezDimens.Border, RezColors.Ink, RoundedCornerShape(4.dp))
-                    .padding(horizontal = 10.dp, vertical = 7.dp),
+                    .padding(horizontal = 10.dp, vertical = 7.dp)
+                    .then(
+                        if (tappable) {
+                            Modifier.clickable(role = Role.Button) { onItemClick(item) }
+                        } else {
+                            Modifier
+                        },
+                    ),
                 color = RezColors.Ink,
                 fontSize = 12.sp,
                 fontWeight = FontWeight.Black,
@@ -418,41 +436,76 @@ fun RezBottomBar(
     onTabSelected: (RezMainTab) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    Row(
+    val inactive = Color(0xFF9A9588)
+    val selectedWash = Color(0xFFF6E7A8)
+    val capsule = RoundedCornerShape(36.dp)
+    val navBottom = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
+    Column(
         modifier = modifier
             .fillMaxWidth()
-            .background(RezColors.Surface)
-            .border(RezDimens.Border, RezColors.Ink)
-            .padding(horizontal = 8.dp, vertical = 7.dp),
-        horizontalArrangement = Arrangement.SpaceAround,
+            .background(Color.Transparent)
+            .padding(bottom = navBottom),
     ) {
-        RezMainTab.entries.forEach { tab ->
-            val selected = tab == selectedTab
-            val background by animateColorAsState(
-                targetValue = if (selected) RezColors.Warning else Color.Transparent,
-                label = "tabBackground",
-            )
-            Column(
-                modifier = Modifier
-                    .weight(1f)
-                    .clickable(role = Role.Tab) { onTabSelected(tab) }
-                    .background(background, RoundedCornerShape(5.dp))
-                    .padding(vertical = 6.dp),
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.spacedBy(2.dp),
-            ) {
-                Icon(
-                    imageVector = tab.icon,
-                    contentDescription = null,
-                    tint = RezColors.Ink,
-                    modifier = Modifier.size(20.dp),
+        Row(
+            modifier = Modifier
+                .padding(horizontal = 22.dp, vertical = 8.dp)
+                .fillMaxWidth()
+                .height(72.dp)
+                .shadow(
+                    elevation = 16.dp,
+                    shape = capsule,
+                    ambientColor = Color.Black.copy(alpha = 0.10f),
+                    spotColor = Color.Black.copy(alpha = 0.14f),
                 )
-                Text(
-                    text = tab.label,
-                    color = RezColors.Ink,
-                    fontSize = 11.sp,
-                    fontWeight = if (selected) FontWeight.Black else FontWeight.SemiBold,
+                .background(Color.White, capsule)
+                .padding(horizontal = 6.dp),
+            horizontalArrangement = Arrangement.SpaceEvenly,
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            RezMainTab.entries.forEach { tab ->
+                val selected = tab == selectedTab
+                val tint by animateColorAsState(
+                    targetValue = if (selected) RezColors.Ink else inactive,
+                    label = "tabTint",
                 )
+                val wash by animateColorAsState(
+                    targetValue = if (selected) selectedWash else Color.Transparent,
+                    label = "tabWash",
+                )
+                Column(
+                    modifier = Modifier
+                        .weight(1f)
+                        .clickable(
+                            interactionSource = remember { MutableInteractionSource() },
+                            indication = null,
+                            role = Role.Tab,
+                            onClick = { onTabSelected(tab) },
+                        )
+                        .padding(vertical = 6.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.spacedBy(4.dp),
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .size(width = 56.dp, height = 32.dp)
+                            .background(wash, RoundedCornerShape(16.dp)),
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        Image(
+                            painter = painterResource(tab.illustration),
+                            contentDescription = tab.label,
+                            modifier = Modifier.size(24.dp),
+                            colorFilter = ColorFilter.tint(tint),
+                        )
+                    }
+                    Text(
+                        text = tab.label,
+                        color = tint,
+                        fontSize = 11.sp,
+                        fontWeight = FontWeight.Medium,
+                        maxLines = 1,
+                    )
+                }
             }
         }
     }

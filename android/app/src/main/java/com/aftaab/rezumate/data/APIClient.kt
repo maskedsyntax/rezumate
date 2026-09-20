@@ -3,13 +3,19 @@ package com.aftaab.rezumate.data
 import android.content.Context
 import android.net.Uri
 import com.aftaab.rezumate.data.document.ContentUriDocumentImporter
+import com.aftaab.rezumate.data.document.ImportedResume
 import com.aftaab.rezumate.data.local.LocalStorageManager
 import com.aftaab.rezumate.domain.ATSAnalysisResult
 import com.aftaab.rezumate.domain.ATSScoringService
+import com.aftaab.rezumate.domain.AnalysisInputValidator
+import com.aftaab.rezumate.domain.JobFitExtractor
 import com.aftaab.rezumate.domain.LocalAIService
+import com.aftaab.rezumate.domain.ResumeTailoringService
+import com.aftaab.rezumate.domain.ResumeParser
 import com.aftaab.rezumate.model.AnalyzeResponse
 import com.aftaab.rezumate.model.ImproveResumeResponse
 import com.aftaab.rezumate.model.TailoredContent
+import com.aftaab.rezumate.model.TailoringResponse
 import com.aftaab.rezumate.model.UploadResponse
 import com.aftaab.rezumate.model.VariantDetail
 import com.aftaab.rezumate.model.VariantSummary
@@ -19,6 +25,10 @@ import java.time.format.DateTimeFormatter
 import java.time.format.FormatStyle
 import java.util.Locale
 import java.util.UUID
+
+fun interface ResumeDocumentImporter {
+    suspend fun import(uri: Uri): ImportedResume
+}
 
 fun interface ResumeAnalyzer {
     fun analyze(resumeText: String, jobDescription: String): ATSAnalysisResult
@@ -76,7 +86,7 @@ data class AcceptRewriteResponse(
 )
 
 class APIClient(
-    private val importer: ContentUriDocumentImporter,
+    private val importer: ResumeDocumentImporter,
     private val storage: LocalStorageManager,
     private val analyzer: ResumeAnalyzer = DefaultResumeAnalyzer,
     private val suggestionEngine: ResumeSuggestionEngine = DefaultResumeSuggestionEngine,
@@ -84,7 +94,10 @@ class APIClient(
     private val clock: Clock = Clock.systemDefaultZone(),
 ) {
     constructor(context: Context) : this(
-        importer = ContentUriDocumentImporter(context.contentResolver),
+        importer = object : ResumeDocumentImporter {
+            private val inner = ContentUriDocumentImporter(context.contentResolver)
+            override suspend fun import(uri: Uri) = inner.import(uri)
+        },
         storage = LocalStorageManager(context.applicationContext),
     )
 
@@ -124,17 +137,21 @@ class APIClient(
         shouldSave: Boolean = true,
         allowBeyondFreeLimit: Boolean = false,
     ): AnalyzeResponse {
-        val result = analyzer.analyze(resumeText, jobDescription)
+        val validatedResume = AnalysisInputValidator.validatedResumeText(resumeText)
+        val validatedJobDescription = AnalysisInputValidator.validatedJobDescription(jobDescription)
+        val result = analyzer.analyze(validatedResume, validatedJobDescription)
+        val fit = JobFitExtractor.extract(validatedJobDescription, validatedResume)
         val now = Instant.now(clock).toString()
         val variant = AnalyzedVariant(
             id = UUID.randomUUID().toString(),
             resumeId = resumeId,
-            variantName = "Analysis ${formattedNow()}",
-            tailoredContent = resumeText,
+            variantName = variantName(fit.jobTitle),
+            tailoredContent = validatedResume,
             atsScore = result.score,
             analysisFeedback = result,
             createdAt = now,
             updatedAt = now,
+            jobDescription = validatedJobDescription,
         )
         if (shouldSave) {
             storage.saveVariant(
@@ -144,7 +161,7 @@ class APIClient(
         } else {
             storage.saveTransientVariant(variantAdapter.toRecord(variant))
         }
-        return result.toAnalyzeResponse(variant.id)
+        return variant.toAnalyzeResponse()
     }
 
     @Suppress("UNUSED_PARAMETER")
@@ -194,7 +211,7 @@ class APIClient(
     @Suppress("UNUSED_PARAMETER")
     suspend fun analysisResult(id: String, token: String): AnalyzeResponse {
         val variant = loadAnalyzedVariant(id)
-        return variant.analysisFeedback.toAnalyzeResponse(variant.id)
+        return variant.toAnalyzeResponse()
     }
 
     @Suppress("UNUSED_PARAMETER")
@@ -210,16 +227,7 @@ class APIClient(
         }
 
         val updatedText = variant.tailoredContent.replace(originalBullet, rewrittenBullet)
-        val updatedFeedback = analyzer.analyze(
-            updatedText,
-            variant.analysisFeedback.jdKeywords.joinToString(" "),
-        )
-        val updated = variant.copy(
-            tailoredContent = updatedText,
-            atsScore = updatedFeedback.score,
-            analysisFeedback = updatedFeedback,
-            updatedAt = Instant.now(clock).toString(),
-        )
+        val updated = rescore(variant, updatedText)
         storage.updateVariant(variantAdapter.toRecord(updated))
         return AcceptRewriteResponse(true, variantId, updatedText)
     }
@@ -232,27 +240,80 @@ class APIClient(
         val optimizedText = suggestionEngine.improveResume(
             variant.tailoredContent,
             weakPoints,
-            feedback.missingKeywords,
+            emptyList(),
         )
-        val updatedFeedback = analyzer.analyze(optimizedText, feedback.jdKeywords.joinToString(" "))
-        val updated = variant.copy(
-            tailoredContent = optimizedText,
-            atsScore = updatedFeedback.score,
-            analysisFeedback = updatedFeedback,
-            updatedAt = Instant.now(clock).toString(),
-        )
+        val updated = rescore(variant, optimizedText)
         storage.updateVariant(variantAdapter.toRecord(updated))
 
         return ImproveResumeResponse(
             success = true,
             variantId = variant.id,
             optimizedResumeText = optimizedText,
-            updatedAnalysis = updatedFeedback.toAnalyzeResponse(variant.id),
+            updatedAnalysis = updated.toAnalyzeResponse(),
             originalScore = variant.atsScore,
-            componentDeltas = componentDeltas(feedback.componentScores, updatedFeedback.componentScores),
+            componentDeltas = componentDeltas(feedback.componentScores, updated.analysisFeedback.componentScores),
             changedBullets = weakPoints.filterNot(optimizedText::contains),
             remainingBulletsWithoutMeasurableImpact =
-                updatedFeedback.bulletsWithoutMeasurableImpactCount,
+                updated.analysisFeedback.bulletsWithoutMeasurableImpactCount,
+        )
+    }
+
+    @Suppress("UNUSED_PARAMETER")
+    suspend fun placeKeyword(
+        variantId: String,
+        keyword: String,
+        alsoInBullet: String?,
+        token: String,
+    ): TailoringResponse {
+        val variant = loadAnalyzedVariant(variantId)
+        val originalScore = variant.atsScore
+        var updatedText = ResumeTailoringService.placeInSkills(keyword, variant.tailoredContent)
+        if (!alsoInBullet.isNullOrBlank()) {
+            updatedText = ResumeTailoringService.placeInBullet(keyword, alsoInBullet, updatedText)
+        }
+        val updated = rescore(variant, updatedText)
+        storage.updateVariant(variantAdapter.toRecord(updated))
+        return TailoringResponse(
+            success = true,
+            variantId = updated.id,
+            updatedResumeText = updatedText,
+            updatedAnalysis = updated.toAnalyzeResponse(),
+            originalScore = originalScore,
+            placedKeyword = keyword,
+        )
+    }
+
+    @Suppress("UNUSED_PARAMETER")
+    suspend fun replaceTailoredContent(
+        variantId: String,
+        resumeText: String,
+        token: String,
+    ): AnalyzeResponse {
+        val variant = loadAnalyzedVariant(variantId)
+        val updated = rescore(variant, resumeText)
+        storage.updateVariant(variantAdapter.toRecord(updated))
+        return updated.toAnalyzeResponse()
+    }
+
+    @Suppress("UNUSED_PARAMETER")
+    suspend fun exportVariant(id: String, token: String): ExportPlan {
+        val variant = loadAnalyzedVariant(id)
+        val document = ResumeParser.parse(variant.tailoredContent)
+        if (!document.hasContent) {
+            throw APIClientException(
+                "Rezumate could not safely format this resume. Review the imported text and try again.",
+            )
+        }
+        val warnings = if (document.unmappedContent.isNotEmpty()) {
+            val preview = document.unmappedContent.take(3).joinToString("; ")
+            listOf("Some header content could not be mapped safely: $preview")
+        } else {
+            emptyList()
+        }
+        return ExportPlan(
+            resumeText = variant.tailoredContent,
+            exportId = variant.id,
+            warnings = warnings,
         )
     }
 
@@ -262,23 +323,48 @@ class APIClient(
             .getOrElse { throw APIClientException("Stored analysis could not be read.", it) }
     }
 
-    private fun ATSAnalysisResult.toAnalyzeResponse(variantId: String) = AnalyzeResponse(
-        success = true,
-        variantId = variantId,
-        score = score,
-        matchedKeywords = matchedKeywords,
-        missingKeywords = missingKeywords,
-        weakBullets = weakBullets,
-        bulletsWithoutMeasurableImpact = bulletsWithoutMeasurableImpact,
-        bulletsWithoutMeasurableImpactCount = bulletsWithoutMeasurableImpactCount,
-        formattingWarnings = formattingWarnings,
-        componentScores = componentScores,
-        analysisStatus = "complete",
-        aiModelName = LOCAL_MODEL_NAME,
-        bulletCount = bulletCount,
-        keywordCoverage = keywordCoverage,
-        sections = sections,
-    )
+    private fun rescore(variant: AnalyzedVariant, resumeText: String): AnalyzedVariant {
+        val result = analyzer.analyze(resumeText, variant.scoringJobDescription)
+        return variant.copy(
+            tailoredContent = resumeText,
+            atsScore = result.score,
+            analysisFeedback = result,
+            updatedAt = Instant.now(clock).toString(),
+        )
+    }
+
+    private fun AnalyzedVariant.toAnalyzeResponse(): AnalyzeResponse {
+        val fit = JobFitExtractor.extract(scoringJobDescription, tailoredContent)
+        val result = analysisFeedback
+        return AnalyzeResponse(
+            success = true,
+            variantId = id,
+            score = atsScore,
+            matchedKeywords = result.matchedKeywords,
+            missingKeywords = result.missingKeywords,
+            partialMatches = result.partialMatches,
+            weakBullets = result.weakBullets,
+            bulletsWithoutMeasurableImpact = result.bulletsWithoutMeasurableImpact,
+            bulletsWithoutMeasurableImpactCount = result.bulletsWithoutMeasurableImpactCount,
+            formattingWarnings = result.formattingWarnings,
+            componentScores = result.componentScores,
+            analysisStatus = "complete",
+            aiModelName = LOCAL_MODEL_NAME,
+            bulletCount = result.bulletCount,
+            keywordCoverage = result.keywordCoverage,
+            sections = result.sections,
+            jobTitle = fit.jobTitle,
+            jobTitleMatched = fit.jobTitleMatched,
+            educationRequirement = fit.educationRequirement,
+            educationMatched = fit.educationMatched,
+        )
+    }
+
+    private fun variantName(jobTitle: String?): String {
+        val title = jobTitle?.trim().orEmpty()
+        if (title.isNotEmpty()) return title.take(48)
+        return "Analysis ${formattedNow()}"
+    }
 
     private fun componentDeltas(
         old: Map<String, Int>,
@@ -297,5 +383,11 @@ class APIClient(
         const val LOCAL_MODEL_NAME = "Local Suggestion Engine"
     }
 }
+
+data class ExportPlan(
+    val resumeText: String,
+    val exportId: String,
+    val warnings: List<String>,
+)
 
 class APIClientException(message: String, cause: Throwable? = null) : Exception(message, cause)
