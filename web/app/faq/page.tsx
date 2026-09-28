@@ -1,8 +1,15 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 
 import { FaqList } from "../components/FaqList";
 import { faqSections } from "../components/faq-data";
 import { SiteChrome } from "../components/SiteChrome";
+
+export const metadata: Metadata = {
+  title: "FAQ: Resume Scoring, Privacy and Pricing",
+  description: "Answers about Rezumate's ATS-style score, local resume tailoring, PDF export, privacy, free usage, and one-time Pro pricing.",
+  alternates: { canonical: "/faq" }
+};
 
 export default function FaqPage() {
   return (

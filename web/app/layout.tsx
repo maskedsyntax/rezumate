@@ -18,13 +18,13 @@ const jetbrainsMono = JetBrains_Mono({
 });
 
 export const metadata: Metadata = {
-  metadataBase: new URL("https://rezumate.app"),
+  metadataBase: new URL("https://www.rezumate.app"),
   applicationName: "Rezumate",
   title: {
     default: "Rezumate - Private ATS resume optimizer for iPhone",
     template: "%s | Rezumate"
   },
-  description: "Available now on the App Store. Private iPhone resume optimizer with ATS scoring, missing keyword detection, bullet improvements, and LaTeX-style PDF export.",
+  description: "Check your resume against a job description for free in your browser. Then use Rezumate on iPhone to review missing keywords, improve wording, and export a polished PDF privately.",
   keywords: [
     "resume optimizer",
     "ATS resume checker",

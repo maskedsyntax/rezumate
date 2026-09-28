@@ -24,6 +24,7 @@ export function SiteChrome({ children }: Props) {
           Rezumate
         </Link>
         <nav className="navlinks">
+          <Link href="/#free-check">Free checker</Link>
           <a href="/#how-it-works">How it works</a>
           <a href="/#features">Features</a>
           <a href="/#pricing">Pricing</a>
@@ -37,7 +38,7 @@ export function SiteChrome({ children }: Props) {
       <footer className="shell footer">
         <span>© {new Date().getFullYear()} Rezumate</span>
         <span>
-          <Link href="/faq">FAQ</Link> · <Link href="/blog">Blog</Link> · <Link href="/terms">Terms</Link> · <Link href="/privacy">Privacy</Link> · <Link href="/support">Support</Link>
+          <Link href="/resume-checker">Free checker</Link> · <Link href="/faq">FAQ</Link> · <Link href="/blog">Blog</Link> · <Link href="/terms">Terms</Link> · <Link href="/privacy">Privacy</Link> · <Link href="/support">Support</Link>
         </span>
       </footer>
 

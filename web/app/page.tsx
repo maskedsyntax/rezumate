@@ -1,9 +1,11 @@
 import Link from "next/link";
 
 import { FaqList } from "./components/FaqList";
+import { ResumeCheck } from "./components/ResumeCheck";
 import { ScrollReveal } from "./components/ScrollReveal";
 import { featuredFaqItems } from "./components/faq-data";
 import { SiteChrome } from "./components/SiteChrome";
+import { TestimonialMarquee } from "./components/TestimonialMarquee";
 import { APP_STORE_URL } from "../lib/app-store";
 
 const ctaHref = APP_STORE_URL;
@@ -71,14 +73,16 @@ export default function Home() {
               Rezumate is the private iPhone resume optimizer that scores your resume against a job description,
               identifies missing keywords and weak bullets, then exports a polished ATS-safe PDF.
             </p>
+            <div className="actions">
+              <a className="button" href="#free-check">Check your resume free</a>
+              <a className="button secondary" href={ctaHref}>Download on the App Store</a>
+            </div>
+            <p className="hero-assurance">Browser preview: no account, no resume upload, no payment.</p>
+
             <div className="offer-strip" aria-label="Lifetime pricing">
               <span className="offer-label">Lifetime Pro</span>
               <strong>$14.99</strong>
               <span className="offer-note">One-time purchase. Localized App Store pricing may vary.</span>
-            </div>
-            <div className="actions">
-              <a className="button" href={ctaHref}>Download on the App Store</a>
-              <a className="button secondary" href="#how-it-works">See How It Works</a>
             </div>
 
             <div className="proof-grid" aria-label="Product proof points">
@@ -92,7 +96,7 @@ export default function Home() {
           </div>
 
           <div className="phone-wrap">
-            <div className="phone" aria-label="Rezumate app preview">
+            <div className="phone" aria-label="Illustrative Rezumate app preview">
               <div className="phone-island" aria-hidden="true" />
               <div className="screen">
 
@@ -108,15 +112,14 @@ export default function Home() {
                 </div>
 
                 <div className="score-card">
-                  <div className="score-label">ATS Match Score</div>
+                  <div className="score-label">Example ATS Match Score</div>
                   <div className="sc-main">
                     <span className="sc-big">87<em>/100</em></span>
-                    <span className="sc-gain">+32 pts</span>
                   </div>
                   <div className="progress-track" aria-hidden="true">
                     <div className="progress-fill" style={{ width: "87%" }} />
                   </div>
-                  <div className="sc-from">Improved from 55</div>
+                  <div className="sc-from">Illustrative interface preview</div>
                 </div>
 
                 <div className="screen-section">
@@ -147,6 +150,8 @@ export default function Home() {
           </div>
         </section>
 
+        <ResumeCheck />
+
         <section className="ticker-band" aria-label="Product details">
           <div className="shell ticker-grid">
             <div>
@@ -165,6 +170,37 @@ export default function Home() {
               <span className="ticker-kicker">Privacy</span>
               <strong>No cloud resume upload</strong>
             </div>
+          </div>
+        </section>
+
+        <TestimonialMarquee />
+
+        <section className="band proof-story-band" aria-labelledby="proof-story-heading">
+          <div className="shell">
+            <p className="eyebrow">A transparent example</p>
+            <h2 id="proof-story-heading">Show the gap. Make a truthful change. Export.</h2>
+            <p className="lead">This sample shows the kind of feedback Rezumate gives. The app never adds a skill or outcome without your review.</p>
+            <div className="proof-story-grid">
+              <article className="proof-story-card">
+                <span className="proof-story-step">01 / Compare with the role</span>
+                <h3>Spot the actual gap</h3>
+                <p>The job asks for Docker. The sample resume mentions Python and PostgreSQL, but not Docker. Rezumate marks it for review instead of inserting it automatically.</p>
+                <div className="proof-story-pills"><span>Python · matched</span><span>Docker · review</span></div>
+              </article>
+              <article className="proof-story-card">
+                <span className="proof-story-step">02 / Improve wording</span>
+                <h3>Keep every fact intact</h3>
+                <div className="proof-story-edit"><small>Before</small><p>Worked on backend API development.</p><small>After</small><p>Contributed to backend API development.</p></div>
+                <p>This verb change follows the app’s current local writing rule. It adds no result, metric, or employer.</p>
+              </article>
+              <article className="proof-story-card">
+                <span className="proof-story-step">03 / Finish on iPhone</span>
+                <h3>Review the final PDF</h3>
+                <p>Confirm any skill you really have, inspect the updated score, save a role-specific version, and export a selectable-text PDF on your device.</p>
+                <a href={ctaHref}>See the app on the App Store <span aria-hidden="true">→</span></a>
+              </article>
+            </div>
+            <p className="proof-story-note">Sample content demonstrates the workflow; it is not a customer result or an interview guarantee.</p>
           </div>
         </section>
 

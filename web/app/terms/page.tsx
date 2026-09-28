@@ -1,6 +1,13 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 
 import { SiteChrome } from "../components/SiteChrome";
+
+export const metadata: Metadata = {
+  title: "Terms of Service",
+  description: "Terms for using Rezumate's resume comparison, writing suggestions, and PDF export tools.",
+  alternates: { canonical: "/terms" }
+};
 
 export default function TermsPage() {
   return (

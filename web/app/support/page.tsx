@@ -1,6 +1,13 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 
 import { SiteChrome } from "../components/SiteChrome";
+
+export const metadata: Metadata = {
+  title: "Support",
+  description: "Get help with Rezumate resume analysis, file imports, scoring, and PDF exports.",
+  alternates: { canonical: "/support" }
+};
 
 export default function SupportPage() {
   return (
@@ -8,10 +15,10 @@ export default function SupportPage() {
       <main className="shell legal">
         <Link href="/" className="legal-back">← Back</Link>
         <h1>Support</h1>
-        <p className="legal-meta">Help with Rezumate, account access, and data requests</p>
+        <p className="legal-meta">Help with Rezumate and your resume workflow</p>
         <div className="legal-card">
           <p>
-            Need help with Rezumate, account access, resume analysis, exports, or data deletion? Email us and we will
+            Need help with Rezumate, resume analysis, exports, or local data? Email us and we will
             get back to you as soon as possible.
           </p>
           <a className="legal-email" href="mailto:aftaab@aftaab.dev">Email Support</a>
