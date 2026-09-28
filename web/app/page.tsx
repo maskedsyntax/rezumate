@@ -1,10 +1,20 @@
 import Link from "next/link";
 
+import { Fragment, type CSSProperties } from "react";
+
+import { CostCalculator } from "./components/CostCalculator";
 import { FaqList } from "./components/FaqList";
+import { FeatureBento } from "./components/FeatureBento";
+import { HeroDemo } from "./components/HeroDemo";
+import { HowItWorks } from "./components/HowItWorks";
+import { MobileCtaBar } from "./components/MobileCtaBar";
+import { ProofStory } from "./components/ProofStory";
 import { ResumeCheck } from "./components/ResumeCheck";
+import { RevealHeading } from "./components/RevealHeading";
 import { ScrollReveal } from "./components/ScrollReveal";
 import { featuredFaqItems } from "./components/faq-data";
 import { SiteChrome } from "./components/SiteChrome";
+import { TapeMarquee } from "./components/TapeMarquee";
 import { TestimonialMarquee } from "./components/TestimonialMarquee";
 import { APP_STORE_URL } from "../lib/app-store";
 
@@ -14,18 +24,6 @@ const proofStats = [
   ["100% local", "Resume parsing, scoring, keyword checks, rewrites, history, and PDF export run on your iPhone."],
   ["Truthful improvements", "Weak wording is strengthened without adding skills, metrics, or achievements that are not already in your resume."],
   ["No account", "Open the app, upload a resume, paste a job description, and start tailoring."]
-];
-
-const features = [
-  ["ATS match score", "A role-specific score built from keyword coverage, impact quality, structure, readability, and formatting risk."],
-  ["Full score diagnosis", "Pro users can open each score component and see why it matters, what is missing, and what to fix next."],
-  ["Missing keyword detection", "Rezumate extracts skills, tools, frameworks, and role terms from the job description and compares them with your resume."],
-  ["Bullet strengthening", "Weak bullets receive conservative wording improvements based only on content already present in your resume."],
-  ["Resume improvement engine", "One tap strengthens supported wording, refreshes the score, and saves the improved variant without inventing qualifications."],
-  ["LaTeX-style PDF export", "Export a clean ATS-safe PDF with centered header, section rules, tabular experience entries, and selectable text."],
-  ["Private local history", "Saved resume variants and scoring history stay inside local sandboxed storage on your device."],
-  ["Free daily usage", "Start with 3 analyses/day, 3 improvements/day, 2 saved variants, and PDF export included."],
-  ["Unlimited Pro unlock", "Pay once for unlimited analyses, improvements, variants, full diagnosis, and complete keyword insights."]
 ];
 
 const guideSteps = [
@@ -53,6 +51,15 @@ const proFeatures = [
   "No subscription, no credit packs, no account requirement"
 ];
 
+const heroWords: [string, boolean][] = [
+  ["Tailor", false],
+  ["every", true],
+  ["resume", true],
+  ["before", false],
+  ["you", false],
+  ["apply.", false]
+];
+
 const freeFeatures = [
   "3 analyses per day",
   "3 improvements per day",
@@ -65,27 +72,46 @@ export default function Home() {
   return (
     <SiteChrome>
       <main>
-        <section className="shell hero">
-          <div className="hero-left">
-            <div className="eyebrow">Private resume tailoring on iPhone</div>
-            <h1>Tailor every resume before you apply.</h1>
-            <p className="lead">
-              Rezumate is the private iPhone resume optimizer that scores your resume against a job description,
-              identifies missing keywords and weak bullets, then exports a polished ATS-safe PDF.
-            </p>
-            <div className="actions">
-              <a className="button" href="#free-check">Check your resume free</a>
-              <a className="button secondary" href={ctaHref}>Download on the App Store</a>
-            </div>
-            <p className="hero-assurance">Browser preview: no account, no resume upload, no payment.</p>
+        <div className="hero-wrap">
+          <section className="shell hero">
+            <div className="hero-left">
+              <div className="eyebrow">Private resume tailoring on iPhone</div>
+              <h1 className="hero-title">
+                {heroWords.map(([word, highlighted], index) => (
+                  <Fragment key={word}>
+                    <span className="hw">
+                      <span className={`hw-inner${highlighted ? " hl" : ""}`} style={{ "--i": index } as CSSProperties}>{word}</span>
+                    </span>
+                    {index < heroWords.length - 1 ? " " : ""}
+                  </Fragment>
+                ))}
+              </h1>
+              <p className="lead">
+                Rezumate is the private iPhone resume optimizer that scores your resume against a job description,
+                identifies missing keywords and weak bullets, then exports a polished ATS-safe PDF.
+              </p>
+              <div className="actions">
+                <a className="button button-shine" href="#free-check">Check your resume free</a>
+                <a className="button secondary" href={ctaHref}>Download on the App Store</a>
+              </div>
+              <ul className="hero-assurance" aria-label="Browser preview">
+                <li>No account</li>
+                <li>No resume upload</li>
+                <li>No payment</li>
+              </ul>
 
-            <div className="offer-strip" aria-label="Lifetime pricing">
-              <span className="offer-label">Lifetime Pro</span>
-              <strong>$14.99</strong>
-              <span className="offer-note">One-time purchase. Localized App Store pricing may vary.</span>
+              <div className="offer-strip" aria-label="Lifetime pricing">
+                <span className="offer-label">Lifetime Pro</span>
+                <strong>$14.99</strong>
+                <span className="offer-note">One-time purchase. Localized App Store pricing may vary.</span>
+              </div>
             </div>
 
-            <div className="proof-grid" aria-label="Product proof points">
+            <div className="phone-wrap">
+              <HeroDemo />
+            </div>
+
+            <div className="proof-grid hero-proof" aria-label="Product proof points">
               {proofStats.map(([value, label]) => (
                 <div className="proof-tile" key={value}>
                   <strong>{value}</strong>
@@ -93,165 +119,26 @@ export default function Home() {
                 </div>
               ))}
             </div>
-          </div>
-
-          <div className="phone-wrap">
-            <div className="phone" aria-label="Illustrative Rezumate app preview">
-              <div className="phone-island" aria-hidden="true" />
-              <div className="screen">
-
-                <div className="app-header">
-                  <div className="app-header-left">
-                    <img src="/rezumate-logo.svg" alt="" className="app-logo" />
-                    <div>
-                      <strong>Rezumate</strong>
-                      <span>Results</span>
-                    </div>
-                  </div>
-                  <span className="app-badge optimized-badge">✓ Optimized</span>
-                </div>
-
-                <div className="score-card">
-                  <div className="score-label">Example ATS Match Score</div>
-                  <div className="sc-main">
-                    <span className="sc-big">87<em>/100</em></span>
-                  </div>
-                  <div className="progress-track" aria-hidden="true">
-                    <div className="progress-fill" style={{ width: "87%" }} />
-                  </div>
-                  <div className="sc-from">Illustrative interface preview</div>
-                </div>
-
-                <div className="screen-section">
-                  <div className="section-label">Missing keyword recommendations</div>
-                  <div className="chips" style={{ marginTop: "5px" }}>
-                    <span className="chip chip-added">Docker</span>
-                    <span className="chip chip-added">Kubernetes</span>
-                    <span className="chip chip-added">TypeScript</span>
-                    <span className="chip chip-added">CI/CD</span>
-                  </div>
-                </div>
-
-                <div className="bullet-improve-card">
-                  <div className="bi-tag">✦ Bullet strengthened</div>
-                  <p className="bi-text">
-                    Contributed to backend API development using the tools and
-                    experience already documented in the resume
-                  </p>
-                </div>
-
-                <div className="screen-export-btn">
-                  View &amp; Download LaTeX PDF
-                </div>
-
-                <div className="phone-home-indicator" aria-hidden="true" />
-              </div>
-            </div>
-          </div>
-        </section>
+          </section>
+        </div>
 
         <ResumeCheck />
 
-        <section className="ticker-band" aria-label="Product details">
-          <div className="shell ticker-grid">
-            <div>
-              <span className="ticker-kicker">Lifetime Pro</span>
-              <strong>$14.99 one-time</strong>
-            </div>
-            <div>
-              <span className="ticker-kicker">Suggestions</span>
-              <strong>No invented claims</strong>
-            </div>
-            <div>
-              <span className="ticker-kicker">Billing</span>
-              <strong>Pay once</strong>
-            </div>
-            <div>
-              <span className="ticker-kicker">Privacy</span>
-              <strong>No cloud resume upload</strong>
-            </div>
-          </div>
-        </section>
+        <TapeMarquee />
 
         <TestimonialMarquee />
 
-        <section className="band proof-story-band" aria-labelledby="proof-story-heading">
-          <div className="shell">
-            <p className="eyebrow">A transparent example</p>
-            <h2 id="proof-story-heading">Show the gap. Make a truthful change. Export.</h2>
-            <p className="lead">This sample shows the kind of feedback Rezumate gives. The app never adds a skill or outcome without your review.</p>
-            <div className="proof-story-grid">
-              <article className="proof-story-card">
-                <span className="proof-story-step">01 / Compare with the role</span>
-                <h3>Spot the actual gap</h3>
-                <p>The job asks for Docker. The sample resume mentions Python and PostgreSQL, but not Docker. Rezumate marks it for review instead of inserting it automatically.</p>
-                <div className="proof-story-pills"><span>Python · matched</span><span>Docker · review</span></div>
-              </article>
-              <article className="proof-story-card">
-                <span className="proof-story-step">02 / Improve wording</span>
-                <h3>Keep every fact intact</h3>
-                <div className="proof-story-edit"><small>Before</small><p>Worked on backend API development.</p><small>After</small><p>Contributed to backend API development.</p></div>
-                <p>This verb change follows the app’s current local writing rule. It adds no result, metric, or employer.</p>
-              </article>
-              <article className="proof-story-card">
-                <span className="proof-story-step">03 / Finish on iPhone</span>
-                <h3>Review the final PDF</h3>
-                <p>Confirm any skill you really have, inspect the updated score, save a role-specific version, and export a selectable-text PDF on your device.</p>
-                <a href={ctaHref}>See the app on the App Store <span aria-hidden="true">→</span></a>
-              </article>
-            </div>
-            <p className="proof-story-note">Sample content demonstrates the workflow; it is not a customer result or an interview guarantee.</p>
-          </div>
-        </section>
+        <ProofStory ctaHref={ctaHref} />
 
-        <section id="how-it-works" className="band guide-band">
-          <div className="shell split-section">
-            <ScrollReveal>
-              <p className="eyebrow">How to use Rezumate</p>
-              <h2>A practical workflow for every job application.</h2>
-              <p className="lead faq-lead">
-                Rezumate is not another template gallery. It is built around the exact sequence job seekers repeat:
-                compare the resume to the job, close the gaps, and export a version ready to submit.
-              </p>
-              <a className="button" href={ctaHref}>Download on the App Store</a>
-            </ScrollReveal>
-            <ScrollReveal stagger className="guide-list">
-              {guideSteps.map(([title, copy], index) => (
-                <article className="guide-item" key={title}>
-                  <span>{String(index + 1).padStart(2, "0")}</span>
-                  <div>
-                    <h3>{title}</h3>
-                    <p>{copy}</p>
-                  </div>
-                </article>
-              ))}
-            </ScrollReveal>
-          </div>
-        </section>
+        <HowItWorks steps={guideSteps} ctaHref={ctaHref} />
 
-        <section id="features" className="band">
-          <div className="shell">
-            <ScrollReveal>
-              <p className="eyebrow">What the app includes</p>
-              <h2>Everything shown in the app, built into one local resume workspace.</h2>
-            </ScrollReveal>
-            <ScrollReveal stagger className="grid">
-              {features.map(([title, copy], index) => (
-                <article className="card" key={title}>
-                  <span className="card-index">{String(index + 1).padStart(2, "0")}</span>
-                  <h3>{title}</h3>
-                  <p>{copy}</p>
-                </article>
-              ))}
-            </ScrollReveal>
-          </div>
-        </section>
+        <FeatureBento />
 
         <section className="band comparison-band">
           <div className="shell">
             <ScrollReveal>
               <p className="eyebrow">Why one-time pricing works</p>
-              <h2>No monthly resume tax. No cloud AI meter.</h2>
+              <RevealHeading>No monthly resume tax. No cloud AI meter.</RevealHeading>
               <p className="lead faq-lead">
                 Most tools charge every month because the product runs on rented servers. Rezumate runs locally,
                 so Pro can be a one-time unlock instead of a subscription.
@@ -272,6 +159,9 @@ export default function Home() {
                 ))}
               </div>
             </ScrollReveal>
+            <ScrollReveal delay={120}>
+              <CostCalculator />
+            </ScrollReveal>
           </div>
         </section>
 
@@ -279,7 +169,7 @@ export default function Home() {
           <div className="shell">
             <ScrollReveal>
               <p className="eyebrow">Simple lifetime pricing</p>
-              <h2>Get the lifetime Pro unlock for $14.99.</h2>
+              <RevealHeading>Get the lifetime Pro unlock for $14.99.</RevealHeading>
               <p className="lead faq-lead">
                 Pay once with no subscription or credit packs. Localized App Store pricing may vary.
               </p>
@@ -300,9 +190,16 @@ export default function Home() {
               </article>
 
               <article className="pricing-card pricing-card-pro">
+                <svg className="price-stamp" viewBox="0 0 120 120" aria-hidden="true">
+                  <defs>
+                    <path id="stamp-circle" d="M60,60 m-44,0 a44,44 0 1,1 88,0 a44,44 0 1,1 -88,0" />
+                  </defs>
+                  <circle cx="60" cy="60" r="58" />
+                  <text><textPath href="#stamp-circle" textLength="274" lengthAdjust="spacing">PAY ONCE ✦ OWN IT ✦ PAY ONCE ✦ OWN IT ✦</textPath></text>
+                  <text className="price-stamp-center" x="60" y="68" textAnchor="middle">✦</text>
+                </svg>
                 <div className="pricing-card-head">
                   <h3>Pro lifetime</h3>
-                  <span className="pricing-badge">Pay once</span>
                 </div>
                 <div className="price-stack">
                   <strong className="pricing-price">$14.99</strong>
@@ -314,17 +211,24 @@ export default function Home() {
                     <li key={feature}>{feature}</li>
                   ))}
                 </ul>
-                <a className="button pricing-cta" href={ctaHref}>Get Rezumate Pro</a>
+                <a className="button button-shine pricing-cta" href={ctaHref}>Get Rezumate Pro</a>
               </article>
             </ScrollReveal>
           </div>
         </section>
 
         <section className="final-cta">
+          <div className="final-cta-backdrop" aria-hidden="true">
+            <div className="final-cta-track">
+              {[0, 1].map((copy) => (
+                <span key={copy}>Upload ✦ Analyze ✦ Improve ✦ Export ✦&nbsp;</span>
+              ))}
+            </div>
+          </div>
           <div className="shell final-cta-inner">
             <div>
               <p className="eyebrow">Before you apply again</p>
-              <h2>Run the resume through Rezumate first.</h2>
+              <RevealHeading>Run the resume through Rezumate first.</RevealHeading>
               <p className="lead">
                 A generic resume can miss the exact words recruiters search for. Rezumate is available now, so you can tailor
                 every application locally on your iPhone before you submit it.
@@ -338,7 +242,7 @@ export default function Home() {
           <div className="shell">
             <ScrollReveal>
               <p className="eyebrow">FAQ</p>
-              <h2>Questions about Rezumate</h2>
+              <RevealHeading>Questions about Rezumate</RevealHeading>
               <p className="lead faq-lead">
                 Rezumate is built for one workflow: upload, analyze, improve, and export,
                 without compromising your privacy, showing ads, or uploading your CV to a cloud server.
@@ -355,6 +259,7 @@ export default function Home() {
           </div>
         </section>
       </main>
+      <MobileCtaBar ctaHref={ctaHref} />
     </SiteChrome>
   );
 }

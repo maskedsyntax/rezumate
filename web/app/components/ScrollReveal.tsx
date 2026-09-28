@@ -7,9 +7,10 @@ type Props = {
   className?: string;
   stagger?: boolean;
   delay?: number;
+  variant?: 'up' | 'pop' | 'tilt';
 };
 
-export function ScrollReveal({ children, className = '', stagger = false, delay = 0 }: Props) {
+export function ScrollReveal({ children, className = '', stagger = false, delay = 0, variant = 'up' }: Props) {
   const ref = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -28,7 +29,7 @@ export function ScrollReveal({ children, className = '', stagger = false, delay 
     return () => observer.disconnect();
   }, []);
 
-  const classes = ['reveal', stagger && 'reveal-stagger', className]
+  const classes = ['reveal', `reveal-${variant}`, stagger && 'reveal-stagger', className]
     .filter(Boolean)
     .join(' ');
 

@@ -1,3 +1,5 @@
+import { RevealHeading } from "./RevealHeading";
+
 const testimonials = [
   {
     name: "Colin",
@@ -42,7 +44,7 @@ export function TestimonialMarquee() {
       <div className="shell testimonial-heading">
         <div>
           <p className="eyebrow">User feedback</p>
-          <h2 id="testimonial-heading">What Rezumate users say.</h2>
+          <RevealHeading id="testimonial-heading">What Rezumate users say.</RevealHeading>
         </div>
       </div>
       <div className="testimonial-viewport">
@@ -51,7 +53,8 @@ export function TestimonialMarquee() {
             <div className="testimonial-set" key={copy} aria-hidden={copy === 1}>
               {testimonials.map(({ name, role, quote }) => (
                 <figure className="testimonial-card" key={`${copy}-${name}`}>
-                  <blockquote>“{quote}”</blockquote>
+                  <span className="testimonial-mark" aria-hidden="true">“</span>
+                  <blockquote>{quote}</blockquote>
                   <figcaption><strong>{name}</strong><span>{role}</span></figcaption>
                 </figure>
               ))}

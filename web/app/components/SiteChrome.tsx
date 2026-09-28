@@ -2,6 +2,7 @@ import Link from "next/link";
 import type { ReactNode } from "react";
 
 import { APP_STORE_URL } from "../../lib/app-store";
+import { ScrollProgress } from "./ScrollProgress";
 import { ScrollTopButton } from "./ScrollTopButton";
 
 type Props = {
@@ -18,19 +19,22 @@ export function SiteChrome({ children }: Props) {
           <a href={APP_STORE_URL}>Download now <span aria-hidden="true">→</span></a>
         </div>
       </aside>
-      <header className="shell nav">
-        <Link href="/" className="brand">
-          <img src="/rezumate-logo.svg" alt="" className="brand-logo" />
-          Rezumate
-        </Link>
-        <nav className="navlinks">
-          <Link href="/#free-check">Free checker</Link>
-          <a href="/#how-it-works">How it works</a>
-          <a href="/#features">Features</a>
-          <a href="/#pricing">Pricing</a>
-          <a href="/#faq">FAQ</a>
-          <a className="nav-cta" href={APP_STORE_URL}>Get the App</a>
-        </nav>
+      <header className="site-header">
+        <div className="shell nav">
+          <Link href="/" className="brand">
+            <img src="/rezumate-logo.svg" alt="" className="brand-logo" />
+            Rezumate
+          </Link>
+          <nav className="navlinks">
+            <Link className="navlink" href="/#free-check">Free checker</Link>
+            <a className="navlink" href="/#how-it-works">How it works</a>
+            <a className="navlink" href="/#features">Features</a>
+            <a className="navlink" href="/#pricing">Pricing</a>
+            <a className="navlink" href="/#faq">FAQ</a>
+            <a className="nav-cta" href={APP_STORE_URL}>Get the App</a>
+          </nav>
+        </div>
+        <ScrollProgress />
       </header>
 
       {children}
