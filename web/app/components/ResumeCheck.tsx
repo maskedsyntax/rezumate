@@ -117,17 +117,18 @@ export function ResumeCheck() {
         {result && (
           <div className="check-result" role="region" aria-label="Resume match preview" aria-live="polite">
             <div className="check-result-top">
-              <div className="check-score"><strong>{result.score}<small>/100</small></strong><span>ATS-style match preview</span></div>
+              <div className="check-score"><strong>{result.score ?? "—"}{result.score !== null && <small>/100</small>}</strong><span>{result.score === null ? "Limited match preview" : "ATS-style match preview"}</span></div>
               <div><p className="eyebrow">Your result{isSample ? " · sample" : ""}</p><h3>Here’s what the comparison found.</h3><p>This is a rule-based guide, not a prediction of any employer’s screening decision.</p></div>
             </div>
-            <div className="check-score-grid">
+            {result.coverageWarning && <p className="check-coverage-warning">{result.coverageWarning}</p>}
+            {result.score !== null && <div className="check-score-grid">
               {scoreAreas.map(({ key, label, weight }) => (
                 <div className="check-score-area" key={key}>
                   <div><strong>{label}</strong><span>{String(result[key])}/100 · {weight} of score</span></div>
                   <div className="check-meter"><span style={{ width: `${result[key]}%` }} /></div>
                 </div>
               ))}
-            </div>
+            </div>}
             <div className="check-findings">
               <div className="check-finding-card">
                 <h4>Matched in your resume</h4>
@@ -148,7 +149,7 @@ export function ResumeCheck() {
               </div>
               <a className="button" href={APP_STORE_URL}>Improve and export in Rezumate</a>
             </div>
-            <p className="check-result-note">The iPhone app lets you review changes, save variants, and export a clean PDF. Its score may differ if the file’s text is extracted differently on iPhone.</p>
+            <p className="check-result-note">The iPhone app lets you review changes, save variants, and export a clean PDF. Its score may differ because its matching rules and file extraction are not identical to this browser preview.</p>
           </div>
         )}
       </div>

@@ -1105,6 +1105,16 @@ h3 {
   margin-top: 26px;
 }
 
+.check-coverage-warning {
+  margin: 20px 0 0;
+  padding: 12px 14px;
+  border: 2px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--yellow);
+  font-size: 13px;
+  font-weight: 600;
+}
+
 .check-finding-card {
   padding: 18px;
   border: 2px solid var(--line);
