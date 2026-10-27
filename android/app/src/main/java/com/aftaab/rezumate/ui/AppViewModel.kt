@@ -109,6 +109,7 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
     private val foregroundObserver = object : DefaultLifecycleObserver {
         override fun onStart(owner: LifecycleOwner) {
             billingClient.retry()
+            refreshUsageSnapshot()
         }
     }
 
@@ -654,6 +655,13 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
+    private fun refreshUsageSnapshot() {
+        viewModelScope.launch {
+            runCatching { usageLimiter.loadSnapshot() }
+                .onSuccess { usage -> _state.update { it.copy(usage = usage) } }
+        }
+    }
+
     private fun pollForRefinedAnalysis(variantId: String) {
         if (_state.value.currentResult?.analysisStatus != "pending") return
         refinementJob?.cancel()
@@ -693,8 +701,13 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
 
 fun RezumateState.toAnalyzeUiState(): AnalyzeUiState = AnalyzeUiState(
     latestScore = latestAnalysis?.score,
-    planName = if (billing.isPro) "Pro Lifetime" else "Free",
+    planName = when {
+        !billing.entitlementLoaded -> "Checking purchase..."
+        billing.isPro -> "Pro Lifetime"
+        else -> "Free"
+    },
     isPro = billing.isPro,
+    entitlementLoaded = billing.entitlementLoaded,
     remainingAnalyses = if (billing.isPro) Int.MAX_VALUE else UsagePolicy.remainingAnalyses(usage),
     remainingImprovements = if (billing.isPro) Int.MAX_VALUE else UsagePolicy.remainingImprovements(usage),
     savedVariantCount = history.size,
@@ -710,6 +723,8 @@ fun RezumateState.toAnalyzeUiState(): AnalyzeUiState = AnalyzeUiState(
     jobDescription = jobDescription,
     isAnalyzing = isAnalyzing,
     canAnalyze = canAnalyze(),
+    canPurchasePro = billing.entitlementLoaded && billing.price != null &&
+        !billing.isPurchasing && !billing.isRestoring,
     isPurchasing = billing.isPurchasing,
     purchaseMessage = billing.message,
     noticeMessage = analyzeNotice,
@@ -750,7 +765,9 @@ fun RezumateState.toResultsUiState(): ResultsUiState? {
         jobTitleMatched = result.jobTitleMatched,
         educationRequirement = result.educationRequirement,
         educationMatched = result.educationMatched,
-        proPriceText = billing.price ?: "$7.99",
+        proPriceText = billing.price,
+        canPurchasePro = billing.entitlementLoaded && billing.price != null &&
+            !billing.isPurchasing && !billing.isRestoring,
         isPurchasing = billing.isPurchasing,
         purchaseMessage = billing.message,
         remainingImprovements = if (billing.isPro) {
@@ -808,10 +825,10 @@ fun RezumateState.toVariantDetailUiState(): VariantDetailUiState? = selectedVari
 }
 
 private fun RezumateState.canAnalyze(): Boolean =
-    billing.isPro || UsagePolicy.remainingAnalyses(usage) > 0
+    billing.entitlementLoaded && (billing.isPro || UsagePolicy.remainingAnalyses(usage) > 0)
 
 private fun RezumateState.canImprove(): Boolean =
-    billing.isPro || UsagePolicy.remainingImprovements(usage) > 0
+    billing.entitlementLoaded && (billing.isPro || UsagePolicy.remainingImprovements(usage) > 0)
 
 private fun mergeBulletIssues(result: AnalyzeResponse): List<ResumeBulletIssueUi> {
     val issues = linkedMapOf<String, MutableList<String>>()

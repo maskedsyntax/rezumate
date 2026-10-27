@@ -101,7 +101,8 @@ data class ResultsUiState(
     val jobTitleMatched: Boolean = false,
     val educationRequirement: String? = null,
     val educationMatched: Boolean = false,
-    val proPriceText: String = "",
+    val proPriceText: String? = null,
+    val canPurchasePro: Boolean = false,
     val isPurchasing: Boolean = false,
     val purchaseMessage: String? = null,
     val remainingImprovements: Int = 3,
@@ -721,7 +722,9 @@ private fun ProInsightsCard(state: ResultsUiState, onUnlockPro: () -> Unit) {
             RezSectionTitle(
                 title = "Unlock full diagnosis",
                 modifier = Modifier.weight(1f),
-                subtitle = "One-time Pro unlock for ${state.proPriceText}. Get every keyword, detailed score reasoning, and unlimited local improvements.",
+                subtitle = state.proPriceText?.let { price ->
+                    "One-time Pro unlock for $price. Get every keyword, detailed score reasoning, and unlimited local improvements."
+                } ?: "Get every keyword, detailed score reasoning, and unlimited local improvements. Price unavailable right now.",
             )
         }
         RezButton(
@@ -732,7 +735,7 @@ private fun ProInsightsCard(state: ResultsUiState, onUnlockPro: () -> Unit) {
                 .padding(top = 12.dp),
             kind = RezButtonKind.Secondary,
             fill = RezColors.Warning,
-            enabled = !state.isPurchasing,
+            enabled = state.canPurchasePro,
             leadingIcon = Icons.Default.AutoAwesome,
         )
         if (state.purchaseMessage != null) {

@@ -1,7 +1,12 @@
 package com.aftaab.rezumate.ui.designsystem
 
-import androidx.compose.ui.draw.clip
 import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.animateDpAsState
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.spring
+import androidx.compose.animation.core.tween
 import androidx.annotation.DrawableRes
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -11,6 +16,7 @@ import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
@@ -33,6 +39,8 @@ import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.selection.selectable
+import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material3.Icon
@@ -48,6 +56,7 @@ import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.PathEffect
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -432,81 +441,128 @@ fun RezTitleBar(
     }
 }
 
-/**
- * Docked tab bar: full-bleed, anchored to the bottom edge with a hairline top divider and
- * the system navigation inset below it. The active tab's glyph and label go ink-black, the
- * rest gray.
- */
 @Composable
 fun RezBottomBar(
     selectedTab: RezMainTab,
     onTabSelected: (RezMainTab) -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    val active = Color(0xFF5946C7)
+    val inactive = Color(0xFF77736B)
+    val selectedIndex = RezMainTab.entries.indexOf(selectedTab)
     val navBottom = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
     Column(
         modifier = modifier
             .fillMaxWidth()
-            .background(Color.White),
+            .background(Color.Transparent)
+            .padding(bottom = navBottom),
     ) {
-        Box(
+        BoxWithConstraints(
             modifier = Modifier
+                .padding(horizontal = 16.dp, vertical = 10.dp)
                 .fillMaxWidth()
-                .height(1.dp)
-                .background(BarDivider),
-        )
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(BarHeight),
-            horizontalArrangement = Arrangement.SpaceEvenly,
-            verticalAlignment = Alignment.CenterVertically,
+                .height(72.dp)
+                .selectableGroup()
+                .padding(horizontal = 10.dp),
         ) {
-            RezMainTab.entries.forEach { tab ->
-                val selected = tab == selectedTab
-                val tint by animateColorAsState(
-                    targetValue = if (selected) BarActive else BarInactive,
-                    label = "tabTint",
-                )
-                Column(
-                    modifier = Modifier
-                        .weight(1f)
-                        .fillMaxHeight()
-                        .clickable(
-                            interactionSource = remember { MutableInteractionSource() },
-                            indication = null,
-                            role = Role.Tab,
-                            onClick = { onTabSelected(tab) },
+            val tabWidth = maxWidth / RezMainTab.entries.size
+            val indicatorWidth = 28.dp
+            val indicatorOffset by animateDpAsState(
+                targetValue = tabWidth * selectedIndex + (tabWidth - indicatorWidth) / 2,
+                animationSpec = tween(
+                    durationMillis = 420,
+                    easing = FastOutSlowInEasing,
+                ),
+                label = "tabIndicatorOffset",
+            )
+
+            Row(
+                modifier = Modifier.fillMaxSize(),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                RezMainTab.entries.forEach { tab ->
+                    val selected = tab == selectedTab
+                    val labelColor by animateColorAsState(
+                        targetValue = if (selected) RezColors.Ink else inactive,
+                        animationSpec = tween(260),
+                        label = "tabTint",
+                    )
+                    val iconColor by animateColorAsState(
+                        targetValue = if (selected) active else inactive,
+                        animationSpec = tween(260),
+                        label = "tabIconColor",
+                    )
+                    val illustrationAlpha by animateFloatAsState(
+                        targetValue = if (selected) 1f else 0.72f,
+                        animationSpec = tween(260),
+                        label = "tabIllustrationAlpha",
+                    )
+                    val illustrationScale by animateFloatAsState(
+                        targetValue = if (selected) 1.18f else 0.94f,
+                        animationSpec = spring(
+                            dampingRatio = Spring.DampingRatioMediumBouncy,
+                            stiffness = Spring.StiffnessLow,
                         ),
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.Center,
-                ) {
-                    Image(
-                        painter = painterResource(tab.illustration),
-                        contentDescription = tab.label,
-                        modifier = Modifier.size(24.dp),
-                        colorFilter = ColorFilter.tint(tint),
+                        label = "tabIllustrationScale",
                     )
-                    Spacer(modifier = Modifier.height(5.dp))
-                    Text(
-                        text = tab.label,
-                        color = tint,
-                        fontSize = 12.sp,
-                        lineHeight = 14.sp,
-                        fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Normal,
-                        maxLines = 1,
+                    val illustrationOffset by animateDpAsState(
+                        targetValue = if (selected) (-4).dp else 0.dp,
+                        animationSpec = spring(
+                            dampingRatio = Spring.DampingRatioMediumBouncy,
+                            stiffness = Spring.StiffnessLow,
+                        ),
+                        label = "tabIllustrationOffset",
                     )
+                    Column(
+                        modifier = Modifier
+                            .weight(1f)
+                            .fillMaxHeight()
+                            .selectable(
+                                selected = selected,
+                                role = Role.Tab,
+                                onClick = { onTabSelected(tab) },
+                            )
+                            .padding(horizontal = 4.dp, vertical = 5.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.Center,
+                    ) {
+                        Image(
+                            painter = painterResource(tab.illustration),
+                            contentDescription = null,
+                            modifier = Modifier
+                                .size(28.dp)
+                                .offset(y = illustrationOffset)
+                                .graphicsLayer {
+                                    alpha = illustrationAlpha
+                                    scaleX = illustrationScale
+                                    scaleY = illustrationScale
+                                },
+                            colorFilter = ColorFilter.tint(iconColor),
+                        )
+                        Spacer(Modifier.height(3.dp))
+                        Text(
+                            text = tab.label,
+                            color = labelColor,
+                            fontSize = 12.sp,
+                            lineHeight = 14.sp,
+                            fontWeight = if (selected) FontWeight.Bold else FontWeight.Medium,
+                            maxLines = 1,
+                        )
+                        Spacer(Modifier.height(6.dp))
+                    }
                 }
             }
+
+            Box(
+                modifier = Modifier
+                    .align(Alignment.BottomStart)
+                    .offset(x = indicatorOffset, y = (-6).dp)
+                    .size(width = indicatorWidth, height = 3.dp)
+                    .background(active, RoundedCornerShape(2.dp)),
+            )
         }
-        Spacer(modifier = Modifier.height(navBottom))
     }
 }
-
-private val BarHeight = 62.dp
-private val BarActive = Color(0xFF0D0D0D)
-private val BarInactive = Color(0xFF939393)
-private val BarDivider = Color(0x14000000)
 
 fun rezScoreColor(score: Int?): Color = when (score ?: 0) {
     in 80..100 -> RezColors.Success

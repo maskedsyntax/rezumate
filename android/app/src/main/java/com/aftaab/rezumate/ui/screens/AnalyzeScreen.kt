@@ -64,6 +64,7 @@ data class AnalyzeUiState(
     val latestScore: Int? = null,
     val planName: String = "Free plan",
     val isPro: Boolean = false,
+    val entitlementLoaded: Boolean = false,
     val remainingAnalyses: Int = 3,
     val remainingImprovements: Int = 3,
     val savedVariantCount: Int = 0,
@@ -75,6 +76,7 @@ data class AnalyzeUiState(
     val jobDescriptionLimit: Int = 5_000,
     val isAnalyzing: Boolean = false,
     val canAnalyze: Boolean = true,
+    val canPurchasePro: Boolean = false,
     val isPurchasing: Boolean = false,
     val purchaseMessage: String? = null,
     val noticeMessage: String? = null,
@@ -464,20 +466,26 @@ private fun AnalyzeActions(state: AnalyzeUiState, callbacks: AnalyzeCallbacks) {
         )
         if (!state.canAnalyze) {
             Text(
-                text = "Free analyses are used for today.",
+                text = if (state.entitlementLoaded) {
+                    "Free analyses are used for today."
+                } else {
+                    "Checking your purchase status..."
+                },
                 color = RezColors.Muted,
                 fontSize = 12.sp,
                 fontWeight = FontWeight.SemiBold,
             )
-            RezButton(
-                text = "Unlock unlimited analyses",
-                onClick = callbacks::onUnlockPro,
-                modifier = Modifier.fillMaxWidth(),
-                kind = RezButtonKind.Secondary,
-                fill = RezColors.Warning,
-                enabled = !state.isPurchasing,
-                leadingIcon = Icons.Default.LockOpen,
-            )
+            if (state.entitlementLoaded && !state.isPro) {
+                RezButton(
+                    text = "Unlock unlimited analyses",
+                    onClick = callbacks::onUnlockPro,
+                    modifier = Modifier.fillMaxWidth(),
+                    kind = RezButtonKind.Secondary,
+                    fill = RezColors.Warning,
+                    enabled = state.canPurchasePro,
+                    leadingIcon = Icons.Default.LockOpen,
+                )
+            }
             if (state.purchaseMessage != null) {
                 Text(
                     text = state.purchaseMessage,
