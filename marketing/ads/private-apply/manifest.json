@@ -1,0 +1,63 @@
+{
+  "campaign": "private-apply",
+  "product": "rezumate",
+  "product_root": "/Users/batman/maskedsyntax/rezumate",
+  "created_at": "2026-09-28T16:11:00Z",
+  "duration_seconds": 30,
+  "format": "vertical",
+  "fps": 30,
+  "strategy": "pain-solution \u2192 contrarian privacy pivot \u2192 transformation",
+  "hero_hook": "pain-solution #1: APPLICATION N\u00ba 38 \u2192 tap Submit \u2192 'Applied. Again.' + rejection pile",
+  "selected_concept": "A. Know before you apply",
+  "status": "rendered",
+  "composition_id": "private-apply",
+  "renders": [
+    {
+      "file": "/Users/batman/maskedsyntax/agent-skills/ad-studio/renders/private-apply/private-apply.mp4",
+      "version": "v6 (final)",
+      "hook": "pain-solution #1",
+      "concept": "A",
+      "duration_seconds": 30,
+      "format": "vertical 1080x1920",
+      "fps": 30,
+      "audio": "synthesized in-house (public/private-apply/synth_audio.py), 120 BPM, drop 8.0s, final hit 27.0s",
+      "repo_copy": "marketing/ads/private-apply/rezumate-promo-30s-vertical.mp4"
+    },
+    {
+      "file": "/Users/batman/maskedsyntax/agent-skills/ad-studio/renders/private-apply/private-apply-4x5.mp4",
+      "repo_copy": "marketing/ads/private-apply/rezumate-promo-30s-4x5.mp4",
+      "composition_id": "private-apply-4x5",
+      "version": "v1",
+      "hook": "pain-solution #1",
+      "concept": "A",
+      "duration_seconds": 30,
+      "format": "portrait 4:5 1080x1350",
+      "fps": 30,
+      "use": "X and Threads feeds",
+      "notes": "Same timeline and audio as the 9:16 cut; each shot's content band is refitted via <Region> (kit.tsx REGIONS)"
+    }
+  ],
+  "variants": [
+    {
+      "id": "hook-privacy-first",
+      "status": "planned",
+      "hook": "contrarian #1: PII chips flying to a cloud as the first frame"
+    },
+    {
+      "id": "hook-result-first",
+      "status": "planned",
+      "hook": "transformation #1: red 58 stamps, smash-cut to green 81"
+    },
+    {
+      "id": "hook-human",
+      "status": "planned",
+      "hook": "pain #5: 'Did a human even read it?'"
+    }
+  ],
+  "assumptions": [
+    "UI is rebuilt from the SwiftUI source (no screen recordings exist); sample resume data is disclosed on the end card",
+    "30s vertical chosen to double as an App Store preview base and a Reels/Shorts/TikTok cut",
+    "Price omitted from the CTA to keep one clear action; 'Free to start' used instead",
+    "Music and SFX are synthesized, no licensing needed"
+  ]
+}
