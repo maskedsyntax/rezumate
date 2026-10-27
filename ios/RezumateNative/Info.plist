@@ -53,6 +53,8 @@
 	<true/>
 	<key>NSDocumentsFolderUsageDescription</key>
 	<string>Rezumate imports your selected resume so it can be analyzed against a job description.</string>
+	<key>RezumateAIBaseURL</key>
+	<string>$(REZUMATE_AI_BASE_URL)</string>
 	<key>UIApplicationSceneManifest</key>
 	<dict>
 		<key>UIApplicationSupportsMultipleScenes</key>

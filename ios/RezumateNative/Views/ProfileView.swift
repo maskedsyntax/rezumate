@@ -3,6 +3,7 @@ import UIKit
 
 struct ProfileView: View {
     @EnvironmentObject private var appState: AppState
+    @State private var isShowingPaywall = false
 
     var body: some View {
         NavigationStack {
@@ -44,7 +45,7 @@ struct ProfileView: View {
                     RezCard {
                         VStack(alignment: .leading, spacing: 12) {
                             SectionTitle("Privacy")
-                            Text("Resume parsing, scoring, suggestions, history, and export run locally on this device.")
+                            Text("Resume parsing, scoring, keyword checks, history, and export run on this device. AI features send only the needed resume text and job description to OpenAI, with your contact details removed, and nothing is stored.")
                                 .font(.caption)
                                 .foregroundStyle(RezTheme.muted)
                         }
@@ -53,7 +54,7 @@ struct ProfileView: View {
                     RezCard {
                         VStack(alignment: .leading, spacing: 14) {
                             HStack {
-                                SectionTitle("Rezumate Pro", subtitle: "Pay once. Optimize unlimited resumes privately on your iPhone.")
+                                SectionTitle("Rezumate Pro", subtitle: "Unlimited resumes, full diagnosis, and AI rewrites.")
                                 Spacer()
                                 RezStatusPill(text: proStatusText, color: appState.isPro ? RezTheme.success : RezTheme.warning)
                             }
@@ -63,11 +64,22 @@ struct ProfileView: View {
                                 PlanFeatureRow(text: "Unlimited resume improvements")
                                 PlanFeatureRow(text: "Unlimited saved variants")
                                 PlanFeatureRow(text: "Full ATS diagnosis and keyword insights")
+                                if appState.isAIConfigured {
+                                    PlanFeatureRow(text: "AI rewrites, Improve Resume, and cover letters")
+                                }
                             }
 
                             Text(proPriceMessage)
                                 .font(.caption.weight(.semibold))
                                 .foregroundStyle(RezTheme.muted)
+                                .fixedSize(horizontal: false, vertical: true)
+
+                            if appState.isAIConfigured, let access = appState.aiAccess {
+                                Text(aiAccessDetail(access))
+                                    .font(.caption.weight(.semibold))
+                                    .foregroundStyle(RezTheme.muted)
+                                    .fixedSize(horizontal: false, vertical: true)
+                            }
 
                             if let purchaseMessage = appState.purchaseMessage {
                                 Text(purchaseMessage)
@@ -75,14 +87,21 @@ struct ProfileView: View {
                                     .foregroundStyle(RezTheme.muted)
                             }
 
-                            if appState.entitlementState == .free {
+                            switch appState.entitlementState {
+                            case .subscription:
+                                Link(destination: URL(string: "https://apps.apple.com/account/subscriptions")!) {
+                                    Label("Manage subscription", systemImage: "gearshape")
+                                }
+                                .buttonStyle(RezSecondaryButtonStyle())
+                            case .free, .lifetime:
                                 Button {
-                                    Task { await appState.purchasePro() }
+                                    isShowingPaywall = true
                                 } label: {
-                                    Label(appState.isPurchasing ? "Unlocking..." : "Unlock Pro", systemImage: "sparkles")
+                                    Label(appState.entitlementState == .lifetime ? "Add AI" : "See Pro plans", systemImage: "sparkles")
                                 }
                                 .buttonStyle(RezPrimaryButtonStyle())
-                                .disabled(!appState.canPurchasePro)
+                            case .loading:
+                                EmptyView()
                             }
 
                             Button {
@@ -124,14 +143,35 @@ struct ProfileView: View {
             }
             .rezScreenBackground()
             .navigationTitle("Profile")
+            .sheet(isPresented: $isShowingPaywall) {
+                ProPaywallSheet()
+            }
         }
+    }
+
+    private func aiAccessDetail(_ access: AIAccess) -> String {
+        var parts: [String] = []
+        if appState.hasSubscription {
+            parts.append("\(access.monthlyRemaining) AI actions left this month")
+        }
+        if access.bonusRemaining > 0 {
+            parts.append("\(access.bonusRemaining) bonus actions from Pro")
+        }
+        if access.trialRemaining > 0 {
+            parts.append("\(access.trialRemaining) free trial actions")
+        }
+        if parts.isEmpty {
+            return appState.hasSubscription ? "Your AI actions are updating." : "No AI actions left. Subscribe to keep using AI."
+        }
+        return parts.joined(separator: " · ")
     }
 
     private var proStatusText: String {
         switch appState.entitlementState {
         case .loading: "CHECKING"
-        case .free: "ONE-TIME"
-        case .pro: "ACTIVE"
+        case .free: "FREE"
+        case .lifetime: "LIFETIME"
+        case .subscription: "ACTIVE"
         }
     }
 
@@ -139,11 +179,13 @@ struct ProfileView: View {
         switch appState.entitlementState {
         case .loading:
             return "Checking your App Store purchase..."
-        case .pro:
-            return "Lifetime Pro is active on this device."
+        case .subscription:
+            return "Rezumate Pro is active."
+        case .lifetime:
+            return "Pro Lifetime is active. AI is part of the Rezumate Pro subscription."
         case .free:
-            if let price = appState.proPriceText {
-                return "One-time purchase: \(price)."
+            if let price = appState.subscriptionPriceText {
+                return "\(price). Cancel anytime."
             }
             return "Price unavailable. Restore Purchase remains available."
         }

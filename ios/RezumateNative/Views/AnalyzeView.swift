@@ -8,6 +8,7 @@ struct AnalyzeView: View {
     @State private var isAnalyzing = false
     @State private var errorMessage: String?
     @State private var resultForSheet: AnalyzeResponse?
+    @State private var isShowingPaywall = false
 
     var body: some View {
         NavigationStack {
@@ -44,6 +45,9 @@ struct AnalyzeView: View {
                     isShowingPicker = false
                     Task { await upload(url: url) }
                 }
+            }
+            .sheet(isPresented: $isShowingPaywall) {
+                ProPaywallSheet()
             }
             .navigationDestination(item: $resultForSheet) { result in
                 ResultsView(result: result)
@@ -354,12 +358,11 @@ struct AnalyzeView: View {
 
                 if appState.entitlementState == .free {
                     Button {
-                        Task { await appState.purchasePro() }
+                        isShowingPaywall = true
                     } label: {
                         Label("Unlock unlimited analyses", systemImage: "lock.open")
                     }
                     .buttonStyle(RezSecondaryButtonStyle(fill: RezTheme.warning))
-                    .disabled(!appState.canPurchasePro)
                 }
 
                 if let purchaseMessage = appState.purchaseMessage {
@@ -393,7 +396,7 @@ struct AnalyzeView: View {
         guard let token = appState.token, let upload = appState.upload else { return }
         guard appState.canAnalyze else {
             errorMessage = appState.entitlementsLoaded
-                ? "Free analyses are used for today. Unlock Pro once for unlimited analyses."
+                ? "Free analyses are used for today. Rezumate Pro includes unlimited analyses."
                 : "Rezumate is still checking your App Store purchase. Try again in a moment."
             return
         }
@@ -425,7 +428,8 @@ struct AnalyzeView: View {
         switch appState.entitlementState {
         case .loading: "Verifying your App Store entitlement."
         case .free: "3 analyses/day, 3 improvements/day, 2 saved variants."
-        case .pro: "Unlimited analyses, improvements, and saved variants."
+        case .lifetime: "Unlimited analyses, improvements, and saved variants."
+        case .subscription: "Unlimited analyses, improvements, saved variants, and AI."
         }
     }
 
@@ -433,7 +437,7 @@ struct AnalyzeView: View {
         switch appState.entitlementState {
         case .loading: "CHECKING"
         case .free: "FREE"
-        case .pro: "PRO"
+        case .lifetime, .subscription: "PRO"
         }
     }
 }

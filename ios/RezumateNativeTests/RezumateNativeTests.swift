@@ -503,30 +503,54 @@ final class TailoringAPITests: XCTestCase {
 
 @MainActor
 final class AppStateStoreKitTests: XCTestCase {
-    func testEntitlementRefreshTransitionsFromLoadingToFreeAndPro() async {
+    func testEntitlementRefreshTransitionsFromLoadingToFreeAndLifetime() async {
         let store = FakeStoreKitService()
         let state = AppState(storeKit: store, automaticallyRefresh: false)
 
         XCTAssertEqual(state.entitlementState, .loading)
         await state.refreshProductsAndEntitlements()
         XCTAssertEqual(state.entitlementState, .free)
-        XCTAssertEqual(state.proPriceText, "$14.99")
+        XCTAssertFalse(state.isPro)
+        XCTAssertEqual(state.subscriptionPriceText, "$4.99/year or $4.99/month")
 
-        store.hasPro = true
+        store.owned.insert(AppState.lifetimeProductId)
         await state.refreshProductsAndEntitlements()
-        XCTAssertEqual(state.entitlementState, .pro)
+        XCTAssertEqual(state.entitlementState, .lifetime)
+        XCTAssertTrue(state.isPro)
+        XCTAssertFalse(state.hasSubscription)
     }
 
-    func testSuccessfulPurchaseRefreshesEntitlement() async {
+    func testSubscriptionUnlocksProFeatures() async {
+        let store = FakeStoreKitService()
+        store.owned.insert(AppState.monthlyProductId)
+        let state = AppState(storeKit: store, automaticallyRefresh: false)
+        await state.refreshProductsAndEntitlements()
+
+        XCTAssertEqual(state.entitlementState, .subscription)
+        XCTAssertTrue(state.isPro)
+        XCTAssertEqual(state.remainingAnalyses, Int.max)
+        XCTAssertTrue(state.canSaveNewVariant)
+    }
+
+    func testSubscriptionWinsOverLifetime() async {
+        let store = FakeStoreKitService()
+        store.owned = [AppState.lifetimeProductId, AppState.yearlyProductId]
+        let state = AppState(storeKit: store, automaticallyRefresh: false)
+        await state.refreshProductsAndEntitlements()
+
+        XCTAssertEqual(state.entitlementState, .subscription)
+    }
+
+    func testSuccessfulSubscriptionPurchaseRefreshesEntitlement() async {
         let store = FakeStoreKitService()
         store.purchaseOutcome = .purchased
         let state = AppState(storeKit: store, automaticallyRefresh: false)
         await state.refreshProductsAndEntitlements()
 
-        await state.purchasePro()
+        await state.purchaseSubscription(AppState.yearlyProductId)
 
-        XCTAssertEqual(state.entitlementState, .pro)
-        XCTAssertEqual(state.purchaseMessage, "Rezumate Pro unlocked.")
+        XCTAssertEqual(state.entitlementState, .subscription)
+        XCTAssertEqual(state.purchaseMessage, "Rezumate Pro is active.")
         XCTAssertFalse(state.isPurchasing)
     }
 
@@ -536,7 +560,7 @@ final class AppStateStoreKitTests: XCTestCase {
         let state = AppState(storeKit: store, automaticallyRefresh: false)
         await state.refreshProductsAndEntitlements()
 
-        await state.purchasePro()
+        await state.purchaseSubscription(AppState.monthlyProductId)
 
         XCTAssertEqual(state.entitlementState, .free)
         XCTAssertEqual(state.purchaseMessage, "Purchase pending approval.")
@@ -544,8 +568,8 @@ final class AppStateStoreKitTests: XCTestCase {
 }
 
 private final class FakeStoreKitService: StoreKitServing {
-    var listing: StoreProductListing? = StoreProductListing(displayPrice: "$14.99")
-    var hasPro = false
+    var listing: StoreProductListing? = StoreProductListing(displayPrice: "$4.99")
+    var owned: Set<String> = []
     var purchaseOutcome: StorePurchaseOutcome = .cancelled
 
     func productListing(for productID: String) async throws -> StoreProductListing? {
@@ -553,17 +577,21 @@ private final class FakeStoreKitService: StoreKitServing {
     }
 
     func hasActiveEntitlement(for productID: String) async -> Bool {
-        hasPro
+        owned.contains(productID)
     }
 
     func purchase(productID: String) async throws -> StorePurchaseOutcome {
-        if purchaseOutcome == .purchased { hasPro = true }
+        if purchaseOutcome == .purchased { owned.insert(productID) }
         return purchaseOutcome
     }
 
     func sync() async throws {}
 
-    func transactionUpdates(for productID: String) -> AsyncStream<Bool> {
+    func transactionUpdates() -> AsyncStream<Void> {
         AsyncStream { _ in }
+    }
+
+    func currentTransactionIDs() async -> [String] {
+        owned.isEmpty ? [] : ["1000"]
     }
 }

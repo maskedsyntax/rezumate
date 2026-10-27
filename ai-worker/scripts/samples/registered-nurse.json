@@ -1,0 +1,21 @@
+{
+  "name": "Registered nurse \u2192 ICU nurse",
+  "jobTitle": "ICU Registered Nurse",
+  "resume": "[NAME], RN\n[EMAIL] | [PHONE]\n\nEXPERIENCE\nRiverside General Hospital, Registered Nurse, Medical-Surgical Unit  2020 - Present\n- Responsible for patient care for 5-6 patients per shift\n- Helped train new nurses on the unit's charting system (Epic)\n- Took part in the unit's fall prevention project\n- Gave medications and monitored patients after surgery\n\nOakview Clinic, Nursing Assistant  2018 - 2020\n- Took vital signs and helped patients with daily activities\n\nLICENSES AND CERTIFICATIONS\nRegistered Nurse (RN), BLS, ACLS\n\nEDUCATION\nBSN, Coastal University, 2020",
+  "jobDescription": "St. Marion Medical Center seeks an ICU Registered Nurse for our 24-bed adult intensive care unit.\n\nResponsibilities:\n- Provide care for critically ill patients with a 1:2 nurse-to-patient ratio\n- Manage ventilators, arterial lines, and titrated drips\n- Collaborate with intensivists, respiratory therapists, and pharmacists\n- Document care accurately in Epic\n\nRequirements:\n- Active RN license\n- BLS and ACLS required; CCRN preferred\n- 2+ years of acute care experience\n- Experience with telemetry or step-down units preferred",
+  "rewriteBullets": [
+    "Responsible for patient care for 5-6 patients per shift",
+    "Helped train new nurses on the unit's charting system (Epic)"
+  ],
+  "weakBullets": [
+    "Responsible for patient care for 5-6 patients per shift",
+    "Helped train new nurses on the unit's charting system (Epic)",
+    "Took part in the unit's fall prevention project",
+    "Gave medications and monitored patients after surgery"
+  ],
+  "detailAnswers": [
+    "Built a short Epic charting checklist for new hires",
+    "Trained 9 new nurses in 2024",
+    "Charting errors on audits dropped noticeably"
+  ]
+}

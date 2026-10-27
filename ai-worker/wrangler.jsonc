@@ -1,0 +1,42 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "rezumate-ai",
+  "main": "src/index.ts",
+  "compatibility_date": "2026-10-23",
+  "compatibility_flags": ["nodejs_compat"],
+  "workers_dev": true,
+  "preview_urls": false,
+  "observability": {
+    "enabled": true,
+    "logs": { "enabled": true, "head_sampling_rate": 1 },
+    "traces": { "enabled": true, "head_sampling_rate": 0.05 }
+  },
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "rezumate-ai",
+      // Replace with the id printed by `wrangler d1 create rezumate-ai`.
+      "database_id": "afe1ee45-4ad2-49b5-af7d-ff0698eddc63",
+      "migrations_dir": "migrations"
+    }
+  ],
+  // Non-secret settings. Secrets (OPENAI_API_KEY, SESSION_SECRET, APPLE_* keys) are set
+  // with `wrangler secret put`; see README.md.
+  "vars": {
+    // Rewrites, Improve Resume and cover letters.
+    "OPENAI_WRITING_MODEL": "gpt-6.1-sol",
+    "OPENAI_WRITING_EFFORT": "low",
+    // Reading requirements out of job descriptions.
+    "OPENAI_EXTRACT_MODEL": "gpt-6-luna",
+    "OPENAI_EXTRACT_EFFORT": "none",
+    "BUNDLE_ID": "com.aftaab.rezumate",
+    "PRO_PRODUCT_ID": "rezumate_pro_lifetime",
+    "SUBSCRIPTION_PRODUCT_IDS": "rezumate_ai_monthly,rezumate_ai_yearly",
+    "TRIAL_ACTIONS": "3",
+    "PRO_BONUS_ACTIONS": "25",
+    "SUBSCRIPTION_MONTHLY_CAP": "300",
+    "DAILY_REQUEST_LIMIT": "100",
+    // "production" on release builds, "development" for Xcode debug builds, "off" for the simulator.
+    "DEVICECHECK_MODE": "production"
+  }
+}

@@ -4,12 +4,19 @@ import Foundation
 enum EntitlementState: Equatable {
     case loading
     case free
-    case pro
+    /// Bought the old one-time unlock. No longer sold; kept for existing buyers.
+    case lifetime
+    /// Active Rezumate Pro subscription: everything lifetime unlocks, plus AI.
+    case subscription
 }
 
 @MainActor
 final class AppState: ObservableObject {
-    static let proProductId = "rezumate_pro_lifetime"
+    static let lifetimeProductId = "rezumate_pro_lifetime"
+    static let monthlyProductId = "rezumate_ai_monthly"
+    static let yearlyProductId = "rezumate_ai_yearly"
+    static let subscriptionProductIds = [monthlyProductId, yearlyProductId]
+    private static let aiConsentKey = "rezumate.ai.consent"
 
     @Published var session: AuthSession? {
         didSet {
@@ -27,23 +34,39 @@ final class AppState: ObservableObject {
     @Published var selectedVariant: VariantDetail?
     @Published var usageSnapshot = UsageLimiter.loadSnapshot()
     @Published private(set) var entitlementState: EntitlementState = .loading
-    @Published private(set) var proProductListing: StoreProductListing?
     @Published var purchaseMessage: String?
     @Published var isPurchasing = false
     @Published var isRestoring = false
+    @Published private(set) var aiAccess: AIAccess?
+    @Published private(set) var subscriptionListings: [String: StoreProductListing] = [:]
+    /// "Also mentioned in this job" terms by variant id, so each analysis asks the AI once.
+    var aiRequirementsCache: [UUID: [String]] = [:]
+    @Published var aiConsentGiven: Bool {
+        didSet { UserDefaults.standard.set(aiConsentGiven, forKey: Self.aiConsentKey) }
+    }
 
     let api = APIClient()
+    let ai: AIRewriteService
+    private let aiClient: AIClient
     private let storeKit: any StoreKitServing
     private var transactionUpdatesTask: Task<Void, Never>?
 
-    init(storeKit: any StoreKitServing = AppStoreKitService(), automaticallyRefresh: Bool = true) {
+    init(
+        storeKit: any StoreKitServing = AppStoreKitService(),
+        aiClient: AIClient = .shared,
+        automaticallyRefresh: Bool = true
+    ) {
         self.storeKit = storeKit
+        self.aiClient = aiClient
+        self.ai = AIRewriteService(client: aiClient)
+        self.aiConsentGiven = UserDefaults.standard.bool(forKey: Self.aiConsentKey)
         let token = KeychainSessionStore.loadToken() ?? "local-session-token"
         session = AuthSession(token: token, user: nil)
         transactionUpdatesTask = observeTransactionUpdates()
         if automaticallyRefresh {
             Task {
                 await refreshProductsAndEntitlements()
+                await refreshAI()
             }
         }
     }
@@ -53,23 +76,30 @@ final class AppState: ObservableObject {
     }
 
     var token: String? { session?.token }
-    var isPro: Bool { entitlementState == .pro }
+    var isPro: Bool { entitlementState == .lifetime || entitlementState == .subscription }
+    var hasSubscription: Bool { entitlementState == .subscription }
     var entitlementsLoaded: Bool { entitlementState != .loading }
 
     var planName: String {
         switch entitlementState {
         case .loading: "Checking purchase..."
         case .free: "Free"
-        case .pro: "Pro Lifetime"
+        case .lifetime: "Pro Lifetime"
+        case .subscription: "Rezumate Pro"
         }
     }
 
-    var proPriceText: String? { proProductListing?.displayPrice }
-    var canPurchasePro: Bool {
-        entitlementState == .free
-            && proProductListing != nil
-            && !isPurchasing
-            && !isRestoring
+    var monthlyPriceText: String? { subscriptionListings[Self.monthlyProductId]?.displayPrice }
+    var yearlyPriceText: String? { subscriptionListings[Self.yearlyProductId]?.displayPrice }
+
+    /// Short price line for upsell copy, e.g. "$29.99/year or $4.99/month".
+    var subscriptionPriceText: String? {
+        switch (yearlyPriceText, monthlyPriceText) {
+        case let (yearly?, monthly?): "\(yearly)/year or \(monthly)/month"
+        case let (yearly?, nil): "\(yearly)/year"
+        case let (nil, monthly?): "\(monthly)/month"
+        case (nil, nil): nil
+        }
     }
 
     var remainingAnalyses: Int {
@@ -117,45 +147,66 @@ final class AppState: ObservableObject {
     }
 
     func refreshProductsAndEntitlements() async {
-        do {
-            proProductListing = try await storeKit.productListing(for: Self.proProductId)
-            if proProductListing == nil {
-                purchaseMessage = "Pro pricing is temporarily unavailable."
+        var failed = false
+        for productId in Self.subscriptionProductIds where subscriptionListings[productId] == nil {
+            do {
+                if let listing = try await storeKit.productListing(for: productId) {
+                    subscriptionListings[productId] = listing
+                }
+            } catch {
+                failed = true
             }
-        } catch {
-            proProductListing = nil
-            purchaseMessage = "Unable to load Pro purchase options right now."
         }
         await refreshEntitlements()
-        if isPro, proProductListing == nil {
-            purchaseMessage = nil
+        if subscriptionListings.isEmpty, !hasSubscription {
+            purchaseMessage = failed
+                ? "Unable to load Pro purchase options right now."
+                : "Pro pricing is temporarily unavailable."
         }
     }
 
     func refreshForActiveScene() async {
         usageSnapshot = UsageLimiter.loadSnapshot()
         await refreshProductsAndEntitlements()
+        await refreshAI()
     }
 
-    func purchasePro() async {
+    // MARK: - AI
+
+    var isAIConfigured: Bool { aiClient.isConfigured }
+    var hasAIActions: Bool { aiAccess?.hasActions ?? false }
+
+    /// Re-checks AI access with the Worker.
+    func refreshAI() async {
+        guard isAIConfigured else { return }
+        await syncAIEntitlements()
+    }
+
+    /// Sends current App Store transactions to the Worker, which verifies them with Apple.
+    func syncAIEntitlements() async {
+        guard isAIConfigured else { return }
+        let ids = await storeKit.currentTransactionIDs()
+        do {
+            aiAccess = try await aiClient.syncEntitlements(transactionIDs: ids)
+        } catch {
+            if aiAccess == nil { aiAccess = try? await aiClient.access() }
+        }
+    }
+
+    func updateAIAccess(_ access: AIAccess) {
+        aiAccess = access
+    }
+
+    func purchaseSubscription(_ productId: String) async {
         isPurchasing = true
         purchaseMessage = nil
         defer { isPurchasing = false }
-
         do {
-            if proProductListing == nil {
-                proProductListing = try await storeKit.productListing(for: Self.proProductId)
-            }
-
-            guard proProductListing != nil else {
-                purchaseMessage = "Pro pricing is unavailable right now. Please try again later."
-                return
-            }
-
-            switch try await storeKit.purchase(productID: Self.proProductId) {
+            switch try await storeKit.purchase(productID: productId) {
             case .purchased:
                 await refreshEntitlements()
-                purchaseMessage = "Rezumate Pro unlocked."
+                await syncAIEntitlements()
+                purchaseMessage = "Rezumate Pro is active."
             case .cancelled:
                 break
             case .pending:
@@ -173,25 +224,37 @@ final class AppState: ObservableObject {
         do {
             try await storeKit.sync()
             await refreshEntitlements()
-            purchaseMessage = isPro ? "Rezumate Pro restored." : "No Pro purchase found for this Apple ID."
+            await syncAIEntitlements()
+            purchaseMessage = isPro ? "Rezumate Pro restored." : "No Rezumate Pro purchase found for this Apple ID."
         } catch {
             purchaseMessage = error.localizedDescription
         }
     }
 
     private func observeTransactionUpdates() -> Task<Void, Never> {
-        let updates = storeKit.transactionUpdates(for: Self.proProductId)
+        let updates = storeKit.transactionUpdates()
         return Task { [weak self] in
-            for await hasPro in updates {
+            for await _ in updates {
                 guard !Task.isCancelled, let self else { return }
-                self.entitlementState = hasPro ? .pro : .free
+                await self.refreshEntitlements()
+                await self.syncAIEntitlements()
             }
         }
     }
 
+    /// Reads entitlements straight from StoreKit, so Pro features work even when the AI Worker is unreachable.
     private func refreshEntitlements() async {
-        let hasPro = await storeKit.hasActiveEntitlement(for: Self.proProductId)
-        entitlementState = hasPro ? .pro : .free
+        var hasSubscription = false
+        for productId in Self.subscriptionProductIds where await storeKit.hasActiveEntitlement(for: productId) {
+            hasSubscription = true
+        }
+        if hasSubscription {
+            entitlementState = .subscription
+        } else if await storeKit.hasActiveEntitlement(for: Self.lifetimeProductId) {
+            entitlementState = .lifetime
+        } else {
+            entitlementState = .free
+        }
     }
 
     func importResumeFromExternalURL(_ url: URL) {

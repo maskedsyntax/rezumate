@@ -1,0 +1,22 @@
+{
+  "name": "Software engineer \u2192 senior backend role",
+  "jobTitle": "Senior Backend Engineer",
+  "resume": "[NAME]\n[EMAIL] | [PHONE]\n\nEXPERIENCE\nBrightCart, Software Engineer  2021 - Present\n- Worked on the checkout service in Python and PostgreSQL\n- Helped with moving payments to a new provider, cutting failed payments by 18%\n- Responsible for on-call for the orders API\n- Wrote tests for the inventory service\n\nNorthwind Labs, Junior Developer  2019 - 2021\n- Fixed bugs in the customer dashboard (React)\n- Assisted senior engineers with code reviews\n\nSKILLS\nPython, PostgreSQL, React, Docker, Git, REST APIs\n\nEDUCATION\nB.S. Computer Science, State University, 2019",
+  "jobDescription": "Lumen Pay is hiring a Senior Backend Engineer to scale our payments platform.\n\nWhat you'll do:\n- Design and build reliable, high-throughput services in Python or Go\n- Own the reliability of payment flows, including incident response and on-call\n- Improve observability with metrics, tracing, and alerting\n- Mentor engineers and lead technical design reviews\n\nRequirements:\n- 5+ years of backend engineering experience\n- Strong Python and SQL (PostgreSQL preferred)\n- Experience with distributed systems and message queues (Kafka or RabbitMQ)\n- Experience running services on AWS with Docker and Kubernetes\n\nNice to have: Terraform, payments or fintech experience, PCI DSS.",
+  "rewriteBullets": [
+    "Worked on the checkout service in Python and PostgreSQL",
+    "Helped with moving payments to a new provider, cutting failed payments by 18%"
+  ],
+  "weakBullets": [
+    "Worked on the checkout service in Python and PostgreSQL",
+    "Helped with moving payments to a new provider, cutting failed payments by 18%",
+    "Responsible for on-call for the orders API",
+    "Wrote tests for the inventory service",
+    "Assisted senior engineers with code reviews"
+  ],
+  "detailAnswers": [
+    "Moved payment calls to an async queue",
+    "p95 checkout latency went from 800ms to 300ms",
+    "About 20,000 orders a day"
+  ]
+}

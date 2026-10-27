@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		02980003352B3BAA0F83F392 /* AIViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = E67EB4B2AFCCF51C757AFA87 /* AIViews.swift */; };
 		100000000000000000000001 /* RezumateNativeApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 200000000000000000000001 /* RezumateNativeApp.swift */; };
 		100000000000000000000002 /* AppState.swift in Sources */ = {isa = PBXBuildFile; fileRef = 200000000000000000000002 /* AppState.swift */; };
 		100000000000000000000004 /* APIModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 200000000000000000000004 /* APIModels.swift */; };
@@ -38,8 +39,14 @@
 		100000000000000000000020 /* StoreKitService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 200000000000000000000021 /* StoreKitService.swift */; };
 		100000000000000000000021 /* ResumeTailoringService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 200000000000000000000022 /* ResumeTailoringService.swift */; };
 		100000000000000000000022 /* JobFitExtractor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 200000000000000000000023 /* JobFitExtractor.swift */; };
+		77F06BF7B95EB9BE6B0E655A /* PIIRedactor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 73248F34047757372179EF13 /* PIIRedactor.swift */; };
 		900000000000000000000001 /* RezumateNativeTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 900000000000000000000002 /* RezumateNativeTests.swift */; };
 		90000000000000000000000E /* fake-resume-v1.0.3.pdf in Resources */ = {isa = PBXBuildFile; fileRef = 90000000000000000000000D /* fake-resume-v1.0.3.pdf */; };
+		B626E410EA5733316720908D /* AIRewriteServiceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = DC843E5DF69A9D619DF47C00 /* AIRewriteServiceTests.swift */; };
+		B8EA98F6AE07D4A886A95619 /* AIRewriteService.swift in Sources */ = {isa = PBXBuildFile; fileRef = B94F752FCAFEA6D04A992CE8 /* AIRewriteService.swift */; };
+		CB3F5A9535835B0C2BB6B519 /* AISafetyTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9B4E5535C77828995D3048B9 /* AISafetyTests.swift */; };
+		D505C6FC280AD85C29D9CCB5 /* RewriteValidator.swift in Sources */ = {isa = PBXBuildFile; fileRef = FC86D326C76ACF1BAEC32088 /* RewriteValidator.swift */; };
+		E0E7F8963ABDD9944E07DFB9 /* AIClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = 69FC4F4FA07CDBE449924426 /* AIClient.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -86,10 +93,34 @@
 		200000000000000000000021 /* StoreKitService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Services/StoreKitService.swift; sourceTree = "<group>"; };
 		200000000000000000000022 /* ResumeTailoringService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Services/ResumeTailoringService.swift; sourceTree = "<group>"; };
 		200000000000000000000023 /* JobFitExtractor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Services/JobFitExtractor.swift; sourceTree = "<group>"; };
+		69FC4F4FA07CDBE449924426 /* AIClient.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = AIClient.swift; path = Services/AIClient.swift; sourceTree = "<group>"; };
+		73248F34047757372179EF13 /* PIIRedactor.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = PIIRedactor.swift; path = Services/PIIRedactor.swift; sourceTree = "<group>"; };
 		900000000000000000000002 /* RezumateNativeTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RezumateNativeTests.swift; sourceTree = "<group>"; };
 		900000000000000000000003 /* RezumateNativeTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = RezumateNativeTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		90000000000000000000000D /* fake-resume-v1.0.3.pdf */ = {isa = PBXFileReference; lastKnownFileType = image.pdf; name = "fake-resume-v1.0.3.pdf"; path = "../../output/pdf/fake-resume-v1.0.3.pdf"; sourceTree = "<group>"; };
+		9B4E5535C77828995D3048B9 /* AISafetyTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = AISafetyTests.swift; sourceTree = "<group>"; };
+		B94F752FCAFEA6D04A992CE8 /* AIRewriteService.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = AIRewriteService.swift; path = Services/AIRewriteService.swift; sourceTree = "<group>"; };
+		DC843E5DF69A9D619DF47C00 /* AIRewriteServiceTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = AIRewriteServiceTests.swift; sourceTree = "<group>"; };
+		E67EB4B2AFCCF51C757AFA87 /* AIViews.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = AIViews.swift; path = Views/AIViews.swift; sourceTree = "<group>"; };
+		FC86D326C76ACF1BAEC32088 /* RewriteValidator.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = RewriteValidator.swift; path = Services/RewriteValidator.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		500000000000000000000002 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		900000000000000000000007 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
 		300000000000000000000000 = {
@@ -136,6 +167,11 @@
 				20000000000000000000001C /* LaTeXStylePDFRenderer.swift */,
 				200000000000000000000018 /* PrivacyInfo.xcprivacy */,
 				200000000000000000000020 /* ResumePDFPreview.swift */,
+				FC86D326C76ACF1BAEC32088 /* RewriteValidator.swift */,
+				73248F34047757372179EF13 /* PIIRedactor.swift */,
+				69FC4F4FA07CDBE449924426 /* AIClient.swift */,
+				B94F752FCAFEA6D04A992CE8 /* AIRewriteService.swift */,
+				E67EB4B2AFCCF51C757AFA87 /* AIViews.swift */,
 			);
 			path = RezumateNative;
 			sourceTree = "<group>";
@@ -154,6 +190,8 @@
 			children = (
 				900000000000000000000002 /* RezumateNativeTests.swift */,
 				90000000000000000000000D /* fake-resume-v1.0.3.pdf */,
+				9B4E5535C77828995D3048B9 /* AISafetyTests.swift */,
+				DC843E5DF69A9D619DF47C00 /* AIRewriteServiceTests.swift */,
 			);
 			path = RezumateNativeTests;
 			sourceTree = "<group>";
@@ -255,23 +293,6 @@
 		};
 /* End PBXResourcesBuildPhase section */
 
-/* Begin PBXFrameworksBuildPhase section */
-		500000000000000000000002 /* Frameworks */ = {
-			isa = PBXFrameworksBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
-		900000000000000000000007 /* Frameworks */ = {
-			isa = PBXFrameworksBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
-/* End PBXFrameworksBuildPhase section */
-
 /* Begin PBXSourcesBuildPhase section */
 		500000000000000000000001 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
@@ -306,6 +327,11 @@
 				100000000000000000000019 /* ResumeDocument.swift in Sources */,
 				10000000000000000000001A /* ResumeParser.swift in Sources */,
 				10000000000000000000001B /* LaTeXStylePDFRenderer.swift in Sources */,
+				D505C6FC280AD85C29D9CCB5 /* RewriteValidator.swift in Sources */,
+				77F06BF7B95EB9BE6B0E655A /* PIIRedactor.swift in Sources */,
+				E0E7F8963ABDD9944E07DFB9 /* AIClient.swift in Sources */,
+				B8EA98F6AE07D4A886A95619 /* AIRewriteService.swift in Sources */,
+				02980003352B3BAA0F83F392 /* AIViews.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -314,6 +340,8 @@
 			buildActionMask = 2147483647;
 			files = (
 				900000000000000000000001 /* RezumateNativeTests.swift in Sources */,
+				CB3F5A9535835B0C2BB6B519 /* AISafetyTests.swift in Sources */,
+				B626E410EA5733316720908D /* AIRewriteServiceTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -409,45 +437,47 @@
 			name = Release;
 		};
 		800000000000000000000002 /* Debug */ = {
-	buildSettings = {
-		"ASSETCATALOG_COMPILER_APPICON_NAME" = AppIcon;
-		"ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME" = AccentColor;
-		"CODE_SIGN_STYLE" = Automatic;
-		"CURRENT_PROJECT_VERSION" = 8;
-		"DEVELOPMENT_TEAM" = GVGJLY2H53;
-		"GENERATE_INFOPLIST_FILE" = NO;
-		"INFOPLIST_FILE" = "RezumateNative/Info.plist";
-		"IPHONEOS_DEPLOYMENT_TARGET" = "17.0";
-		"MARKETING_VERSION" = "1.1.0";
-		"PRODUCT_BUNDLE_IDENTIFIER" = "com.aftaab.rezumate";
-		"PRODUCT_NAME" = "$(TARGET_NAME)";
-		"SWIFT_EMIT_LOC_STRINGS" = YES;
-		"SWIFT_VERSION" = "5.0";
-		"TARGETED_DEVICE_FAMILY" = 1;
-	};
-	isa = XCBuildConfiguration;
-	name = Debug;
-};
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 10;
+				DEVELOPMENT_TEAM = GVGJLY2H53;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = RezumateNative/Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				MARKETING_VERSION = 2.0.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.aftaab.rezumate;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				REZUMATE_AI_BASE_URL = "https://rezumate-ai.maskedsyntax.workers.dev";
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 1;
+			};
+			name = Debug;
+		};
 		800000000000000000000003 /* Release */ = {
-	buildSettings = {
-		"ASSETCATALOG_COMPILER_APPICON_NAME" = AppIcon;
-		"ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME" = AccentColor;
-		"CODE_SIGN_STYLE" = Automatic;
-		"CURRENT_PROJECT_VERSION" = 8;
-		"DEVELOPMENT_TEAM" = GVGJLY2H53;
-		"GENERATE_INFOPLIST_FILE" = NO;
-		"INFOPLIST_FILE" = "RezumateNative/Info.plist";
-		"IPHONEOS_DEPLOYMENT_TARGET" = "17.0";
-		"MARKETING_VERSION" = "1.1.0";
-		"PRODUCT_BUNDLE_IDENTIFIER" = "com.aftaab.rezumate";
-		"PRODUCT_NAME" = "$(TARGET_NAME)";
-		"SWIFT_EMIT_LOC_STRINGS" = YES;
-		"SWIFT_VERSION" = "5.0";
-		"TARGETED_DEVICE_FAMILY" = 1;
-	};
-	isa = XCBuildConfiguration;
-	name = Release;
-};
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 10;
+				DEVELOPMENT_TEAM = GVGJLY2H53;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = RezumateNative/Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				MARKETING_VERSION = 2.0.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.aftaab.rezumate;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				REZUMATE_AI_BASE_URL = "https://rezumate-ai.maskedsyntax.workers.dev";
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 1;
+			};
+			name = Release;
+		};
 		90000000000000000000000A /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {

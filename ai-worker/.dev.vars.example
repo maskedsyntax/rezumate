@@ -1,0 +1,12 @@
+# Copy to .dev.vars for `wrangler dev`. Never commit .dev.vars.
+OPENAI_API_KEY=sk-...
+SESSION_SECRET=generate-with-openssl-rand-hex-32
+DEVICECHECK_MODE=off
+
+# Only needed to test purchases locally.
+APPLE_ISSUER_ID=
+APPLE_IAP_KEY_ID=
+APPLE_IAP_PRIVATE_KEY="-----BEGIN PRIVATE KEY-----\n...\n-----END PRIVATE KEY-----"
+APPLE_TEAM_ID=GVGJLY2H53
+APPLE_DEVICECHECK_KEY_ID=
+APPLE_DEVICECHECK_PRIVATE_KEY=

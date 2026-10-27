@@ -16,7 +16,10 @@ protocol StoreKitServing {
     func hasActiveEntitlement(for productID: String) async -> Bool
     func purchase(productID: String) async throws -> StorePurchaseOutcome
     func sync() async throws
-    func transactionUpdates(for productID: String) -> AsyncStream<Bool>
+    /// Yields whenever a purchase, renewal, expiry, or refund arrives from the App Store.
+    func transactionUpdates() -> AsyncStream<Void>
+    /// Ids of every verified, unrevoked transaction the user currently owns.
+    func currentTransactionIDs() async -> [String]
 }
 
 actor AppStoreKitService: StoreKitServing {
@@ -35,6 +38,15 @@ actor AppStoreKitService: StoreKitServing {
             }
         }
         return false
+    }
+
+    func currentTransactionIDs() async -> [String] {
+        var ids: [String] = []
+        for await entitlement in Transaction.currentEntitlements {
+            guard let transaction = try? Self.checkVerified(entitlement), transaction.revocationDate == nil else { continue }
+            ids.append(String(transaction.id))
+        }
+        return ids
     }
 
     func purchase(productID: String) async throws -> StorePurchaseOutcome {
@@ -60,17 +72,15 @@ actor AppStoreKitService: StoreKitServing {
         try await AppStore.sync()
     }
 
-    nonisolated func transactionUpdates(for productID: String) -> AsyncStream<Bool> {
+    nonisolated func transactionUpdates() -> AsyncStream<Void> {
         AsyncStream { continuation in
             let task = Task {
                 for await update in Transaction.updates {
-                    guard !Task.isCancelled,
-                          let transaction = try? Self.checkVerified(update),
-                          transaction.productID == productID else {
+                    guard !Task.isCancelled, let transaction = try? Self.checkVerified(update) else {
                         continue
                     }
                     await transaction.finish()
-                    continuation.yield(transaction.revocationDate == nil)
+                    continuation.yield()
                 }
                 continuation.finish()
             }

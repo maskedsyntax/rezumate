@@ -25,6 +25,20 @@ struct ResultsView: View {
     @State private var placementUndoStack: [String] = []
     @State private var isPlacingKeyword = false
     @State private var lastPlacedKeyword: String?
+    @State private var rewriteDraft: BulletRewriteDraft?
+    @State private var rewriteOptions: [String] = []
+    @State private var rewriteError: String?
+    @State private var isRewriting = false
+    @State private var rewriteIsFallback = false
+    @State private var rewriteQuestions: [BulletQuestion]?
+    @State private var isLoadingQuestions = false
+    @State private var rewriteDetails: [BulletDetail] = []
+    @State private var improveDraft: ImproveReviewDraft?
+    @State private var isShowingAIConsent = false
+    @State private var isShowingPaywall = false
+    @State private var isShowingCoverLetter = false
+    @State private var pendingAIAction: (() -> Void)?
+    @State private var extraRequirements: [String] = []
 
     init(result: AnalyzeResponse) {
         self.result = result
@@ -54,12 +68,23 @@ struct ResultsView: View {
                     limitForFree: 5,
                     showsPlacementNotice: false
                 )
+                if !extraRequirements.isEmpty {
+                    tappableKeywordSection(
+                        title: "Also mentioned in this job",
+                        subtitle: "Found by AI. Tap one you actually have to add it. Not counted in the score.",
+                        items: extraRequirements,
+                        color: RezTheme.violet,
+                        limitForFree: 3,
+                        showsPlacementNotice: false
+                    )
+                }
                 keywordSection(title: "Matched keywords", items: currentResult.matchedKeywords, color: RezTheme.success, limitForFree: 6)
                 resumeIssuesSection
                 if appState.entitlementState == .free {
                     proInsightsCard
                 }
                 improveResumeSection
+                coverLetterSection
                 exportSection
 
                 if let errorMessage {
@@ -95,7 +120,7 @@ struct ResultsView: View {
                                 .foregroundStyle(RezTheme.ink)
                         }
                         .disabled(isPlacingKeyword || isWorking)
-                        .accessibilityLabel("Undo last keyword")
+                        .accessibilityLabel("Undo last change")
                     }
                     Button {
                         Task { await reAnalyze() }
@@ -116,6 +141,76 @@ struct ResultsView: View {
         }
         .task {
             await pollForRefinedAnalysis()
+        }
+        .task {
+            await loadExtraRequirements()
+        }
+        .sheet(item: $rewriteDraft) { draft in
+            BulletRewriteSheet(
+                draft: draft,
+                questions: rewriteQuestions,
+                isLoadingQuestions: isLoadingQuestions,
+                options: rewriteOptions,
+                isLoading: isRewriting,
+                errorMessage: rewriteError,
+                isFallback: rewriteIsFallback,
+                onSubmitDetails: { details in
+                    rewriteQuestions = nil
+                    rewriteDetails = details
+                    Task { await loadRewriteOptions(for: draft.bullet) }
+                },
+                onPick: { rewrite in
+                    Task { await applyRewrites([BulletImprovement(original: draft.bullet, rewrite: rewrite)], countsAsImprovement: false) }
+                },
+                onRetry: { Task { await loadRewriteOptions(for: draft.bullet) } },
+                onCancel: { rewriteDraft = nil }
+            )
+            .presentationDetents([.medium, .large])
+        }
+        .sheet(item: $improveDraft) { draft in
+            ImproveReviewSheet(
+                draft: draft,
+                isApplying: isWorking,
+                onApply: { accepted in
+                    Task { await applyRewrites(accepted, countsAsImprovement: true) }
+                },
+                onCancel: { improveDraft = nil }
+            )
+        }
+        .sheet(isPresented: $isShowingAIConsent) {
+            AIConsentSheet(
+                onAccept: {
+                    appState.aiConsentGiven = true
+                    isShowingAIConsent = false
+                    let action = pendingAIAction
+                    pendingAIAction = nil
+                    Task {
+                        await loadExtraRequirements()
+                        action?()
+                    }
+                },
+                onCancel: {
+                    pendingAIAction = nil
+                    isShowingAIConsent = false
+                }
+            )
+        }
+        .sheet(isPresented: $isShowingPaywall) {
+            ProPaywallSheet()
+        }
+        .sheet(isPresented: $isShowingCoverLetter) {
+            CoverLetterSheet {
+                guard let context = aiContext() else { throw APIClientError.server("Resume not found.") }
+                do {
+                    let (letter, access) = try await appState.ai.coverLetter(context: context)
+                    appState.updateAIAccess(access)
+                    return letter
+                } catch AIClientError.noAccess {
+                    isShowingCoverLetter = false
+                    isShowingPaywall = true
+                    throw AIClientError.noAccess
+                }
+            }
         }
         .sheet(item: $exportArtifact, onDismiss: requestReviewIfEligible) { artifact in
             ResumePDFPreview(url: artifact.url)
@@ -352,12 +447,12 @@ struct ResultsView: View {
                 }
 
                 Button {
-                    Task { await appState.purchasePro() }
+                    isShowingPaywall = true
                 } label: {
-                    Label(appState.isPurchasing ? "Unlocking..." : "Unlock Pro", systemImage: "sparkles")
+                    Label("See Pro plans", systemImage: "sparkles")
                 }
                 .buttonStyle(RezSecondaryButtonStyle(fill: RezTheme.warning))
-                .disabled(!appState.canPurchasePro)
+                .disabled(!appState.entitlementsLoaded)
 
                 if let purchaseMessage = appState.purchaseMessage {
                     Text(purchaseMessage)
@@ -616,6 +711,17 @@ struct ResultsView: View {
                                     .background(RezTheme.warning, in: RoundedRectangle(cornerRadius: 3))
                                     .foregroundStyle(RezTheme.ink)
                             }
+                            Spacer(minLength: 0)
+                            Button {
+                                startRewrite(of: issue.text)
+                            } label: {
+                                Label("Rewrite", systemImage: "wand.and.stars")
+                                    .font(.caption.weight(.black))
+                                    .foregroundStyle(RezTheme.ink)
+                            }
+                            .buttonStyle(.plain)
+                            .disabled(isWorking || isPlacingKeyword)
+                            .accessibilityLabel("Rewrite this bullet")
                         }
                     }
                     .padding(10)
@@ -665,7 +771,11 @@ struct ResultsView: View {
                 SectionTitle("Improve Resume", subtitle: "Optimize content and format in the standard resume template.")
 
                 if optimizedResumeText == nil {
-                    if appState.entitlementState == .free {
+                    if appState.isAIConfigured {
+                        Text("AI rewrites each weak bullet. You review every change before it's applied.")
+                            .font(.caption.weight(.semibold))
+                            .foregroundStyle(RezTheme.muted)
+                    } else if appState.entitlementState == .free {
                         Text("\(appState.remainingImprovements) free improvements left today.")
                             .font(.caption.weight(.semibold))
                             .foregroundStyle(RezTheme.muted)
@@ -677,16 +787,15 @@ struct ResultsView: View {
                         Label(isWorking ? "Improving..." : "Improve Resume", systemImage: "wand.and.stars")
                     }
                     .buttonStyle(RezPrimaryButtonStyle())
-                    .disabled(isWorking || !appState.canImprove)
+                    .disabled(isWorking || (!appState.isAIConfigured && !appState.canImprove))
 
-                    if appState.entitlementState == .free && !appState.canImprove {
+                    if !appState.isAIConfigured && appState.entitlementState == .free && !appState.canImprove {
                         Button {
-                            Task { await appState.purchasePro() }
+                            isShowingPaywall = true
                         } label: {
                             Label("Unlock unlimited improvements", systemImage: "lock.open")
                         }
                         .buttonStyle(RezSecondaryButtonStyle(fill: RezTheme.warning))
-                        .disabled(!appState.canPurchasePro)
                     } else if appState.entitlementState == .loading {
                         Text("Checking your purchase status...")
                             .font(.caption.weight(.semibold))
@@ -761,10 +870,18 @@ struct ResultsView: View {
     }
 
     private func improveResume() async {
+        if appState.isAIConfigured {
+            runWithAI { Task { await improveResumeWithAI() } }
+        } else {
+            await improveResumeWithRules()
+        }
+    }
+
+    private func improveResumeWithRules() async {
         guard let token = appState.token else { return }
         guard appState.canImprove else {
             errorMessage = appState.entitlementsLoaded
-                ? "Free improvements are used for today. Unlock Pro once for unlimited improvements."
+                ? "Free improvements are used for today. Rezumate Pro includes unlimited improvements."
                 : "Rezumate is still checking your App Store purchase. Try again in a moment."
             return
         }
@@ -899,10 +1016,225 @@ struct ResultsView: View {
     }
 
     private var proSubtitle: String {
-        if let price = appState.proPriceText {
-            return "One-time Pro unlock for \(price). Get every keyword, detailed score reasoning, and unlimited local improvements."
+        let features = "Get every keyword, detailed score reasoning, unlimited improvements, and AI rewrites."
+        if let price = appState.subscriptionPriceText {
+            return "Rezumate Pro, \(price). \(features)"
         }
-        return "Get every keyword, detailed score reasoning, and unlimited local improvements. Price unavailable right now."
+        return features
+    }
+
+    private var coverLetterSection: some View {
+        RezCard {
+            VStack(alignment: .leading, spacing: 12) {
+                SectionTitle("Cover letter", subtitle: "A short letter for this job, written only from your resume.")
+                Button {
+                    runWithAI { isShowingCoverLetter = true }
+                } label: {
+                    Label("Write cover letter", systemImage: "envelope")
+                }
+                .buttonStyle(RezSecondaryButtonStyle(fill: RezTheme.violet))
+                .disabled(!appState.isAIConfigured || isWorking)
+                if !appState.isAIConfigured {
+                    Text("Needs Rezumate AI, which isn't available in this build.")
+                        .font(.caption)
+                        .foregroundStyle(RezTheme.muted)
+                }
+            }
+        }
+    }
+
+    // MARK: - AI
+
+    /// Asks for consent once, shows the paywall when no AI actions are left, then runs the action.
+    private func runWithAI(_ action: @escaping () -> Void) {
+        guard appState.isAIConfigured else { return }
+        guard appState.aiConsentGiven else {
+            pendingAIAction = action
+            isShowingAIConsent = true
+            return
+        }
+        if let access = appState.aiAccess, !access.hasActions {
+            isShowingPaywall = true
+            return
+        }
+        action()
+    }
+
+    private func aiContext() -> AIRewriteService.Context? {
+        guard let variant = LocalStorageManager.shared.loadVariant(id: currentResult.variantId) else { return nil }
+        return AIRewriteService.Context(
+            resumeText: variant.tailoredContent,
+            jobDescription: variant.scoringJobDescription,
+            jobTitle: currentResult.jobTitle,
+            confirmedKeywords: lastPlacedKeyword.map { [$0] } ?? []
+        )
+    }
+
+    private func startRewrite(of bullet: String) {
+        guard appState.isAIConfigured else {
+            showRuleBasedRewrite(of: bullet)
+            return
+        }
+        runWithAI {
+            rewriteQuestions = nil
+            rewriteDetails = []
+            rewriteOptions = []
+            rewriteError = nil
+            rewriteDraft = BulletRewriteDraft(bullet: bullet)
+            Task { await loadQuestions(for: bullet) }
+        }
+    }
+
+    /// Asks what the bullet leaves out. With no questions (or no AI), goes straight to rewriting.
+    private func loadQuestions(for bullet: String) async {
+        guard let context = aiContext() else { return }
+        isLoadingQuestions = true
+        let questions: [BulletQuestion]
+        do {
+            questions = try await appState.ai.questions(for: bullet, context: context)
+        } catch AIClientError.noAccess {
+            isLoadingQuestions = false
+            rewriteDraft = nil
+            isShowingPaywall = true
+            return
+        } catch {
+            questions = []
+        }
+        isLoadingQuestions = false
+        if questions.isEmpty {
+            await loadRewriteOptions(for: bullet)
+        } else {
+            rewriteQuestions = questions
+        }
+    }
+
+    private func loadRewriteOptions(for bullet: String) async {
+        guard let context = aiContext() else { return }
+        isRewriting = true
+        rewriteError = nil
+        rewriteOptions = []
+        rewriteIsFallback = false
+        defer { isRewriting = false }
+
+        do {
+            let (options, access) = try await appState.ai.rewriteOptions(for: bullet, details: rewriteDetails, context: context)
+            appState.updateAIAccess(access)
+            rewriteOptions = options
+        } catch AIClientError.noAccess {
+            rewriteDraft = nil
+            isShowingPaywall = true
+        } catch AIClientError.unavailable {
+            // Offline or service down: fall back to the local suggestion engine.
+            rewriteOptions = (try? await LocalAIService.shared.rewriteBullet(bullet, focusKeywords: []))?
+                .filter { $0 != bullet } ?? []
+            rewriteIsFallback = true
+            if rewriteOptions.isEmpty { rewriteError = AIClientError.unavailable.localizedDescription }
+        } catch {
+            rewriteError = error.localizedDescription
+        }
+    }
+
+    private func showRuleBasedRewrite(of bullet: String) {
+        rewriteQuestions = nil
+        rewriteDetails = []
+        rewriteDraft = BulletRewriteDraft(bullet: bullet)
+        Task {
+            rewriteOptions = (try? await LocalAIService.shared.rewriteBullet(bullet, focusKeywords: []))?
+                .filter { $0 != bullet } ?? []
+            rewriteIsFallback = true
+            rewriteError = rewriteOptions.isEmpty ? "No basic suggestion for this bullet." : nil
+        }
+    }
+
+    private func improveResumeWithAI() async {
+        guard let context = aiContext() else { return }
+        let targets = bulletIssues.map(\.text)
+        guard !targets.isEmpty else {
+            errorMessage = "No weak bullets to improve."
+            return
+        }
+        isWorking = true
+        errorMessage = nil
+        defer { isWorking = false }
+
+        do {
+            let (items, access) = try await appState.ai.improvements(for: targets, context: context)
+            appState.updateAIAccess(access)
+            improveDraft = ImproveReviewDraft(items: items)
+        } catch AIClientError.noAccess {
+            isShowingPaywall = true
+        } catch AIClientError.unavailable {
+            errorMessage = "AI is unavailable right now, so basic improvements were used instead."
+            isWorking = false
+            await improveResumeWithRules()
+        } catch {
+            errorMessage = error.localizedDescription
+        }
+    }
+
+    /// Replaces accepted bullets in the resume, then rescores it on-device.
+    private func applyRewrites(_ items: [BulletImprovement], countsAsImprovement: Bool) async {
+        guard let token = appState.token,
+              let variant = LocalStorageManager.shared.loadVariant(id: currentResult.variantId),
+              !items.isEmpty else { return }
+        isWorking = true
+        errorMessage = nil
+        defer { isWorking = false }
+
+        let previousText = variant.tailoredContent
+        var updatedText = previousText
+        var applied = 0
+        for item in items where updatedText.contains(item.original) {
+            updatedText = updatedText.replacingOccurrences(of: item.original, with: item.rewrite)
+            applied += 1
+        }
+        guard applied > 0 else {
+            errorMessage = "Those bullets have changed since the suggestions were made. Try again."
+            return
+        }
+
+        do {
+            let previousScores = currentResult.componentScores
+            let previousScore = currentResult.score
+            let updated = try await appState.api.replaceTailoredContent(
+                variantId: currentResult.variantId,
+                resumeText: updatedText,
+                token: token
+            )
+            placementUndoStack.append(previousText)
+            if originalScore == nil { originalScore = previousScore }
+            if originalComponentScores == nil { originalComponentScores = previousScores }
+            currentResult = updated
+            appState.latestAnalysis = updated
+            if countsAsImprovement {
+                optimizedResumeText = updatedText
+                changedBulletCount = applied
+                improvementComponentDeltas = updated.componentScores.reduce(into: [:]) { deltas, entry in
+                    let delta = entry.value - (previousScores[entry.key] ?? entry.value)
+                    if delta != 0 { deltas[entry.key] = delta }
+                }
+                remainingImpactIssues = updated.bulletsWithoutMeasurableImpactCount
+            }
+            rewriteDraft = nil
+            improveDraft = nil
+        } catch {
+            errorMessage = error.localizedDescription
+        }
+    }
+
+    /// Fetched once per analysis; reopening the results reuses the cached list.
+    private func loadExtraRequirements() async {
+        guard appState.isAIConfigured, appState.aiConsentGiven, extraRequirements.isEmpty else { return }
+        let variantId = currentResult.variantId
+        if let cached = appState.aiRequirementsCache[variantId] {
+            extraRequirements = cached
+            return
+        }
+        guard let context = aiContext() else { return }
+        let shown = currentResult.missingKeywords + currentResult.partialMatches + currentResult.matchedKeywords
+        guard let terms = try? await appState.ai.extraRequirements(context: context, alreadyShown: shown) else { return }
+        appState.aiRequirementsCache[variantId] = terms
+        extraRequirements = terms
     }
 
     private var bulletIssues: [BulletIssue] {
@@ -925,7 +1257,7 @@ struct ResultsView: View {
               !isRefreshingAnalysis else { return }
         guard appState.canAnalyze else {
             errorMessage = appState.entitlementsLoaded
-                ? "Free analyses are used for today. Unlock Pro once for unlimited analyses."
+                ? "Free analyses are used for today. Rezumate Pro includes unlimited analyses."
                 : "Rezumate is still checking your App Store purchase. Try again in a moment."
             return
         }
