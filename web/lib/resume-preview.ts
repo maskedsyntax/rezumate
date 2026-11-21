@@ -26,7 +26,15 @@ const knownSkills = [
   "budgeting", "forecasting", "customer success", "account management",
   "stakeholder management", "user research", "ux research",
   "wireframing", "prototyping", "a/b testing", "project management",
-  "program management", "quickbooks", "sap", "erp"
+  "program management", "quickbooks", "sap", "erp",
+  "ios", "swift", "swiftui", "uikit", "objective-c", "xcode", "xctest",
+  "core data", "swiftdata", "app store", "testflight", "android", "kotlin",
+  "jetpack compose", "react native", "flutter", "unit testing", "ui testing",
+  "patient care", "patient education", "medication administration", "triage",
+  "bls", "acls", "pals", "ehr", "emr", "telemetry", "icu", "infection control",
+  "care planning", "vital signs", "hipaa",
+  "ppc", "crm", "content marketing", "email marketing", "social media", "copywriting",
+  "marketing automation", "campaign management", "brand strategy"
 ];
 
 const canonicalKeywords: Record<string, string> = {
@@ -216,7 +224,9 @@ export function analyzeResumePreview(resumeText: string, jobDescription: string)
   if (lines.filter((line) => line.length > 140).length >= 5) formattingWarnings.push("Several long lines may indicate layout extraction issues.");
 
   const keywordCoverage = percent(matchedKeywords.length + partialMatches.length * 0.5, jdKeywords.length);
-  const impactQuality = percent(bullets.length - bulletsWithoutImpact.length, bullets.length);
+  // Matches the app: most credit for showing an outcome, the rest for strong wording.
+  const impactPoints = bullets.reduce((total, bullet) => total + (bulletsWithoutImpact.includes(bullet) ? 0 : 0.75) + (weakBullets.includes(bullet) ? 0 : 0.25), 0);
+  const impactQuality = percent(impactPoints, bullets.length);
   const structureQuality = percent(
     Number(sections.summary) + Number(sections.experience || sections.projects) + Number(sections.skills) + Number(sections.education),
     4

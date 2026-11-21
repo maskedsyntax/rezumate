@@ -231,7 +231,8 @@ struct AnalyzeView: View {
             stepTitle("Job Description")
 
             TextEditor(text: $appState.jobDescription)
-                .frame(minHeight: 178)
+                // Capped so a long posting scrolls inside the editor instead of pushing Analyze off screen.
+                .frame(minHeight: 178, maxHeight: 260)
                 .padding(.horizontal, 12)
                 .padding(.top, 12)
                 .padding(.bottom, 34)
@@ -260,22 +261,27 @@ struct AnalyzeView: View {
                         .padding(.bottom, 12)
                 }
                 .onChange(of: appState.jobDescription) { _, value in
+                    errorMessage = nil
                     guard value.count > AnalysisInputValidator.maximumJobDescriptionCharacters else { return }
                     appState.jobDescription = String(value.prefix(AnalysisInputValidator.maximumJobDescriptionCharacters))
                 }
 
-            Button {
-                pasteJobDescriptionFromClipboard()
-            } label: {
-                Label("Paste from Clipboard", systemImage: "doc.on.clipboard")
+            // The system PasteButton reads the clipboard without iOS's "Allow Paste" prompt,
+            // which silently returns nothing when declined or unavailable.
+            PasteButton(payloadType: String.self) { strings in
+                Task { @MainActor in
+                    pasteJobDescription(strings.first ?? "")
+                }
             }
-            .buttonStyle(RezSecondaryButtonStyle(fill: RezTheme.surface))
+            .labelStyle(.titleAndIcon)
+            .buttonBorderShape(.roundedRectangle(radius: 6))
+            .tint(RezTheme.ink)
+            .frame(maxWidth: .infinity)
         }
     }
 
-    private func pasteJobDescriptionFromClipboard() {
-        let pasted = UIPasteboard.general.string?
-            .trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+    private func pasteJobDescription(_ text: String) {
+        let pasted = text.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !pasted.isEmpty else {
             errorMessage = "Clipboard is empty. Copy a job description first."
             return

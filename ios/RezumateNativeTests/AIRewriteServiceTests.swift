@@ -188,6 +188,27 @@ final class AIRewriteServiceTests: XCTestCase {
         XCTAssertEqual(items, [BulletImprovement(original: bullets[0], rewrite: "Supported onboarding for 4 new engineers")])
     }
 
+    func testImprovementsUseEachFactOnlyInItsOwnBullet() async throws {
+        let bullets = ["Helped with onboarding for 4 new engineers", "Worked on the checkout service in Python, cutting latency by 30%"]
+        respond(task: "improve-bullets", with: ["items": [
+            // Uses the fact given for its own bullet.
+            ["id": 1, "rewrite": "Supported onboarding for 4 new engineers, cutting ramp-up from 6 weeks to 3"],
+            // Borrows that fact for a bullet it doesn't belong to.
+            ["id": 2, "rewrite": "Contributed to the Python checkout service, cutting latency by 30% in 3 weeks"]
+        ]])
+
+        let (items, _) = try await service.improvements(
+            for: bullets,
+            facts: [bullets[0]: "ramp-up went from 6 weeks to 3, ask jane@example.com"],
+            context: context
+        )
+        XCTAssertEqual(items, [BulletImprovement(original: bullets[0], rewrite: "Supported onboarding for 4 new engineers, cutting ramp-up from 6 weeks to 3")])
+        let sent = try XCTUnwrap(StubWorkerProtocol.sentBodies["/v1/ai/improve-bullets"])
+        XCTAssertTrue(sent.contains("\"id\":1"))
+        XCTAssertTrue(sent.contains("6 weeks to 3"))
+        XCTAssertFalse(sent.contains("jane@example.com"))
+    }
+
     func testCoverLetterRestoresNameAndRejectsClaimedSkills() async throws {
         respond(task: "cover-letter", with: ["letter": "Dear Hiring Manager,\n\nAt Acme I helped onboard 4 new engineers.\n\nSincerely,\n[NAME]"])
         let (letter, _) = try await service.coverLetter(context: context)

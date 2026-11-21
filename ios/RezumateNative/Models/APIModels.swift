@@ -84,6 +84,7 @@ struct AnalyzeResponse: Codable, Equatable, Hashable {
     let sections: [String: Bool]
     let jobTitle: String?
     let jobTitleMatched: Bool
+    let jobTitleSeniorityGap: Bool
     let educationRequirement: String?
     let educationMatched: Bool
 
@@ -106,6 +107,7 @@ struct AnalyzeResponse: Codable, Equatable, Hashable {
         case sections
         case jobTitle = "job_title"
         case jobTitleMatched = "job_title_matched"
+        case jobTitleSeniorityGap = "job_title_seniority_gap"
         case educationRequirement = "education_requirement"
         case educationMatched = "education_matched"
     }
@@ -129,6 +131,7 @@ struct AnalyzeResponse: Codable, Equatable, Hashable {
         sections: [String: Bool],
         jobTitle: String? = nil,
         jobTitleMatched: Bool = false,
+        jobTitleSeniorityGap: Bool = false,
         educationRequirement: String? = nil,
         educationMatched: Bool = false
     ) {
@@ -150,6 +153,7 @@ struct AnalyzeResponse: Codable, Equatable, Hashable {
         self.sections = sections
         self.jobTitle = jobTitle
         self.jobTitleMatched = jobTitleMatched
+        self.jobTitleSeniorityGap = jobTitleSeniorityGap
         self.educationRequirement = educationRequirement
         self.educationMatched = educationMatched
     }
@@ -174,6 +178,7 @@ struct AnalyzeResponse: Codable, Equatable, Hashable {
         sections = try container.decode([String: Bool].self, forKey: .sections)
         jobTitle = try container.decodeIfPresent(String.self, forKey: .jobTitle)
         jobTitleMatched = try container.decodeIfPresent(Bool.self, forKey: .jobTitleMatched) ?? false
+        jobTitleSeniorityGap = try container.decodeIfPresent(Bool.self, forKey: .jobTitleSeniorityGap) ?? false
         educationRequirement = try container.decodeIfPresent(String.self, forKey: .educationRequirement)
         educationMatched = try container.decodeIfPresent(Bool.self, forKey: .educationMatched) ?? false
     }
@@ -203,6 +208,7 @@ struct AnalyzeResponse: Codable, Equatable, Hashable {
             sections: result.sections,
             jobTitle: fit.jobTitle,
             jobTitleMatched: fit.jobTitleMatched,
+            jobTitleSeniorityGap: fit.jobTitleSeniorityGap,
             educationRequirement: fit.educationRequirement,
             educationMatched: fit.educationMatched
         )

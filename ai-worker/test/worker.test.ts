@@ -162,6 +162,26 @@ describe("AI tasks", () => {
     expect(sent.input[1].content).toContain("A: p95 latency 800ms to 300ms");
   });
 
+  it("sends Improve Resume facts with only their own bullet", async () => {
+    const token = await startSession();
+    const fetchSpy = mockFetch(() => openAIReply({ items: [{ id: 2, rewrite: "Cut checkout latency to 300ms" }] }));
+
+    const response = await post("/v1/ai/improve-bullets", token, {
+      bullets: ["Worked on search", "Worked on checkout"],
+      details: [{ id: 2, answer: "p95 latency 800ms to 300ms" }],
+    });
+    expect(response.status).toBe(200);
+    const prompt = JSON.parse(String(fetchSpy.mock.calls[0][1]?.body)).input[1].content as string;
+    expect(prompt).toContain("2. Worked on checkout\n   Result the user added for this bullet (their own fact, use it only here): p95 latency 800ms to 300ms");
+    expect(prompt).not.toContain("1. Worked on search\n   Result");
+  });
+
+  it("rejects Improve Resume facts for a bullet that doesn't exist", async () => {
+    const token = await startSession();
+    const bad = await post("/v1/ai/improve-bullets", token, { bullets: ["Worked on search"], details: [{ id: 2, answer: "a" }] });
+    expect(bad.status).toBe(400);
+  });
+
   it("rejects malformed details", async () => {
     const token = await startSession();
     const tooMany = Array.from({ length: 4 }, () => ({ question: "q", answer: "a" }));

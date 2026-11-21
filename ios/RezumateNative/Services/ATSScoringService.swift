@@ -21,7 +21,7 @@ struct ATSAnalysisResult: Codable, Equatable, Hashable {
 
 struct ATSScoringService {
     
-    static let scoreVersion = "ats-v2"
+    static let scoreVersion = "ats-v3"
     
     static let sectionAliases: [String: [String]] = [
         "summary": ["summary", "profile", "objective"],
@@ -43,13 +43,27 @@ struct ATSScoringService {
         "power bi", "tableau", "figma", "product management", "agile", "scrum",
         "html", "css", "json", "rest api", "rest apis", "responsive design",
         "accessibility", "web applications", "ui", "frontend", "nextjs",
-        "tailwind", "tailwind css", "node", "apis"
+        "tailwind", "tailwind css", "node", "apis",
+        // Mobile
+        "ios", "swift", "swiftui", "uikit", "objective-c", "xcode", "xctest",
+        "core data", "swiftdata", "app store", "testflight", "android", "kotlin",
+        "jetpack compose", "react native", "flutter", "unit testing", "ui testing",
+        // Healthcare
+        "patient care", "patient education", "medication administration", "triage",
+        "bls", "acls", "pals", "ehr", "emr", "telemetry", "icu", "infection control",
+        "care planning", "vital signs", "hipaa",
+        // Marketing
+        "seo", "sem", "ppc", "google analytics", "google ads", "hubspot", "salesforce",
+        "crm", "content marketing", "email marketing", "social media", "copywriting",
+        "a/b testing", "marketing automation", "campaign management", "brand strategy"
     ]
     
     static let canonicalKeywords: [String: String] = [
         "apis": "api",
         "api": "api",
         "nextjs": "next.js",
+        "postgres": "postgresql",
+        "postgresql": "postgresql",
         "next.js": "next.js",
         "node": "node.js",
         "node.js": "node.js",
@@ -61,8 +75,35 @@ struct ATSScoringService {
     ]
     
     static let redundantKeywords: [String: Set<String>] = [
-        "api": ["rest api", "graphql", "fastapi"]
+        "api": ["rest api", "graphql", "fastapi"],
+        "ui": ["swiftui", "uikit", "ui testing", "jetpack compose", "frontend", "figma"]
     ]
+
+    // Words too common to signal a partial match on their own ("data" in "Core Data").
+    static let genericKeywordParts: Set<String> = [
+        "administration", "analysis", "api", "apis", "app", "applications", "automation",
+        "brand", "campaign", "care", "compose", "content", "control", "core", "data",
+        "design", "education", "email", "google", "infection", "learning", "machine",
+        "management", "marketing", "media", "medication", "objective", "patient",
+        "planning", "power", "product", "responsive", "signs", "social", "store",
+        "strategy", "test", "testing", "unit", "vital", "web"
+    ]
+
+    static let optionalHeadingRegex = try! NSRegularExpression(
+        pattern: #"nice[\s-]to[\s-]have|preferred|bonus|good to have|desired|desirable|pluses|optional"#,
+        options: .caseInsensitive
+    )
+
+    static let optionalInlineRegex = try! NSRegularExpression(
+        pattern: #"\ba plus\b|nice[\s-]to[\s-]have|\bpreferred\b|\bbonus\b"#,
+        options: .caseInsensitive
+    )
+
+    // Profile links like github.com/name would otherwise match the "github" skill.
+    static let linkRegex = try! NSRegularExpression(
+        pattern: #"(?:https?://|www\.)\S+|[\w.+-]+@[\w-]+(?:\.[\w-]+)+|\b[\w-]+(?:\.[\w-]+)*\.(?:com|io|dev|org|me|co|app|ai)(?:/\S*)?"#,
+        options: .caseInsensitive
+    )
     
     static let keywordNoise: Set<String> = [
         "ability", "basic", "collaborating", "communication", "developer",
@@ -83,6 +124,9 @@ struct ATSScoringService {
         "shipped", "worked on", "helped with", "responsible for", "assisted with"
     ]
     
+    static let impactSignalWeight = 0.75
+    static let strongWordingWeight = 0.25
+
     static let measurableImpactRegex = try! NSRegularExpression(
         pattern: #"(\d+[%+]?|\$[\d,.]+|[<>]\s*\d+|\b\d+\s*(x|k|m|million|billion|users|customers|requests|seconds|minutes|hours|days)\b)"#,
         options: .caseInsensitive
@@ -96,18 +140,19 @@ struct ATSScoringService {
     ]
     
     static func containsKeyword(_ keyword: String, in resumeText: String) -> Bool {
-        keywordInText(keyword, textLower: resumeText.lowercased())
+        keywordInText(keyword, textLower: removingLinks(from: resumeText.lowercased()))
     }
 
     static func analyzeResume(resumeText: String, jobDescription: String) -> ATSAnalysisResult {
         let jdKeywords = extractKeywords(from: jobDescription)
-        let resumeLower = resumeText.lowercased()
-        
+        let resumeLower = removingLinks(from: resumeText.lowercased())
+
         var matchedKeywords: [String] = []
         var missingKeywords: [String] = []
         var partialMatches: [String] = []
-        
-        for keyword in jdKeywords {
+
+        // Free shows only the first few of each list, so required skills must come first.
+        for keyword in prioritizedKeywords(jdKeywords, in: jobDescription) {
             let keywordLower = keyword.lowercased()
             if keywordInText(keywordLower, textLower: resumeLower) {
                 matchedKeywords.append(keyword)
@@ -125,16 +170,20 @@ struct ATSScoringService {
         
         let sections = detectSections(in: resumeText)
         let formattingWarnings = detectFormattingWarnings(in: resumeText)
-        
+        // Length is still reported, but it says nothing about layout, so it doesn't cost formatting points.
+        let lengthWarnings = detectLengthWarnings(in: resumeText)
+
         let keywordCoverage = calculatePercentage(
             numerator: Double(matchedKeywords.count) + (0.5 * Double(partialMatches.count)),
             denominator: jdKeywords.count
         )
         
-        let impactQuality = calculatePercentage(
-            numerator: Double(bullets.count - bulletsWithoutImpact.count),
-            denominator: bullets.count
-        )
+        // A bullet earns most of its credit for showing an outcome and the rest for strong
+        // wording, so fixing "Worked on..." counts even when no number can be added.
+        let impactPoints = bullets.reduce(0.0) { total, bullet in
+            total + (hasImpactSignal(bullet) ? impactSignalWeight : 0) + (isWeakBullet(bullet) ? 0 : strongWordingWeight)
+        }
+        let impactQuality = calculatePercentage(numerator: impactPoints, denominator: bullets.count)
         
         let structureQuality = calculatePercentage(
             numerator: Double(sections.values.filter { $0 }.count),
@@ -166,7 +215,7 @@ struct ATSScoringService {
             weakBullets: Array(weakBullets.prefix(8)),
             bulletsWithoutMeasurableImpact: Array(bulletsWithoutImpact.prefix(8)),
             sections: sections,
-            formattingWarnings: formattingWarnings,
+            formattingWarnings: lengthWarnings + formattingWarnings,
             estimatedResumeLengthWords: words.count,
             componentScores: [
                 "keyword_coverage": Int(round(keywordCoverage)),
@@ -178,7 +227,7 @@ struct ATSScoringService {
     }
     
     static func extractKeywords(from text: String) -> [String] {
-        let textLower = text.lowercased()
+        let textLower = removingLinks(from: text.lowercased())
         var found: Set<String> = []
         
         for skill in knownSkills {
@@ -188,6 +237,58 @@ struct ATSScoringService {
         }
         
         return removeRedundantKeywords(found).sorted()
+    }
+
+    /// Orders keywords by how central they are to the job: skills outside a "nice to have"
+    /// section first, then by how often the job mentions them, then by first mention.
+    static func prioritizedKeywords(_ keywords: [String], in jobDescription: String) -> [String] {
+        let lines = removingLinks(from: jobDescription.lowercased()).components(separatedBy: .newlines)
+        var inOptionalSection = false
+        var lineIsOptional: [Bool] = []
+
+        for line in lines {
+            let trimmed = line.trimmingCharacters(in: .whitespaces)
+            let wordCount = trimmed.split(separator: " ").count
+            let isHeading = wordCount > 0 && wordCount <= 6 && !trimmed.hasPrefix("-") && !trimmed.hasPrefix("•") && !trimmed.hasPrefix("*")
+            if isHeading {
+                inOptionalSection = matchesRegex(optionalHeadingRegex, in: trimmed)
+            }
+            lineIsOptional.append(inOptionalSection || matchesRegex(optionalInlineRegex, in: trimmed))
+        }
+
+        struct Importance {
+            var requiredHits = 0
+            var optionalHits = 0
+            var firstLine = Int.max
+        }
+
+        let importance = Dictionary(uniqueKeysWithValues: keywords.map { keyword -> (String, Importance) in
+            var value = Importance()
+            for (index, line) in lines.enumerated() where keywordInText(keyword, textLower: line) {
+                if lineIsOptional[index] { value.optionalHits += 1 } else { value.requiredHits += 1 }
+                value.firstLine = min(value.firstLine, index)
+            }
+            // Canonical forms ("rest api" from "REST") may not match line by line; treat as required.
+            if value.requiredHits + value.optionalHits == 0 { value.requiredHits = 1 }
+            return (keyword, value)
+        })
+
+        return keywords.sorted { lhs, rhs in
+            let a = importance[lhs]!, b = importance[rhs]!
+            if (a.requiredHits > 0) != (b.requiredHits > 0) { return a.requiredHits > 0 }
+            if a.requiredHits != b.requiredHits { return a.requiredHits > b.requiredHits }
+            if a.firstLine != b.firstLine { return a.firstLine < b.firstLine }
+            return lhs < rhs
+        }
+    }
+
+    static func removingLinks(from text: String) -> String {
+        let range = NSRange(location: 0, length: text.utf16.count)
+        return linkRegex.stringByReplacingMatches(in: text, options: [], range: range, withTemplate: " ")
+    }
+
+    private static func matchesRegex(_ regex: NSRegularExpression, in text: String) -> Bool {
+        regex.firstMatch(in: text, options: [], range: NSRange(location: 0, length: text.utf16.count)) != nil
     }
 
     static func hasImpactSignal(_ bullet: String) -> Bool {
@@ -278,6 +379,9 @@ struct ATSScoringService {
         if keyword == "rest api" {
             return matchesPattern("(?<![a-z0-9])rest\\s+apis?(?![a-z0-9])", in: textLower)
         }
+        if keyword == "postgresql" {
+            return matchesPattern("(?<![a-z0-9])postgres(?:ql)?(?![a-z0-9])", in: textLower)
+        }
         if keyword == "next.js" {
             return matchesPattern("(?<![a-z0-9])next[.\\s-]?js(?![a-z0-9])", in: textLower)
         }
@@ -295,9 +399,13 @@ struct ATSScoringService {
     }
     
     private static func partialKeywordMatch(_ keyword: String, resumeLower: String) -> Bool {
-        let parts = keyword.components(separatedBy: CharacterSet(charactersIn: " /+-"))
+        // Only multi-word skills can partially match; a single word inside another
+        // ("excel" in "excellent", "java" in "javascript") is not the same skill.
+        // They need a distinctive word, matched whole: "jetpack" for "jetpack compose".
+        return keyword.components(separatedBy: CharacterSet(charactersIn: " /+-"))
             .filter { $0.count > 2 }
-        return !parts.isEmpty && parts.contains(where: { resumeLower.contains($0) })
+            .filter { !genericKeywordParts.contains($0) }
+            .contains(where: { keywordInText($0, textLower: resumeLower) })
     }
     
     private static func canonicalizeKeyword(_ keyword: String) -> String {
@@ -361,17 +469,22 @@ struct ATSScoringService {
         return result
     }
     
-    private static func detectFormattingWarnings(in text: String) -> [String] {
+    private static func detectLengthWarnings(in text: String) -> [String] {
         var warnings: [String] = []
         let words = text.components(separatedBy: .whitespacesAndNewlines).filter { !$0.isEmpty }
         let wordCount = words.count
-        
+
         if wordCount < 250 {
             warnings.append("Resume appears unusually short after extraction.")
         }
         if wordCount > 1200 {
             warnings.append("Resume appears long; consider tightening for ATS and recruiter scanning.")
         }
+        return warnings
+    }
+
+    private static func detectFormattingWarnings(in text: String) -> [String] {
+        var warnings: [String] = []
         if text.contains("\t") {
             warnings.append("Tabs were detected and may indicate table-like formatting.")
         }

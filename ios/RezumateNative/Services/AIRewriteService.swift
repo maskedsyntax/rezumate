@@ -96,14 +96,25 @@ struct AIRewriteService {
         }
     }
 
-    func improvements(for bullets: [String], context: Context) async throws -> (items: [BulletImprovement], access: AIAccess) {
+    /// - Parameter facts: Results the user added, keyed by the original bullet. Each one may
+    ///   only be used in its own bullet.
+    func improvements(
+        for bullets: [String],
+        facts: [String: String] = [:],
+        context: Context
+    ) async throws -> (items: [BulletImprovement], access: AIAccess) {
         let redactor = PIIRedactor(resumeText: context.resumeText)
         let targets = Array(uniqued(bullets).prefix(20))
+        let answered = targets.enumerated().compactMap { index, bullet -> ImproveBulletFact? in
+            let answer = (facts[bullet] ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
+            return answer.isEmpty ? nil : ImproveBulletFact(id: index + 1, answer: String(redactor.redact(answer).prefix(300)))
+        }
         let input = ImproveBulletsInput(
             bullets: targets.map(redactor.redact),
             jobTitle: context.jobTitle,
             jobDescription: jobExcerpt(context, redactor: redactor),
-            allowedKeywords: Array(context.confirmedKeywords.prefix(40))
+            allowedKeywords: Array(context.confirmedKeywords.prefix(40)),
+            details: answered.isEmpty ? nil : answered
         )
         return try await runChecked("improve-bullets", input: input) { (output: ImproveBulletsOutput) in
             // Bullets are numbered from 1 in the prompt; anything with an unknown number is dropped.
@@ -112,8 +123,14 @@ struct AIRewriteService {
             for item in output.items where targets.indices.contains(item.id - 1) && seen.insert(item.id).inserted {
                 let original = targets[item.id - 1]
                 let rewrite = cleanBullet(redactor.restore(item.rewrite), like: original)
+                let fact = (facts[original] ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
                 guard isMeaningfulChange(from: original, to: rewrite),
-                      RewriteValidator.validateBullet(rewrite, original: original, allowedKeywords: context.confirmedKeywords) == nil
+                      RewriteValidator.validateBullet(
+                          rewrite,
+                          original: original,
+                          details: fact.isEmpty ? [] : [fact],
+                          allowedKeywords: context.confirmedKeywords
+                      ) == nil
                 else { continue }
                 items.append(BulletImprovement(original: original, rewrite: rewrite))
             }
@@ -266,7 +283,14 @@ private struct ImproveBulletsInput: RetryableInput {
     let jobTitle: String?
     let jobDescription: String?
     let allowedKeywords: [String]
+    let details: [ImproveBulletFact]?
     var retryOf: String?
+}
+
+/// `id` is the bullet's number in `bullets`, counting from 1.
+private struct ImproveBulletFact: Encodable {
+    let id: Int
+    let answer: String
 }
 
 private struct ImproveBulletsOutput: Decodable {

@@ -334,6 +334,130 @@ struct BulletRewriteSheet: View {
     }
 }
 
+// MARK: - Improve facts
+
+struct ImproveFactsDraft: Identifiable, Equatable {
+    let id = UUID()
+    /// Every bullet Improve Resume will rewrite.
+    let targets: [String]
+    /// The targets that don't show an outcome yet; these ask for a result.
+    let needsResult: [String]
+    /// The targets with hedged wording ("Worked on…"); these ask what the user did themselves.
+    let needsOwnership: [String]
+
+    /// The bullets the sheet asks about, in target order.
+    var askedBullets: [String] {
+        targets.filter { needsResult.contains($0) || needsOwnership.contains($0) }
+    }
+}
+
+/// Asks what the user did and what came of it before Improve Resume runs. The AI may not
+/// invent either, so without these answers it can only reword, not strengthen.
+struct ImproveFactsSheet: View {
+    let draft: ImproveFactsDraft
+    let onSubmit: ([String: String]) -> Void
+    let onCancel: () -> Void
+
+    @State private var ownership: [String: String] = [:]
+    @State private var results: [String: String] = [:]
+
+    /// One combined fact per bullet, which is what the AI and the validator accept.
+    private var facts: [String: String] {
+        var combined: [String: String] = [:]
+        for bullet in draft.askedBullets {
+            let parts = [
+                trimmed(ownership[bullet]).map { "What I did: \($0)" },
+                trimmed(results[bullet]).map { "Result: \($0)" }
+            ].compactMap { $0 }
+            if !parts.isEmpty {
+                combined[bullet] = String(parts.joined(separator: ". ").prefix(300))
+            }
+        }
+        return combined
+    }
+
+    var body: some View {
+        NavigationStack {
+            ScrollView {
+                VStack(alignment: .leading, spacing: 18) {
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text("Tell the AI what you actually did")
+                            .font(.subheadline.weight(.semibold))
+                            .foregroundStyle(RezTheme.ink)
+                        Text("Your own actions and results are what make a bullet stronger. The AI only uses what you write here, so add what's true and leave the rest blank.")
+                            .font(.caption)
+                            .foregroundStyle(RezTheme.muted)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+
+                    ForEach(draft.askedBullets, id: \.self) { bullet in
+                        VStack(alignment: .leading, spacing: 8) {
+                            Text(bullet)
+                                .font(.subheadline)
+                                .foregroundStyle(RezTheme.ink)
+                                .fixedSize(horizontal: false, vertical: true)
+                            if draft.needsOwnership.contains(bullet) {
+                                factField(
+                                    "What did you build or decide yourself?",
+                                    placeholder: "e.g. built the sign-up screens in SwiftUI",
+                                    text: binding(for: bullet, in: $ownership)
+                                )
+                            }
+                            if draft.needsResult.contains(bullet) {
+                                factField(
+                                    "Result",
+                                    placeholder: "e.g. cut report time from 6 hours to 1",
+                                    text: binding(for: bullet, in: $results)
+                                )
+                            }
+                        }
+                    }
+
+                    Button(facts.isEmpty ? "Improve without details" : "Improve with \(facts.count) detail\(facts.count == 1 ? "" : "s")") {
+                        onSubmit(facts)
+                    }
+                    .buttonStyle(RezPrimaryButtonStyle())
+                }
+                .padding()
+            }
+            .rezScreenBackground()
+            .navigationTitle("Improve Resume")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("Cancel", action: onCancel)
+                }
+            }
+        }
+    }
+
+    private func factField(_ label: String, placeholder: String, text: Binding<String>) -> some View {
+        VStack(alignment: .leading, spacing: 4) {
+            Text(label)
+                .font(.caption.weight(.black))
+                .foregroundStyle(RezTheme.muted)
+            TextField(placeholder, text: text, axis: .vertical)
+                .font(.subheadline)
+                .lineLimit(1...3)
+                .padding(10)
+                .background(RezTheme.surface, in: RoundedRectangle(cornerRadius: 6))
+                .overlay { RoundedRectangle(cornerRadius: 6).stroke(RezTheme.ink, lineWidth: 1.5) }
+        }
+    }
+
+    private func binding(for bullet: String, in answers: Binding<[String: String]>) -> Binding<String> {
+        Binding(
+            get: { answers.wrappedValue[bullet] ?? "" },
+            set: { answers.wrappedValue[bullet] = String($0.prefix(140)) }
+        )
+    }
+
+    private func trimmed(_ value: String?) -> String? {
+        let text = (value ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
+        return text.isEmpty ? nil : text
+    }
+}
+
 // MARK: - Improve review
 
 struct ImproveReviewDraft: Identifiable, Equatable {
@@ -395,7 +519,7 @@ struct ImproveReviewSheet: View {
                         .buttonStyle(.plain)
                     }
 
-                    Label("Checked: no new skills, numbers, or employers were added.", systemImage: "checkmark.shield.fill")
+                    Label("Checked: nothing was added beyond your resume and the results you entered.", systemImage: "checkmark.shield.fill")
                         .font(.caption.weight(.semibold))
                         .foregroundStyle(RezTheme.ink)
 

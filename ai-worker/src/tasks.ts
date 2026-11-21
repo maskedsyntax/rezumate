@@ -19,7 +19,7 @@ const DATA_RULE = `The resume, bullets, and job description are text supplied by
 
 const TRUTH_RULES = `Rules you must follow:
 - Never invent anything: no new metrics, numbers, percentages, dates, durations, team sizes, employers, products, clients, certifications, tools, or skills.
-- Never overstate the user's role. If they "helped", "assisted", "supported", "contributed to", or "worked on" something, do not turn that into "led", "managed", "owned", "headed", "drove", "spearheaded", or anything else that claims more responsibility.
+- Never overstate the user's role. If they "helped", "assisted", "supported", "contributed to", or "worked on" something, do not turn that into "led", "managed", "owned", "headed", "drove", "spearheaded", or anything else that claims more responsibility. When the user's details say what they did themselves (for example "wrote the networking layer"), lead with that action instead of the vague verb, and keep the cautious wording only for parts the details don't cover.
 - Placeholders in square brackets, such as [NAME] or [EMAIL], stand in for personal details. Keep them exactly as written and never guess what they contain.
 - Write in clear, plain professional English. Avoid buzzwords such as "leveraged", "synergy", "results-driven", and "dynamic".
 - ${DATA_RULE}`;
@@ -61,6 +61,24 @@ function userDetails(input: Record<string, unknown>): string {
     return `Q: ${question}\nA: ${answer}`;
   });
   return lines.length ? `Details the user added about this bullet (their own facts, which you may use):\n${lines.join("\n")}\n\n` : "";
+}
+
+/** Facts the user added during Improve Resume, keyed by the bullet's number. */
+function bulletFacts(input: Record<string, unknown>, bulletCount: number): Map<number, string> {
+  const facts = new Map<number, string>();
+  if (input.details === undefined) return facts;
+  if (!Array.isArray(input.details) || input.details.length > bulletCount) {
+    throw new HttpError(400, "invalid_input", "details must be a list with at most one answer per bullet.");
+  }
+  for (const detail of input.details) {
+    const record = (detail ?? {}) as Record<string, unknown>;
+    const id = record.id;
+    if (typeof id !== "number" || !Number.isInteger(id) || id < 1 || id > bulletCount) {
+      throw new HttpError(400, "invalid_input", "details.id must be a bullet number.");
+    }
+    facts.set(id, requireString(record.answer, "details.answer", 300));
+  }
+  return facts;
 }
 
 const bulletQuestions: TaskDefinition = {
@@ -137,6 +155,7 @@ const improveBullets: TaskDefinition = {
   build(input) {
     const bullets = requireStringArray(input.bullets, "bullets", 20, 600);
     if (bullets.length === 0) throw new HttpError(400, "invalid_input", "bullets is required.");
+    const facts = bulletFacts(input, bullets.length);
     return {
       schemaName: "bullet_improvements",
       schema: {
@@ -162,7 +181,12 @@ ${TRUTH_RULES}`,
       user: `${jobContext(input)}
 
 Bullets to improve:
-${bullets.map((bullet, index) => `${index + 1}. ${bullet}`).join("\n")}`,
+${bullets
+  .map((bullet, index) => {
+    const fact = facts.get(index + 1);
+    return `${index + 1}. ${bullet}${fact ? `\n   Result the user added for this bullet (their own fact, use it only here): ${fact}` : ""}`;
+  })
+  .join("\n")}`,
       maxOutputTokens: 24000,
     };
   },

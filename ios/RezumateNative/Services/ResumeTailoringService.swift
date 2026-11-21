@@ -87,35 +87,36 @@ enum ResumeTailoringService {
         return resumeText.replacingOccurrences(of: trimmedBullet, with: updatedBullet)
     }
 
+    /// How skills are written on a resume when plain title case would get them wrong
+    /// ("Uikit", "Github"). This text goes into the user's resume, so it must be exact.
+    static let displayNames: [String: String] = [
+        "a/b testing": "A/B testing", "acls": "ACLS", "ai": "AI", "api": "API", "aws": "AWS",
+        "bls": "BLS", "c#": "C#", "c++": "C++", "ci/cd": "CI/CD", "crm": "CRM", "css": "CSS",
+        "ehr": "EHR", "emr": "EMR", "fastapi": "FastAPI", "gcp": "GCP", "github": "GitHub",
+        "graphql": "GraphQL", "hipaa": "HIPAA", "html": "HTML", "hubspot": "HubSpot", "icu": "ICU",
+        "ios": "iOS", "javascript": "JavaScript", "json": "JSON", "llm": "LLM", "ml": "ML",
+        "mongodb": "MongoDB", "mysql": "MySQL", "next.js": "Next.js", "nextjs": "Next.js",
+        "nlp": "NLP", "node.js": "Node.js", "nosql": "NoSQL", "objective-c": "Objective-C",
+        "pals": "PALS", "postgresql": "PostgreSQL", "power bi": "Power BI", "ppc": "PPC",
+        "pytorch": "PyTorch", "rest api": "REST API", "rest apis": "REST APIs",
+        "scikit-learn": "scikit-learn", "sem": "SEM", "seo": "SEO", "sql": "SQL",
+        "swiftdata": "SwiftData", "swiftui": "SwiftUI", "tailwind css": "Tailwind CSS",
+        "tensorflow": "TensorFlow", "testflight": "TestFlight", "typescript": "TypeScript",
+        "ui": "UI", "ui testing": "UI testing", "uikit": "UIKit", "xcode": "Xcode", "xctest": "XCTest"
+    ]
+
     static func displayName(for keyword: String) -> String {
-        switch keyword.lowercased() {
-        case "ci/cd": return "CI/CD"
-        case "rest api": return "REST API"
-        case "next.js": return "Next.js"
-        case "node.js": return "Node.js"
-        case "c++": return "C++"
-        case "c#": return "C#"
-        case "aws": return "AWS"
-        case "gcp": return "GCP"
-        case "sql": return "SQL"
-        case "html": return "HTML"
-        case "css": return "CSS"
-        case "ui": return "UI"
-        case "api": return "API"
-        case "llm": return "LLM"
-        case "nlp": return "NLP"
-        case "ml": return "ML"
-        case "ai": return "AI"
-        default:
-            return keyword
-                .split(separator: " ")
-                .map { part in
-                    let lower = part.lowercased()
-                    guard let first = lower.first else { return String(part) }
-                    return String(first).uppercased() + lower.dropFirst()
-                }
-                .joined(separator: " ")
+        if let name = displayNames[keyword.lowercased()] {
+            return name
         }
+        return keyword
+            .split(separator: " ")
+            .map { part in
+                let lower = part.lowercased()
+                guard let first = lower.first else { return String(part) }
+                return String(first).uppercased() + lower.dropFirst()
+            }
+            .joined(separator: " ")
     }
 
     static func proofBullets(from resumeText: String) -> [String] {

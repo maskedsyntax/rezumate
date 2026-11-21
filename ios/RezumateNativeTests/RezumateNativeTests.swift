@@ -45,10 +45,99 @@ final class ATSScoringServiceTests: XCTestCase {
             jobDescription: "Seeking Python, Kubernetes, and Terraform experience for production infrastructure."
         )
 
-        XCTAssertEqual(result.scoreVersion, "ats-v2")
+        XCTAssertEqual(result.scoreVersion, "ats-v3")
         XCTAssertEqual(result.keywordCoverage, 0)
         XCTAssertTrue(result.matchedKeywords.isEmpty)
         XCTAssertEqual(Set(result.missingKeywords), Set(["kubernetes", "python", "terraform"]))
+    }
+
+    func testStrongWordingEarnsPartialImpactCredit() {
+        let resume = { (bullet: String) in "EXPERIENCE\nAcme\nEngineer\n- \(bullet)" }
+        let jd = "Python role"
+        let weak = ATSScoringService.analyzeResume(resumeText: resume("Helped with REST API integrations for the iOS team"), jobDescription: jd)
+        let strong = ATSScoringService.analyzeResume(resumeText: resume("Integrated REST APIs and ran release checks for the iOS team"), jobDescription: jd)
+        let withOutcome = ATSScoringService.analyzeResume(resumeText: resume("Integrated REST APIs for the iOS team, cutting release checks to 2 hours"), jobDescription: jd)
+
+        XCTAssertEqual(weak.componentScores["impact_quality"], 0)
+        XCTAssertEqual(strong.componentScores["impact_quality"], 25)
+        XCTAssertEqual(withOutcome.componentScores["impact_quality"], 100)
+    }
+
+    func testRecognizesMobileHealthcareAndMarketingKeywords() {
+        let keywords = ATSScoringService.extractKeywords(
+            from: "Swift, SwiftUI and XCTest. BLS and ACLS required. SEO and email marketing experience."
+        )
+        XCTAssertTrue(Set(["swift", "swiftui", "xctest", "bls", "acls", "seo", "email marketing"]).isSubset(of: Set(keywords)))
+    }
+
+    func testMissingKeywordsListRequiredSkillsBeforeNiceToHaves() {
+        let result = ATSScoringService.analyzeResume(
+            resumeText: "EXPERIENCE\nAcme\niOS Engineer\n- Built SwiftUI screens for 12,000 users",
+            jobDescription: """
+            Requirements
+            - Expert in Swift, UIKit and XCTest.
+            - Experience with Core Data and XCTest automation.
+
+            Nice to have
+            - Analytics, GraphQL and Kotlin experience.
+            """
+        )
+
+        XCTAssertEqual(result.missingKeywords, ["xctest", "swift", "uikit", "core data", "analytics", "graphql", "kotlin"])
+    }
+
+    func testPartialMatchesIgnoreGenericWords() {
+        let result = ATSScoringService.analyzeResume(
+            resumeText: "EXPERIENCE\nAcme\nEngineer\n- Built data validation tooling for the app team",
+            jobDescription: "Ship features with Core Data, publish to the App Store, and use Jetpack Compose."
+        )
+
+        XCTAssertTrue(result.partialMatches.isEmpty)
+        XCTAssertTrue(Set(["core data", "app store", "jetpack compose"]).isSubset(of: Set(result.missingKeywords)))
+    }
+
+    func testProfileLinksDoNotCountAsSkills() {
+        let result = ATSScoringService.analyzeResume(
+            resumeText: "Avery Morgan\ngithub.com/averymorgan | avery@example.com\nEXPERIENCE\nAcme\nEngineer\n- Built Swift tooling",
+            jobDescription: "Maintain CI pipelines with GitHub Actions and Swift."
+        )
+
+        XCTAssertEqual(result.matchedKeywords, ["swift"])
+        XCTAssertEqual(result.missingKeywords, ["github"])
+    }
+
+    func testSingleWordSkillsDoNotPartiallyMatchLongerWords() {
+        let result = ATSScoringService.analyzeResume(
+            resumeText: "EXPERIENCE\nAcme\nEngineer\n- Built excellent JavaScript dashboards for trusted reactive clients",
+            jobDescription: "Strong Excel, Java, Rust and React skills required."
+        )
+
+        XCTAssertTrue(result.partialMatches.isEmpty)
+        XCTAssertEqual(Set(result.missingKeywords), Set(["excel", "java", "react", "rust"]))
+    }
+
+    func testPostgresAndPostgreSQLAreTheSameSkill() {
+        let result = ATSScoringService.analyzeResume(
+            resumeText: "EXPERIENCE\nAcme\nEngineer\n- Tuned PostgreSQL queries for reporting",
+            jobDescription: "Experience running Postgres in production."
+        )
+
+        XCTAssertEqual(result.matchedKeywords, ["postgresql"])
+    }
+
+    func testResumeLengthIsReportedWithoutCostingFormattingPoints() {
+        let result = ATSScoringService.analyzeResume(
+            resumeText: "EXPERIENCE\nAcme\nEngineer\n- Built Python tooling for weekly reports",
+            jobDescription: "Python role"
+        )
+
+        XCTAssertTrue(result.formattingWarnings.contains("Resume appears unusually short after extraction."))
+        XCTAssertEqual(result.componentScores["formatting_risk"], 100)
+    }
+
+    func testGenericUIKeywordIsDroppedWhenJobNamesAFramework() {
+        let keywords = ATSScoringService.extractKeywords(from: "Build screens in SwiftUI and UIKit, and write UI tests.")
+        XCTAssertFalse(keywords.contains("ui"))
     }
 }
 
@@ -298,9 +387,32 @@ final class JobFitExtractorTests: XCTestCase {
         XCTAssertEqual(fit.educationRequirement, "Bachelor's degree")
         XCTAssertTrue(fit.educationMatched)
     }
+
+    func testFlagsSeniorityGapWhenOnlyTheLevelDiffers() {
+        let jd = "Title: Senior iOS Engineer\nBuild Swift apps with UIKit."
+        let fit = JobFitExtractor.extract(jobDescription: jd, resumeText: "Jordan Lee\niOS Engineer\nEXPERIENCE\nAcme")
+        let unrelated = JobFitExtractor.extract(jobDescription: jd, resumeText: "Jordan Lee\nData Analyst\nEXPERIENCE\nAcme")
+
+        XCTAssertFalse(fit.jobTitleMatched)
+        XCTAssertTrue(fit.jobTitleSeniorityGap)
+        XCTAssertFalse(unrelated.jobTitleSeniorityGap)
+    }
 }
 
 final class ResumeTailoringServiceTests: XCTestCase {
+    func testSkillsAreWrittenWithTheirRealCapitalization() {
+        let expected = ["uikit": "UIKit", "ios": "iOS", "github": "GitHub", "swiftui": "SwiftUI",
+                        "xctest": "XCTest", "a/b testing": "A/B testing", "core data": "Core Data"]
+        for (keyword, name) in expected {
+            XCTAssertEqual(ResumeTailoringService.displayName(for: keyword), name)
+        }
+        for skill in ATSScoringService.knownSkills {
+            let written = ResumeTailoringService.displayName(for: skill).lowercased()
+            let accepted: Set<String> = [skill, ATSScoringService.canonicalKeywords[skill] ?? skill]
+            XCTAssertTrue(accepted.contains(written), "\(skill) is written as \(written).")
+        }
+    }
+
     private let resumeWithSkills = """
     Alex Doe
     EXPERIENCE

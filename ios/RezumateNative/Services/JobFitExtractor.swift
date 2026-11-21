@@ -3,6 +3,8 @@ import Foundation
 struct JobFit: Equatable {
     var jobTitle: String?
     var jobTitleMatched: Bool
+    /// The title matches apart from seniority ("iOS Engineer" for "Senior iOS Engineer").
+    var jobTitleSeniorityGap: Bool = false
     var educationRequirement: String?
     var educationMatched: Bool
 }
@@ -12,10 +14,12 @@ enum JobFitExtractor {
         let title = extractJobTitle(from: jobDescription)
         let education = extractEducationRequirement(from: jobDescription)
         let resumeLower = resumeText.lowercased()
+        let titleMatched = title.map { resumeContainsTitle($0, resumeLower: resumeLower) } ?? false
 
         return JobFit(
             jobTitle: title,
-            jobTitleMatched: title.map { resumeContainsTitle($0, resumeLower: resumeLower) } ?? false,
+            jobTitleMatched: titleMatched,
+            jobTitleSeniorityGap: !titleMatched && (title.map { matchesWithoutSeniority($0, resumeLower: resumeLower) } ?? false),
             educationRequirement: education,
             educationMatched: education.map { resumeContainsEducation($0, resumeLower: resumeLower) } ?? false
         )
@@ -71,6 +75,13 @@ enum JobFitExtractor {
         return hits >= max(2, tokens.count - 1)
     }
 
+    private static func matchesWithoutSeniority(_ title: String, resumeLower: String) -> Bool {
+        let words = title.components(separatedBy: .whitespaces).filter { !$0.isEmpty }
+        let coreWords = words.filter { !seniorityWords.contains($0.lowercased().trimmingCharacters(in: .punctuationCharacters)) }
+        guard !coreWords.isEmpty, coreWords.count < words.count else { return false }
+        return resumeContainsTitle(coreWords.joined(separator: " "), resumeLower: resumeLower)
+    }
+
     private static func resumeContainsEducation(_ requirement: String, resumeLower: String) -> Bool {
         switch requirement {
         case "PhD":
@@ -113,6 +124,11 @@ enum JobFitExtractor {
         guard !titleNoise.contains(title.lowercased()) else { return nil }
         return title
     }
+
+    private static let seniorityWords: Set<String> = [
+        "senior", "sr", "junior", "jr", "lead", "principal", "staff", "mid-level", "entry-level",
+        "i", "ii", "iii", "iv"
+    ]
 
     private static let titleNoise: Set<String> = [
         "team", "someone", "candidate", "candidates", "person", "people", "individual", "role"

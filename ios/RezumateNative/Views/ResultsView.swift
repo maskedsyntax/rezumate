@@ -34,6 +34,7 @@ struct ResultsView: View {
     @State private var isLoadingQuestions = false
     @State private var rewriteDetails: [BulletDetail] = []
     @State private var improveDraft: ImproveReviewDraft?
+    @State private var factsDraft: ImproveFactsDraft?
     @State private var isShowingAIConsent = false
     @State private var isShowingPaywall = false
     @State private var isShowingCoverLetter = false
@@ -60,14 +61,16 @@ struct ResultsView: View {
                     limitForFree: 5,
                     showsPlacementNotice: true
                 )
-                tappableKeywordSection(
-                    title: "Partial matches",
-                    subtitle: "Close — add the exact term if you have it.",
-                    items: currentResult.partialMatches,
-                    color: RezTheme.blueWash,
-                    limitForFree: 5,
-                    showsPlacementNotice: false
-                )
+                if !currentResult.partialMatches.isEmpty {
+                    tappableKeywordSection(
+                        title: "Partial matches",
+                        subtitle: "Close — add the exact term if you have it.",
+                        items: currentResult.partialMatches,
+                        color: RezTheme.blueWash,
+                        limitForFree: 5,
+                        showsPlacementNotice: false
+                    )
+                }
                 if !extraRequirements.isEmpty {
                     tappableKeywordSection(
                         title: "Also mentioned in this job",
@@ -166,6 +169,16 @@ struct ResultsView: View {
                 onCancel: { rewriteDraft = nil }
             )
             .presentationDetents([.medium, .large])
+        }
+        .sheet(item: $factsDraft) { draft in
+            ImproveFactsSheet(
+                draft: draft,
+                onSubmit: { facts in
+                    factsDraft = nil
+                    Task { await runAIImprovements(draft.targets, facts: facts) }
+                },
+                onCancel: { factsDraft = nil }
+            )
         }
         .sheet(item: $improveDraft) { draft in
             ImproveReviewSheet(
@@ -479,7 +492,7 @@ struct ResultsView: View {
         case "impact_quality":
             let importance = "Strong resume bullets connect work to outcomes. Numbers are best when they are real, but clear outcome, reliability, quality, performance, or delivery signals are also stronger than task-only bullets."
             let bulletsWithImpact = currentResult.bulletCount - currentResult.bulletsWithoutMeasurableImpactCount
-            let explanation = "\(bulletsWithImpact) out of \(currentResult.bulletCount) bullets contain impact signals. Rezumate only makes conservative wording changes and never invents outcomes or numbers."
+            let explanation = "\(bulletsWithImpact) out of \(currentResult.bulletCount) bullets show an outcome. Outcomes count for most of this score and strong wording for the rest. Rezumate never invents outcomes or numbers, so add real ones when Improve Resume asks."
             return (importance, explanation)
             
         case "keyword_coverage":
@@ -538,8 +551,8 @@ struct ResultsView: View {
                         SectionTitle("Role fit", subtitle: "Checked against this job description. Not added to your resume automatically.")
                         ForEach(rows, id: \.label) { row in
                             HStack(alignment: .top, spacing: 10) {
-                                Image(systemName: row.matched ? "checkmark.circle.fill" : "circle")
-                                    .foregroundStyle(row.matched ? RezTheme.success : RezTheme.muted)
+                                Image(systemName: row.status.symbol)
+                                    .foregroundStyle(row.status == .matched ? RezTheme.success : RezTheme.muted)
                                 VStack(alignment: .leading, spacing: 2) {
                                     Text(row.label)
                                         .font(.caption.weight(.black))
@@ -550,11 +563,11 @@ struct ResultsView: View {
                                         .fixedSize(horizontal: false, vertical: true)
                                 }
                                 Spacer(minLength: 0)
-                                Text(row.matched ? "MATCHED" : "MISSING")
+                                Text(row.status.label)
                                     .font(.system(size: 8, weight: .black))
                                     .padding(.horizontal, 6)
                                     .padding(.vertical, 3)
-                                    .background(row.matched ? RezTheme.success : RezTheme.warning, in: RoundedRectangle(cornerRadius: 3))
+                                    .background(row.status.color, in: RoundedRectangle(cornerRadius: 3))
                                     .foregroundStyle(RezTheme.ink)
                             }
                         }
@@ -564,13 +577,19 @@ struct ResultsView: View {
         }
     }
 
-    private var roleFitRows: [(label: String, value: String, matched: Bool)] {
-        var rows: [(label: String, value: String, matched: Bool)] = []
+    private var roleFitRows: [(label: String, value: String, status: RoleFitStatus)] {
+        var rows: [(label: String, value: String, status: RoleFitStatus)] = []
         if let title = currentResult.jobTitle {
-            rows.append(("Job title", title, currentResult.jobTitleMatched))
+            if currentResult.jobTitleMatched {
+                rows.append(("Job title", title, .matched))
+            } else if currentResult.jobTitleSeniorityGap {
+                rows.append(("Job title", "\(title) · same role, different seniority", .partial))
+            } else {
+                rows.append(("Job title", title, .missing))
+            }
         }
         if let education = currentResult.educationRequirement {
-            rows.append(("Education", education, currentResult.educationMatched))
+            rows.append(("Education", education, currentResult.educationMatched ? .matched : .missing))
         }
         return rows
     }
@@ -600,6 +619,37 @@ struct ResultsView: View {
         }
     }
 
+    /// Chips that add a skill to the resume when tapped, after asking where it goes.
+    private func addableKeywordChips(_ items: [String], color: Color) -> some View {
+        FlowLayout(items: items) { item in
+            Button {
+                Task { await presentPlacement(for: item) }
+            } label: {
+                HStack(spacing: 4) {
+                    Image(systemName: "plus")
+                        .font(.system(size: 9, weight: .black))
+                    Text(item)
+                        .font(.caption.weight(.black))
+                        .lineLimit(2)
+                        .multilineTextAlignment(.center)
+                        .minimumScaleFactor(0.82)
+                }
+                .padding(.horizontal, 10)
+                .padding(.vertical, 7)
+                .frame(maxWidth: .infinity, minHeight: 34)
+                .background(color, in: RoundedRectangle(cornerRadius: 4))
+                .foregroundStyle(RezTheme.ink)
+                .overlay {
+                    RoundedRectangle(cornerRadius: 4)
+                        .stroke(RezTheme.ink, lineWidth: 2)
+                }
+            }
+            .buttonStyle(.plain)
+            .disabled(isPlacingKeyword || isWorking)
+            .accessibilityLabel("Add \(item)")
+        }
+    }
+
     private func tappableKeywordSection(
         title: String,
         subtitle: String,
@@ -624,33 +674,7 @@ struct ResultsView: View {
                         .font(.subheadline)
                         .foregroundStyle(RezTheme.muted)
                 } else {
-                    FlowLayout(items: visibleItems) { item in
-                        Button {
-                            Task { await presentPlacement(for: item) }
-                        } label: {
-                            HStack(spacing: 4) {
-                                Image(systemName: "plus")
-                                    .font(.system(size: 9, weight: .black))
-                                Text(item)
-                                    .font(.caption.weight(.black))
-                                    .lineLimit(2)
-                                    .multilineTextAlignment(.center)
-                                    .minimumScaleFactor(0.82)
-                            }
-                            .padding(.horizontal, 10)
-                            .padding(.vertical, 7)
-                            .frame(maxWidth: .infinity, minHeight: 34)
-                            .background(color, in: RoundedRectangle(cornerRadius: 4))
-                            .foregroundStyle(RezTheme.ink)
-                            .overlay {
-                                RoundedRectangle(cornerRadius: 4)
-                                    .stroke(RezTheme.ink, lineWidth: 2)
-                            }
-                        }
-                        .buttonStyle(.plain)
-                        .disabled(isPlacingKeyword || isWorking)
-                        .accessibilityLabel("Add \(item)")
-                    }
+                    addableKeywordChips(visibleItems, color: color)
                     if hiddenCount > 0 {
                         Text("+\(hiddenCount) more included with Pro")
                             .font(.caption.weight(.black))
@@ -860,9 +884,25 @@ struct ResultsView: View {
                             .font(.caption)
                             .foregroundStyle(RezTheme.muted)
 
-                        Label("No skills, metrics, experience, or achievements were added.", systemImage: "checkmark.shield.fill")
+                        Label("Nothing was added that you didn't write.", systemImage: "checkmark.shield.fill")
                             .font(.caption.weight(.semibold))
                             .foregroundStyle(RezTheme.ink)
+
+                        // Skills are the biggest score lever left after rewriting, so offer them here
+                        // rather than only in the list further up.
+                        if !currentResult.missingKeywords.isEmpty {
+                            Divider()
+                            VStack(alignment: .leading, spacing: 4) {
+                                Text("Next: add skills you have")
+                                    .font(.subheadline.weight(.semibold))
+                                    .foregroundStyle(RezTheme.ink)
+                                Text("This job asks for these and your resume doesn't mention them. Tap only the ones you've really used.")
+                                    .font(.caption)
+                                    .foregroundStyle(RezTheme.muted)
+                                    .fixedSize(horizontal: false, vertical: true)
+                            }
+                            addableKeywordChips(Array(currentResult.missingKeywords.prefix(5)), color: RezTheme.warning)
+                        }
                     }
                 }
             }
@@ -1146,19 +1186,35 @@ struct ResultsView: View {
         }
     }
 
+    /// Asks what the user did and what came of it for weak bullets, then runs the AI.
     private func improveResumeWithAI() async {
-        guard let context = aiContext() else { return }
         let targets = bulletIssues.map(\.text)
         guard !targets.isEmpty else {
             errorMessage = "No weak bullets to improve."
             return
         }
+        let withoutImpact = Set(currentResult.bulletsWithoutMeasurableImpact)
+        let weakWording = Set(currentResult.weakBullets)
+        let draft = ImproveFactsDraft(
+            targets: targets,
+            needsResult: targets.filter { withoutImpact.contains($0) },
+            needsOwnership: targets.filter { weakWording.contains($0) }
+        )
+        if draft.askedBullets.isEmpty {
+            await runAIImprovements(targets, facts: [:])
+        } else {
+            factsDraft = draft
+        }
+    }
+
+    private func runAIImprovements(_ targets: [String], facts: [String: String]) async {
+        guard let context = aiContext() else { return }
         isWorking = true
         errorMessage = nil
         defer { isWorking = false }
 
         do {
-            let (items, access) = try await appState.ai.improvements(for: targets, context: context)
+            let (items, access) = try await appState.ai.improvements(for: targets, facts: facts, context: context)
             appState.updateAIAccess(access)
             improveDraft = ImproveReviewDraft(items: items)
         } catch AIClientError.noAccess {
@@ -1427,6 +1483,34 @@ struct FlowLayout<Data: RandomAccessCollection, Content: View>: View where Data.
                     .frame(minHeight: 34)
                     .frame(maxWidth: .infinity)
             }
+        }
+    }
+}
+
+private enum RoleFitStatus {
+    case matched, partial, missing
+
+    var label: String {
+        switch self {
+        case .matched: "MATCHED"
+        case .partial: "PARTIAL"
+        case .missing: "MISSING"
+        }
+    }
+
+    var symbol: String {
+        switch self {
+        case .matched: "checkmark.circle.fill"
+        case .partial: "circle.lefthalf.filled"
+        case .missing: "circle"
+        }
+    }
+
+    var color: Color {
+        switch self {
+        case .matched: RezTheme.success
+        case .partial: RezTheme.blueWash
+        case .missing: RezTheme.warning
         }
     }
 }
