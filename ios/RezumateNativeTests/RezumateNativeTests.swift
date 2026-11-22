@@ -707,3 +707,28 @@ private final class FakeStoreKitService: StoreKitServing {
         owned.isEmpty ? [] : ["1000"]
     }
 }
+
+final class ExtractionCleanupTests: XCTestCase {
+    func testSplitsBulletsPDFKitJoinedIntoOneLine() {
+        let text = PDFTextExtractor.normalizeResumeText(
+            "- Worked on the checkout flow - Helped with moving the app to SwiftUI - Responsible for fixing crashes"
+        )
+        XCTAssertEqual(text.components(separatedBy: "\n"), [
+            "- Worked on the checkout flow",
+            "- Helped with moving the app to SwiftUI",
+            "- Responsible for fixing crashes"
+        ])
+    }
+
+    func testKeepsDashesInsideASingleBullet() {
+        let line = "- Built a sync engine - offline first, using Core Data"
+        XCTAssertEqual(PDFTextExtractor.normalizeResumeText(line), line)
+        XCTAssertEqual(PDFTextExtractor.normalizeResumeText("Mar 2022 - Present"), "Mar 2022 - Present")
+    }
+
+    func testExtraRequirementsTreatPluralsAndCaseAsTheSameSkill() {
+        XCTAssertEqual(AIRewriteService.termKey("REST APIs"), AIRewriteService.termKey("rest api"))
+        XCTAssertEqual(AIRewriteService.termKey("CI/CD"), AIRewriteService.termKey("ci cd"))
+        XCTAssertNotEqual(AIRewriteService.termKey("C#"), AIRewriteService.termKey("C++"))
+    }
+}

@@ -347,7 +347,7 @@ struct ResultsView: View {
             VStack(alignment: .leading, spacing: 16) {
                 SectionTitle(
                     "Score breakdown",
-                    subtitle: appState.isPro ? "Tap a score for details & diagnosis" : "Free includes the score breakdown. Pro unlocks full diagnosis."
+                    subtitle: appState.isPro ? "Tap a score for details & diagnosis" : "Pro explains what's behind each score."
                 )
                 ForEach(currentResult.componentScores.sorted(by: { $0.key < $1.key }), id: \.key) { key, value in
                     let isExpanded = expandedScores.contains(key)
@@ -380,9 +380,11 @@ struct ResultsView: View {
                                                 .font(.system(size: 9, weight: .black))
                                                 .foregroundStyle(delta > 0 ? RezTheme.success : RezTheme.error)
                                         }
-                                        Image(systemName: appState.isPro ? (isExpanded ? "chevron.up" : "chevron.down") : "lock.fill")
-                                            .font(.system(size: 10, weight: .bold))
-                                            .foregroundStyle(RezTheme.muted)
+                                        if appState.isPro {
+                                            Image(systemName: isExpanded ? "chevron.up" : "chevron.down")
+                                                .font(.system(size: 10, weight: .bold))
+                                                .foregroundStyle(RezTheme.muted)
+                                        }
                                     }
                                 }
                                 ProgressView(value: Double(value), total: 100)
@@ -628,7 +630,7 @@ struct ResultsView: View {
                 HStack(spacing: 4) {
                     Image(systemName: "plus")
                         .font(.system(size: 9, weight: .black))
-                    Text(item)
+                    Text(ResumeTailoringService.displayName(for: item))
                         .font(.caption.weight(.black))
                         .lineLimit(2)
                         .multilineTextAlignment(.center)
@@ -646,7 +648,7 @@ struct ResultsView: View {
             }
             .buttonStyle(.plain)
             .disabled(isPlacingKeyword || isWorking)
-            .accessibilityLabel("Add \(item)")
+            .accessibilityLabel("Add \(ResumeTailoringService.displayName(for: item))")
         }
     }
 
@@ -686,13 +688,15 @@ struct ResultsView: View {
     }
 
     private func keywordChip(_ item: String, color: Color) -> some View {
-        Text(item)
+        Text(ResumeTailoringService.displayName(for: item))
             .font(.caption.weight(.black))
             .lineLimit(2)
             .multilineTextAlignment(.center)
             .minimumScaleFactor(0.82)
             .padding(.horizontal, 10)
             .padding(.vertical, 7)
+            // Fill the grid cell like the tappable chips, so rows line up.
+            .frame(maxWidth: .infinity, minHeight: 34)
             .background(color, in: RoundedRectangle(cornerRadius: 4))
             .foregroundStyle(RezTheme.ink)
             .overlay {

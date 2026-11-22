@@ -186,18 +186,27 @@ struct AIRewriteService {
         let input = JobInsightsInput(jobDescription: String(PIIRedactor(resumeText: context.resumeText).redact(context.jobDescription).prefix(10000)))
         let (output, _, _): (JobInsightsOutput, AIAccess, String?) = try await client.run("job-insights", input: input)
 
-        let shown = Set(alreadyShown.map { $0.lowercased() })
+        let shown = Set(alreadyShown.map(Self.termKey))
         let resumeLower = context.resumeText.lowercased()
+        var seen = Set<String>()
         let terms = output.requirements
             .sorted { ($0.importance == "required" ? 0 : 1) < ($1.importance == "required" ? 0 : 1) }
             .map { $0.term.trimmingCharacters(in: .whitespacesAndNewlines) }
             .filter { term in
-                let lower = term.lowercased()
+                let key = Self.termKey(term)
                 return !term.isEmpty && term.count <= 40
-                    && !shown.contains(lower)
-                    && !resumeLower.contains(lower)
+                    && !shown.contains(key)
+                    && !resumeLower.contains(term.lowercased())
+                    && seen.insert(key).inserted
             }
-        return Array(uniqued(terms).prefix(12))
+        return Array(terms.prefix(12))
+    }
+
+    /// Compares skills loosely, so "REST APIs", "rest api", and "REST-API" are the same term.
+    static func termKey(_ term: String) -> String {
+        var key = term.lowercased().filter { $0.isLetter || $0.isNumber || $0 == "+" || $0 == "#" }
+        if key.count > 3, key.hasSuffix("s") { key.removeLast() }
+        return key
     }
 
     // MARK: - Helpers

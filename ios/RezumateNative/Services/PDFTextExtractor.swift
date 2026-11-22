@@ -44,6 +44,20 @@ struct PDFTextExtractor {
         return evaluateExtractedText(extractedText, warnings: warnings, pageCount: pageCount)
     }
     
+    /// PDFKit sometimes reads tightly spaced bullet lines as one paragraph:
+    /// "- Built X - Fixed Y". Splits such a line back into one bullet per line when every
+    /// piece starts with a capital letter and has at least three words.
+    static func splitJoinedBullets(_ line: String) -> [String] {
+        guard let marker = ["- ", "• ", "* "].first(where: { line.hasPrefix($0) }) else { return [line] }
+        let pieces = line.dropFirst(marker.count).components(separatedBy: " \(marker)")
+        guard pieces.count > 1 else { return [line] }
+        let looksLikeBullets = pieces.allSatisfy { piece in
+            guard let first = piece.first, first.isUppercase else { return false }
+            return piece.split(separator: " ").count >= 3
+        }
+        return looksLikeBullets ? pieces.map { marker + $0 } : [line]
+    }
+
     static func normalizeResumeText(_ text: String) -> String {
         let lines = text.replacingOccurrences(of: "\r\n", with: "\n")
                         .replacingOccurrences(of: "\r", with: "\n")
@@ -62,7 +76,7 @@ struct PDFTextExtractor {
                 continue
             }
             
-            normalizedLines.append(cleaned)
+            normalizedLines.append(contentsOf: splitJoinedBullets(cleaned))
             previousBlank = isBlank
         }
         
