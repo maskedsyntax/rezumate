@@ -48,6 +48,8 @@ struct ATSScoringService {
         "ios", "swift", "swiftui", "uikit", "objective-c", "xcode", "xctest",
         "core data", "swiftdata", "app store", "testflight", "android", "kotlin",
         "jetpack compose", "react native", "flutter", "unit testing", "ui testing",
+        "unit tests", "unit test", "ui tests", "ui test", "push notifications", "push notification",
+        "xcode cloud", "github actions", "gitlab ci",
         // Healthcare
         "patient care", "patient education", "medication administration", "triage",
         "bls", "acls", "pals", "ehr", "emr", "telemetry", "icu", "infection control",
@@ -71,8 +73,27 @@ struct ATSScoringService {
         "rest api": "rest api",
         "rest apis": "rest api",
         "tailwind": "tailwind css",
-        "tailwind css": "tailwind css"
+        "tailwind css": "tailwind css",
+        "unit tests": "unit testing",
+        "unit test": "unit testing",
+        "ui tests": "ui testing",
+        "ui test": "ui testing",
+        "push notification": "push notifications"
     ]
+
+    /// Other spellings that count as the same skill on a resume ("unit tests" for "unit testing").
+    static let keywordVariants: [String: [String]] = [
+        "unit testing": ["unit tests", "unit test"],
+        "ui testing": ["ui tests", "ui test"],
+        "push notifications": ["push notification"]
+    ]
+
+    /// Separators that make neighbouring skills alternatives: "Core Data or SwiftData",
+    /// "AWS, GCP, or Azure", "Kotlin/Java". Commas alone only count inside a group that has an "or".
+    static let alternativeSeparatorRegex = try! NSRegularExpression(
+        pattern: #"^[ \t]*(?:,[ \t]*)?(?:or|and/or|/)[ \t]*$"#, options: []
+    )
+    static let commaSeparatorRegex = try! NSRegularExpression(pattern: #"^[ \t]*,[ \t]*$"#, options: [])
     
     static let redundantKeywords: [String: Set<String>] = [
         "api": ["rest api", "graphql", "fastapi"],
@@ -144,8 +165,17 @@ struct ATSScoringService {
     }
 
     static func analyzeResume(resumeText: String, jobDescription: String) -> ATSAnalysisResult {
-        let jdKeywords = extractKeywords(from: jobDescription)
         let resumeLower = removingLinks(from: resumeText.lowercased())
+        // "Core Data or SwiftData": having one option meets the requirement, so the others
+        // are neither missing nor counted.
+        var jdKeywords = extractKeywords(from: jobDescription)
+        for group in alternativeGroups(in: jobDescription) {
+            let have = group.filter { keywordInText($0, textLower: resumeLower) }
+            if !have.isEmpty {
+                let dropped = Set(group).subtracting(have)
+                jdKeywords.removeAll { dropped.contains($0) }
+            }
+        }
 
         var matchedKeywords: [String] = []
         var missingKeywords: [String] = []
@@ -227,16 +257,77 @@ struct ATSScoringService {
     }
     
     static func extractKeywords(from text: String) -> [String] {
-        let textLower = removingLinks(from: text.lowercased())
-        var found: Set<String> = []
-        
-        for skill in knownSkills {
-            if !keywordNoise.contains(skill) && keywordInText(skill, textLower: textLower) {
-                found.insert(canonicalizeKeyword(skill))
+        let found = Set(skillMentions(in: text).map(\.keyword))
+        return removeRedundantKeywords(found).sorted()
+    }
+
+    /// Every skill the text mentions, with where. Longer skills are matched first and their
+    /// text is blanked out, so "GitHub Actions" doesn't also count as "GitHub" and
+    /// "React Native" doesn't also count as "React".
+    static func skillMentions(in text: String) -> [(keyword: String, range: NSRange)] {
+        var textLower = removingLinks(from: text.lowercased()) as NSString
+        var mentions: [(keyword: String, range: NSRange)] = []
+        for skill in skillsLongestFirst {
+            let keyword = canonicalizeKeyword(skill)
+            for pattern in patterns(for: skill) {
+                guard let regex = cachedRegex(pattern) else { continue }
+                let current = textLower as String
+                let matches = regex.matches(in: current, options: [], range: NSRange(location: 0, length: textLower.length))
+                guard !matches.isEmpty else { continue }
+                let masked = NSMutableString(string: current)
+                for match in matches {
+                    mentions.append((keyword, match.range))
+                    masked.replaceCharacters(in: match.range, with: String(repeating: " ", count: match.range.length))
+                }
+                textLower = masked
             }
         }
-        
-        return removeRedundantKeywords(found).sorted()
+        return mentions.sorted { $0.range.location < $1.range.location }
+    }
+
+    private static let skillsLongestFirst = knownSkills.filter { !keywordNoise.contains($0) }
+        .sorted { $0.count != $1.count ? $0.count > $1.count : $0 < $1 }
+
+    // Scoring runs these patterns many times per analysis, so each is compiled once.
+    private static let regexCache = NSCache<NSString, NSRegularExpression>()
+
+    private static func cachedRegex(_ pattern: String) -> NSRegularExpression? {
+        if let regex = regexCache.object(forKey: pattern as NSString) { return regex }
+        guard let regex = try? NSRegularExpression(pattern: pattern, options: []) else { return nil }
+        regexCache.setObject(regex, forKey: pattern as NSString)
+        return regex
+    }
+
+    /// Groups of skills the job offers as alternatives, such as ["core data", "swiftdata"].
+    static func alternativeGroups(in jobDescription: String) -> [[String]] {
+        let text = removingLinks(from: jobDescription.lowercased()) as NSString
+        let mentions = skillMentions(in: jobDescription)
+        var groups: [[String]] = []
+        var current: [String] = []
+        var hasOr = false
+        func close() {
+            if hasOr, Set(current).count > 1 { groups.append(Array(Set(current)).sorted()) }
+            current = []
+            hasOr = false
+        }
+        for (index, mention) in mentions.enumerated() {
+            if index > 0 {
+                let previous = mentions[index - 1].range
+                let gapStart = previous.location + previous.length
+                let gap = gapStart <= mention.range.location
+                    ? text.substring(with: NSRange(location: gapStart, length: mention.range.location - gapStart))
+                    : ""
+                let gapRange = NSRange(location: 0, length: (gap as NSString).length)
+                if alternativeSeparatorRegex.firstMatch(in: gap, options: [], range: gapRange) != nil {
+                    hasOr = true
+                } else if commaSeparatorRegex.firstMatch(in: gap, options: [], range: gapRange) == nil {
+                    close()
+                }
+            }
+            current.append(mention.keyword)
+        }
+        close()
+        return groups
     }
 
     /// Orders keywords by how central they are to the job: skills outside a "nice to have"
@@ -364,12 +455,18 @@ struct ATSScoringService {
         return averageWordLength <= 18
     }
     
+    /// Regexes that find the skill as a whole word, including its known spellings.
+    private static func patterns(for keyword: String) -> [String] {
+        let wholeWord = { (term: String) -> String in
+            let escaped = NSRegularExpression.escapedPattern(for: term.lowercased())
+                .replacingOccurrences(of: "\\ ", with: "\\s+")
+            return "(?<![a-z0-9])\(escaped)(?![a-z0-9])"
+        }
+        return ([keyword] + (keywordVariants[keyword] ?? [])).map(wholeWord)
+    }
+
     private static func keywordInText(_ keyword: String, textLower: String) -> Bool {
-        let escaped = NSRegularExpression.escapedPattern(for: keyword.lowercased())
-            .replacingOccurrences(of: "\\ ", with: "\\s+")
-        let pattern = "(?<![a-z0-9])\(escaped)(?![a-z0-9])"
-        
-        if matchesPattern(pattern, in: textLower) {
+        if patterns(for: keyword).contains(where: { matchesPattern($0, in: textLower) }) {
             return true
         }
         
@@ -393,7 +490,7 @@ struct ATSScoringService {
     }
     
     private static func matchesPattern(_ pattern: String, in text: String) -> Bool {
-        guard let regex = try? NSRegularExpression(pattern: pattern, options: []) else { return false }
+        guard let regex = cachedRegex(pattern) else { return false }
         let range = NSRange(location: 0, length: text.utf16.count)
         return regex.firstMatch(in: text, options: [], range: range) != nil
     }

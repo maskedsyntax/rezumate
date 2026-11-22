@@ -102,7 +102,9 @@ enum ResumeTailoringService {
         "scikit-learn": "scikit-learn", "sem": "SEM", "seo": "SEO", "sql": "SQL",
         "swiftdata": "SwiftData", "swiftui": "SwiftUI", "tailwind css": "Tailwind CSS",
         "tensorflow": "TensorFlow", "testflight": "TestFlight", "typescript": "TypeScript",
-        "ui": "UI", "ui testing": "UI testing", "uikit": "UIKit", "xcode": "Xcode", "xctest": "XCTest"
+        "ui": "UI", "ui testing": "UI testing", "uikit": "UIKit", "xcode": "Xcode", "xctest": "XCTest",
+        "unit testing": "Unit testing", "push notifications": "Push notifications", "xcode cloud": "Xcode Cloud",
+        "github actions": "GitHub Actions", "gitlab ci": "GitLab CI", "app store": "App Store", "core data": "Core Data"
     ]
 
     static func displayName(for keyword: String) -> String {

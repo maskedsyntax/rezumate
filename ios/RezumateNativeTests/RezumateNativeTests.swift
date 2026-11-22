@@ -103,7 +103,8 @@ final class ATSScoringServiceTests: XCTestCase {
         )
 
         XCTAssertEqual(result.matchedKeywords, ["swift"])
-        XCTAssertEqual(result.missingKeywords, ["github"])
+        // The job names the product "GitHub Actions"; the github.com link still doesn't count.
+        XCTAssertEqual(result.missingKeywords, ["github actions"])
     }
 
     func testSingleWordSkillsDoNotPartiallyMatchLongerWords() {
@@ -114,6 +115,49 @@ final class ATSScoringServiceTests: XCTestCase {
 
         XCTAssertTrue(result.partialMatches.isEmpty)
         XCTAssertEqual(Set(result.missingKeywords), Set(["excel", "java", "react", "rust"]))
+    }
+
+    func testOneOptionOfAnOrListMeetsTheRequirement() {
+        let result = ATSScoringService.analyzeResume(
+            resumeText: "EXPERIENCE\nAcme\nEngineer\n- Built offline sync with Core Data",
+            jobDescription: "Experience with Core Data or SwiftData. Also AWS, GCP, or Azure."
+        )
+
+        XCTAssertEqual(result.matchedKeywords, ["core data"])
+        XCTAssertFalse(result.jdKeywords.contains("swiftdata"))
+        // No cloud provider on the resume, so every option is still worth showing.
+        XCTAssertEqual(Set(result.missingKeywords), Set(["aws", "gcp", "azure"]))
+    }
+
+    func testSkillsJoinedByAndAreAllRequired() {
+        let result = ATSScoringService.analyzeResume(
+            resumeText: "EXPERIENCE\nAcme\nEngineer\n- Built screens in SwiftUI",
+            jobDescription: "Strong SwiftUI and UIKit experience."
+        )
+
+        XCTAssertEqual(result.missingKeywords, ["uikit"])
+    }
+
+    func testProductNamesDoNotCountAsTheirShorterSkill() {
+        let keywords = ATSScoringService.extractKeywords(
+            from: "CI/CD with Xcode Cloud or GitHub Actions. React Native experience."
+        )
+
+        XCTAssertTrue(keywords.contains("github actions"))
+        XCTAssertTrue(keywords.contains("xcode cloud"))
+        XCTAssertTrue(keywords.contains("react native"))
+        XCTAssertFalse(keywords.contains("github"))
+        XCTAssertFalse(keywords.contains("xcode"))
+        XCTAssertFalse(keywords.contains("react"))
+    }
+
+    func testTestAndNotificationSpellingsMatch() {
+        let result = ATSScoringService.analyzeResume(
+            resumeText: "EXPERIENCE\nAcme\nEngineer\n- Wrote unit tests and shipped push notifications",
+            jobDescription: "Writing unit testing suites. Experience with push notification services."
+        )
+
+        XCTAssertEqual(Set(result.matchedKeywords), Set(["unit testing", "push notifications"]))
     }
 
     func testPostgresAndPostgreSQLAreTheSameSkill() {
