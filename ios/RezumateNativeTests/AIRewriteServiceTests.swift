@@ -255,3 +255,42 @@ final class RewriteFilteringTests: XCTestCase {
         XCTAssertTrue(service.isMeaningfulChange(from: original, to: "Worked on checkout features and payment flows in Python and PostgreSQL"))
     }
 }
+
+final class ImprovementPlanTests: XCTestCase {
+    func testVagueBulletsWithoutDetailsAreNotSent() {
+        let vague = "Worked on push notifications"
+        let hedgedWithResult = "Helped cut support tickets by 30%"
+        let noResult = "Built the onboarding screens in SwiftUI"
+        let plan = AIRewriteService.improvementPlan(
+            targets: [vague, hedgedWithResult, noResult],
+            weakWording: [vague, hedgedWithResult],
+            withoutImpact: [vague, noResult],
+            facts: [:]
+        )
+
+        XCTAssertEqual(plan.send, [hedgedWithResult, noResult])
+        XCTAssertEqual(plan.needsDetails, [vague])
+    }
+
+    func testADetailMakesAVagueBulletWorthSending() {
+        let vague = "Worked on push notifications"
+        let plan = AIRewriteService.improvementPlan(
+            targets: [vague],
+            weakWording: [vague],
+            withoutImpact: [vague],
+            facts: [vague: "What I did: wrote the APNs token handling"]
+        )
+
+        XCTAssertEqual(plan.send, [vague])
+        XCTAssertTrue(plan.needsDetails.isEmpty)
+    }
+
+    func testBlankDetailDoesNotCount() {
+        let vague = "Assisted the team with unit tests"
+        let plan = AIRewriteService.improvementPlan(
+            targets: [vague], weakWording: [vague], withoutImpact: [vague], facts: [vague: "   "]
+        )
+
+        XCTAssertEqual(plan.needsDetails, [vague])
+    }
+}

@@ -203,6 +203,12 @@ enum AIKeychain {
 
     private static let service = "com.rezumate.native.ai"
 
+    #if REZUMATE_CLI
+    // The command-line runner keeps its session in memory: each rebuild is a new binary,
+    // which macOS would otherwise stop at a keychain permission prompt.
+    nonisolated(unsafe) private static var memory: [Item: String] = [:]
+    #endif
+
     static func installID() -> String {
         if let existing = load(.installID) { return existing }
         let id = UUID().uuidString.lowercased()
@@ -211,6 +217,10 @@ enum AIKeychain {
     }
 
     static func save(_ value: String, for item: Item) {
+        #if REZUMATE_CLI
+        memory[item] = value
+        return
+        #endif
         delete(item)
         let query: [String: Any] = [
             kSecClass as String: kSecClassGenericPassword,
@@ -223,6 +233,9 @@ enum AIKeychain {
     }
 
     static func load(_ item: Item) -> String? {
+        #if REZUMATE_CLI
+        return memory[item]
+        #endif
         let query: [String: Any] = [
             kSecClass as String: kSecClassGenericPassword,
             kSecAttrService as String: service,
@@ -239,6 +252,10 @@ enum AIKeychain {
     }
 
     static func delete(_ item: Item) {
+        #if REZUMATE_CLI
+        memory[item] = nil
+        return
+        #endif
         let query: [String: Any] = [
             kSecClass as String: kSecClassGenericPassword,
             kSecAttrService as String: service,

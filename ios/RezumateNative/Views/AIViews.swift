@@ -413,10 +413,28 @@ struct ImproveFactsSheet: View {
                         }
                     }
 
-                    Button(facts.isEmpty ? "Improve without details" : "Improve with \(facts.count) detail\(facts.count == 1 ? "" : "s")") {
+                    let plan = AIRewriteService.improvementPlan(
+                        targets: draft.targets,
+                        weakWording: Set(draft.needsOwnership),
+                        withoutImpact: Set(draft.needsResult),
+                        facts: facts
+                    )
+                    if plan.send.isEmpty {
+                        Text("These bullets only say what you worked on. Add what you did or what came of it for at least one, and the AI can make it stronger.")
+                            .font(.caption.weight(.semibold))
+                            .foregroundStyle(RezTheme.ink)
+                            .fixedSize(horizontal: false, vertical: true)
+                    } else if !plan.needsDetails.isEmpty {
+                        Text("\(plan.needsDetails.count) bullet\(plan.needsDetails.count == 1 ? "" : "s") without details will stay as \(plan.needsDetails.count == 1 ? "it is" : "they are").")
+                            .font(.caption)
+                            .foregroundStyle(RezTheme.muted)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+                    Button(plan.send.isEmpty ? "Add a detail to continue" : "Improve \(plan.send.count) bullet\(plan.send.count == 1 ? "" : "s")") {
                         onSubmit(facts)
                     }
                     .buttonStyle(RezPrimaryButtonStyle())
+                    .disabled(plan.send.isEmpty)
                 }
                 .padding()
             }
@@ -463,20 +481,31 @@ struct ImproveFactsSheet: View {
 struct ImproveReviewDraft: Identifiable, Equatable {
     let id = UUID()
     let items: [BulletImprovement]
+    /// Vague bullets that were not sent because the user gave no details for them.
+    var needsDetails: [String] = []
 }
 
 struct ImproveReviewSheet: View {
     let draft: ImproveReviewDraft
     let isApplying: Bool
     let onApply: ([BulletImprovement]) -> Void
+    /// Called with the changes the user kept, so they survive the round trip to add details.
+    let onAddDetails: ([BulletImprovement]) -> Void
     let onCancel: () -> Void
 
     @State private var accepted: Set<String>
 
-    init(draft: ImproveReviewDraft, isApplying: Bool, onApply: @escaping ([BulletImprovement]) -> Void, onCancel: @escaping () -> Void) {
+    init(
+        draft: ImproveReviewDraft,
+        isApplying: Bool,
+        onApply: @escaping ([BulletImprovement]) -> Void,
+        onAddDetails: @escaping ([BulletImprovement]) -> Void,
+        onCancel: @escaping () -> Void
+    ) {
         self.draft = draft
         self.isApplying = isApplying
         self.onApply = onApply
+        self.onAddDetails = onAddDetails
         self.onCancel = onCancel
         _accepted = State(initialValue: Set(draft.items.map(\.id)))
     }
@@ -517,6 +546,30 @@ struct ImproveReviewSheet: View {
                             .overlay { RoundedRectangle(cornerRadius: 6).stroke(RezTheme.ink, lineWidth: 1.5) }
                         }
                         .buttonStyle(.plain)
+                    }
+
+                    if !draft.needsDetails.isEmpty {
+                        VStack(alignment: .leading, spacing: 8) {
+                            Text("Needs your details")
+                                .font(.subheadline.weight(.semibold))
+                                .foregroundStyle(RezTheme.ink)
+                            Text("These only say what you worked on. Add what you did or what came of it, and the AI can strengthen them.")
+                                .font(.caption)
+                                .foregroundStyle(RezTheme.muted)
+                                .fixedSize(horizontal: false, vertical: true)
+                            ForEach(draft.needsDetails, id: \.self) { bullet in
+                                Text("• \(bullet)")
+                                    .font(.caption)
+                                    .foregroundStyle(RezTheme.ink)
+                                    .fixedSize(horizontal: false, vertical: true)
+                            }
+                            Button("Add details") { onAddDetails(draft.items.filter { accepted.contains($0.id) }) }
+                                .buttonStyle(RezSecondaryButtonStyle())
+                                .disabled(isApplying)
+                        }
+                        .padding(10)
+                        .background(RezTheme.surface, in: RoundedRectangle(cornerRadius: 6))
+                        .overlay { RoundedRectangle(cornerRadius: 6).stroke(RezTheme.ink, lineWidth: 1.5) }
                     }
 
                     Label("Checked: nothing was added beyond your resume and the results you entered.", systemImage: "checkmark.shield.fill")

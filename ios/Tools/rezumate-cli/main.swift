@@ -158,15 +158,28 @@ func runAI(options: Options, text: String, job: String, result: ATSAnalysisResul
         targets.append(bullet)
     }
     let facts = loadFacts(options.factsPath, targets: targets)
+    let plan = AIRewriteService.improvementPlan(
+        targets: targets,
+        weakWording: Set(result.weakBullets),
+        withoutImpact: Set(result.bulletsWithoutMeasurableImpact),
+        facts: facts
+    )
 
-    heading("AI: Improve Resume (\(targets.count) bullets, \(facts.count) with facts)")
-    do {
-        let (items, access) = try await ai.improvements(for: targets, facts: facts, context: context)
+    heading("AI: Improve Resume (\(plan.send.count) sent, \(facts.count) with facts, \(plan.needsDetails.count) need details)")
+    if !plan.needsDetails.isEmpty {
+        print("  needs your details (not sent):")
+        list(plan.needsDetails, prefix: "  ? ")
+        print("")
+    }
+    if plan.send.isEmpty {
+        print("  nothing to send: add a fact for at least one bullet")
+    } else { do {
+        let (items, access) = try await ai.improvements(for: plan.send, facts: facts, context: context)
         for item in items {
             print("  - \(item.original)")
             print("  + \(item.rewrite)\(facts[item.original].map { "   [fact: \($0)]" } ?? "")\n")
         }
-        let skipped = targets.filter { target in !items.contains { $0.original == target } }
+        let skipped = plan.send.filter { target in !items.contains { $0.original == target } }
         if !skipped.isEmpty {
             print("  not rewritten (no safe change):")
             list(skipped)
@@ -182,7 +195,7 @@ func runAI(options: Options, text: String, job: String, result: ATSAnalysisResul
             let before = result.componentScores[key] ?? 0
             print("  \(key.padding(toLength: 22, withPad: " ", startingAt: 0)) \(before) -> \(value)")
         }
-    } catch { print("  ! \(error.localizedDescription)") }
+    } catch { print("  ! \(error.localizedDescription)") } }
 
     if options.coverLetter {
         heading("AI: cover letter")

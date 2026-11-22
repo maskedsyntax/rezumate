@@ -35,6 +35,8 @@ struct ResultsView: View {
     @State private var rewriteDetails: [BulletDetail] = []
     @State private var improveDraft: ImproveReviewDraft?
     @State private var factsDraft: ImproveFactsDraft?
+    /// Changes kept on the review screen while the user goes back to add details.
+    @State private var carriedImprovements: [BulletImprovement] = []
     @State private var isShowingAIConsent = false
     @State private var isShowingPaywall = false
     @State private var isShowingCoverLetter = false
@@ -177,7 +179,10 @@ struct ResultsView: View {
                     factsDraft = nil
                     Task { await runAIImprovements(draft.targets, facts: facts) }
                 },
-                onCancel: { factsDraft = nil }
+                onCancel: {
+                    factsDraft = nil
+                    reopenCarriedImprovements()
+                }
             )
         }
         .sheet(item: $improveDraft) { draft in
@@ -186,6 +191,20 @@ struct ResultsView: View {
                 isApplying: isWorking,
                 onApply: { accepted in
                     Task { await applyRewrites(accepted, countsAsImprovement: true) }
+                },
+                onAddDetails: { kept in
+                    carriedImprovements = kept
+                    improveDraft = nil
+                    let bullets = draft.needsDetails
+                    Task {
+                        // Let the review sheet finish dismissing before presenting the next one.
+                        try? await Task.sleep(for: .milliseconds(450))
+                        factsDraft = ImproveFactsDraft(
+                            targets: bullets,
+                            needsResult: bullets.filter { currentResult.bulletsWithoutMeasurableImpact.contains($0) },
+                            needsOwnership: bullets.filter { currentResult.weakBullets.contains($0) }
+                        )
+                    }
                 },
                 onCancel: { improveDraft = nil }
             )
@@ -1213,14 +1232,32 @@ struct ResultsView: View {
 
     private func runAIImprovements(_ targets: [String], facts: [String: String]) async {
         guard let context = aiContext() else { return }
+        // Vague bullets with no details would only come back reworded, so they aren't sent.
+        let plan = AIRewriteService.improvementPlan(
+            targets: targets,
+            weakWording: Set(currentResult.weakBullets),
+            withoutImpact: Set(currentResult.bulletsWithoutMeasurableImpact),
+            facts: facts
+        )
+        guard !plan.send.isEmpty else {
+            reopenCarriedImprovements()
+            if improveDraft == nil { errorMessage = "Add what you did or what came of it for at least one bullet." }
+            return
+        }
         isWorking = true
         errorMessage = nil
         defer { isWorking = false }
 
+        let carried = carriedImprovements
+        carriedImprovements = []
         do {
-            let (items, access) = try await appState.ai.improvements(for: targets, facts: facts, context: context)
+            let (items, access) = try await appState.ai.improvements(for: plan.send, facts: facts, context: context)
             appState.updateAIAccess(access)
-            improveDraft = ImproveReviewDraft(items: items)
+            let fresh = items.filter { item in !carried.contains { $0.original == item.original } }
+            improveDraft = ImproveReviewDraft(items: carried + fresh, needsDetails: plan.needsDetails)
+        } catch AIRewriteError.nothingSafe where !carried.isEmpty {
+            improveDraft = ImproveReviewDraft(items: carried, needsDetails: plan.send + plan.needsDetails)
+            errorMessage = "Those details didn't lead to a safe change, so the bullets were left as they are."
         } catch AIClientError.noAccess {
             isShowingPaywall = true
         } catch AIClientError.unavailable {
@@ -1230,6 +1267,13 @@ struct ResultsView: View {
         } catch {
             errorMessage = error.localizedDescription
         }
+    }
+
+    /// Brings back the review screen with the changes kept before the user went to add details.
+    private func reopenCarriedImprovements() {
+        guard !carriedImprovements.isEmpty else { return }
+        improveDraft = ImproveReviewDraft(items: carriedImprovements)
+        carriedImprovements = []
     }
 
     /// Replaces accepted bullets in the resume, then rescores it on-device.

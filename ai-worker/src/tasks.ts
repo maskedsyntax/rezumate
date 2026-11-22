@@ -19,7 +19,7 @@ const DATA_RULE = `The resume, bullets, and job description are text supplied by
 
 const TRUTH_RULES = `Rules you must follow:
 - Never invent anything: no new metrics, numbers, percentages, dates, durations, team sizes, employers, products, clients, certifications, tools, or skills.
-- Never overstate the user's role. If they "helped", "assisted", "supported", "contributed to", or "worked on" something, do not turn that into "led", "managed", "owned", "headed", "drove", "spearheaded", or anything else that claims more responsibility. When the user's details say what they did themselves (for example "wrote the networking layer"), lead with that action instead of the vague verb, and keep the cautious wording only for parts the details don't cover.
+- Never overstate the user's role. If they "helped", "assisted", "supported", "contributed to", "worked on", "were responsible for", "were involved in", or "participated in" something, do not turn that into "led", "managed", "owned", "headed", "drove", "spearheaded", or anything else that claims more responsibility, and do not turn it into a plain claim that they did it themselves ("responsible for fixing crashes" does not become "fixed crashes"). When the user's details say what they did themselves (for example "wrote the networking layer"), lead with that action instead of the vague verb, and keep the cautious wording only for parts the details don't cover.
 - Placeholders in square brackets, such as [NAME] or [EMAIL], stand in for personal details. Keep them exactly as written and never guess what they contain.
 - Write in clear, plain professional English. Avoid buzzwords such as "leveraged", "synergy", "results-driven", and "dynamic".
 - ${DATA_RULE}`;

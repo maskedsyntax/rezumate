@@ -14,6 +14,6 @@ sources=(
 
 if [[ ! -x "$bin" ]] || [[ -n "$(find "${sources[@]}" -newer "$bin" 2>/dev/null)" ]]; then
   mkdir -p "$here/.build"
-  swiftc -O -suppress-warnings -module-name RezumateCLI -o "$bin" "${sources[@]}" >&2
+  swiftc -O -suppress-warnings -D REZUMATE_CLI -module-name RezumateCLI -o "$bin" "${sources[@]}" >&2
 fi
 exec "$bin" "$@"

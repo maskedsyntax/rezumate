@@ -96,6 +96,28 @@ struct AIRewriteService {
         }
     }
 
+    /// Splits Improve Resume targets into bullets worth sending to the AI and bullets that need
+    /// the user's details first. A bullet that is both vague ("Worked on...") and shows no outcome
+    /// has nothing the AI may add, so without a detail it would only come back reworded or unchanged.
+    static func improvementPlan(
+        targets: [String],
+        weakWording: Set<String>,
+        withoutImpact: Set<String>,
+        facts: [String: String]
+    ) -> (send: [String], needsDetails: [String]) {
+        var send: [String] = []
+        var needsDetails: [String] = []
+        for bullet in targets {
+            let hasFact = !(facts[bullet] ?? "").trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+            if !hasFact && weakWording.contains(bullet) && withoutImpact.contains(bullet) {
+                needsDetails.append(bullet)
+            } else {
+                send.append(bullet)
+            }
+        }
+        return (send, needsDetails)
+    }
+
     /// - Parameter facts: Results the user added, keyed by the original bullet. Each one may
     ///   only be used in its own bullet.
     func improvements(
