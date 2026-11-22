@@ -776,3 +776,66 @@ final class ExtractionCleanupTests: XCTestCase {
         XCTAssertNotEqual(AIRewriteService.termKey("C#"), AIRewriteService.termKey("C++"))
     }
 }
+
+final class OneLineExperienceHeaderTests: XCTestCase {
+    func testSplitsTitleCompanyAndCityOnOneLine() {
+        let doc = ResumeParser.parse("""
+        Jordan Lee
+        EXPERIENCE
+        iOS Developer, Brightline Apps, Austin, TX Mar 2022 - Present
+        - Built offline sync with Core Data, cutting support tickets by 30%
+        """)
+
+        let job = doc.experience.first
+        XCTAssertEqual(job?.title, "iOS Developer")
+        XCTAssertEqual(job?.company, "Brightline Apps")
+        XCTAssertEqual(job?.location, "Austin, TX")
+        XCTAssertEqual(job?.dateRange, "Mar 2022 - Present")
+    }
+
+    func testSplitsOtherOneLineFormats() {
+        XCTAssertEqual(ResumeParser.splitOneLineHeader("Product Designer at Figma")?.company, "Figma")
+        XCTAssertEqual(ResumeParser.splitOneLineHeader("Acme Corp | Senior Data Analyst | Remote")?.title, "Senior Data Analyst")
+        XCTAssertEqual(ResumeParser.splitOneLineHeader("Acme Corp | Senior Data Analyst | Remote")?.location, "Remote")
+        XCTAssertEqual(ResumeParser.splitOneLineHeader("Northwind Health - Registered Nurse")?.title, "Registered Nurse")
+    }
+
+    func testLeavesAmbiguousHeadersForTheTwoLineFormat() {
+        // No job-title word, or a company that also looks like one: keep the old behaviour.
+        XCTAssertNil(ResumeParser.splitOneLineHeader("Acme Corp, San Francisco"))
+        XCTAssertNil(ResumeParser.splitOneLineHeader("Acme Corp"))
+        XCTAssertNil(ResumeParser.splitOneLineHeader("Lead Engineer, Engineering Lead Co"))
+    }
+
+    func testTwoLineHeadersStillWork() {
+        let doc = ResumeParser.parse("""
+        Jordan Lee
+        EXPERIENCE
+        Acme Corp Jan 2020 - Present
+        Software Engineer San Francisco, CA
+        - Shipped the billing service
+        """)
+
+        XCTAssertEqual(doc.experience.first?.company, "Acme Corp")
+        XCTAssertEqual(doc.experience.first?.title, "Software Engineer")
+    }
+}
+
+final class JobTitleSynonymTests: XCTestCase {
+    func testDeveloperAndEngineerAreTheSameRole() {
+        let fit = JobFitExtractor.extract(
+            jobDescription: "Job Title: iOS Engineer\nBuild our app.",
+            resumeText: "EXPERIENCE\niOS Developer, Brightline Apps\n- Built offline sync"
+        )
+        XCTAssertTrue(fit.jobTitleMatched)
+    }
+
+    func testMissingSeniorityIsAGapNotAMatch() {
+        let fit = JobFitExtractor.extract(
+            jobDescription: "Job Title: Senior iOS Engineer\nBuild our app.",
+            resumeText: "EXPERIENCE\niOS Developer, Brightline Apps\n- Built offline sync"
+        )
+        XCTAssertFalse(fit.jobTitleMatched)
+        XCTAssertTrue(fit.jobTitleSeniorityGap)
+    }
+}

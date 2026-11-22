@@ -111,7 +111,7 @@ func printAnalysis(_ result: ATSAnalysisResult, fit: JobFit, title: String = "An
     }
     print("  bullets: \(result.bulletCount), weak wording: \(result.weakBulletCount), no impact: \(result.bulletsWithoutMeasurableImpactCount), words: \(result.estimatedResumeLengthWords)")
     print("  sections: " + result.sections.sorted(by: { $0.key < $1.key }).map { "\($0.key)=\($0.value ? "yes" : "no")" }.joined(separator: " "))
-    print("  job title: \(fit.jobTitle ?? "-") (\(fit.jobTitleMatched ? "matched" : "missing")\(fit.jobTitleSeniorityGap ? ", seniority gap" : ""))")
+    print("  job title: \(fit.jobTitle ?? "-") (\(fit.jobTitleMatched ? "matched" : fit.jobTitleSeniorityGap ? "partial: seniority gap" : "missing"))")
     print("  education: \(fit.educationRequirement ?? "-")\(fit.educationRequirement == nil ? "" : fit.educationMatched ? " (matched)" : " (missing)")")
     print("\n  job keywords (\(result.jdKeywords.count)): " + result.jdKeywords.joined(separator: ", "))
     print("  matched: " + result.matchedKeywords.map(ResumeTailoringService.displayName).joined(separator: ", "))

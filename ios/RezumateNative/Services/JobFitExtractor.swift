@@ -60,20 +60,38 @@ enum JobFitExtractor {
     }
 
     private static func resumeContainsTitle(_ title: String, resumeLower: String) -> Bool {
-        let lower = title.lowercased()
-        if resumeLower.contains(lower) {
+        let titleText = normalizedTitleText(title.lowercased())
+        let resumeText = normalizedTitleText(resumeLower)
+        if containsWord(titleText, in: resumeText) {
             return true
         }
 
-        let tokens = lower
+        let words = titleText
             .components(separatedBy: CharacterSet.alphanumerics.inverted)
-            .filter { $0.count >= 4 && !titleNoise.contains($0) }
+            .filter { $0.count >= 2 && !titleNoise.contains($0) && !titleStopWords.contains($0) }
+        // "Senior" can't be the one word allowed to be missing; without it the
+        // title is only a seniority-gap match.
+        let levels = words.filter { seniorityWords.contains($0) }
+        guard levels.allSatisfy({ containsWord($0, in: resumeText) }) else { return false }
+        let tokens = words.filter { !seniorityWords.contains($0) }
         guard tokens.count >= 2 else {
-            return tokens.contains(where: { resumeLower.contains($0) })
+            return tokens.contains(where: { containsWord($0, in: resumeText) })
         }
-        let hits = tokens.filter { resumeLower.contains($0) }.count
+        let hits = tokens.filter { containsWord($0, in: resumeText) }.count
         return hits >= max(2, tokens.count - 1)
     }
+
+    /// Treats common names for the same job as one: an "iOS Developer" is an "iOS Engineer".
+    private static func normalizedTitleText(_ lower: String) -> String {
+        lower.replacingOccurrences(of: #"\b(developer|programmer)\b"#, with: "engineer", options: .regularExpression)
+    }
+
+    private static func containsWord(_ phrase: String, in text: String) -> Bool {
+        let escaped = NSRegularExpression.escapedPattern(for: phrase).replacingOccurrences(of: " ", with: "\\s+")
+        return matches("(?<![a-z0-9])\(escaped)(?![a-z0-9])", in: text)
+    }
+
+    private static let titleStopWords: Set<String> = ["and", "of", "the", "for", "an", "to"]
 
     private static func matchesWithoutSeniority(_ title: String, resumeLower: String) -> Bool {
         let words = title.components(separatedBy: .whitespaces).filter { !$0.isEmpty }

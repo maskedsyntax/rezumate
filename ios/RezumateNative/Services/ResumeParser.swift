@@ -271,12 +271,8 @@ struct ResumeParser {
             }
 
             if current == nil {
-                var e = ExperienceEntry()
-                let (name, date) = splitNameAndDate(line)
-                e.company = name
-                e.dateRange = date
-                current = e
-                expectTitle = true
+                current = experienceHeader(line)
+                expectTitle = current!.title.isEmpty
             } else if expectTitle {
                 let (title, loc) = splitTitleAndLocation(line)
                 current!.title = title
@@ -288,18 +284,80 @@ struct ResumeParser {
                 current = updated
             } else {
                 entries.append(current!)
-                var e = ExperienceEntry()
-                let (name, date) = splitNameAndDate(line)
-                e.company = name
-                e.dateRange = date
-                current = e
-                expectTitle = true
+                current = experienceHeader(line)
+                expectTitle = current!.title.isEmpty
             }
         }
 
         if let last = current { entries.append(last) }
         return entries
     }
+
+    /// Starts an entry from its first line. Usually that's "Company  Date" with the title on
+    /// the next line, but many resumes put everything on one line:
+    /// "iOS Developer, Brightline Apps, Austin, TX  Mar 2022 - Present".
+    private static func experienceHeader(_ line: String) -> ExperienceEntry {
+        var entry = ExperienceEntry()
+        let (name, date) = splitNameAndDate(line)
+        entry.dateRange = date
+        if let parts = splitOneLineHeader(name) {
+            entry.title = parts.title
+            entry.company = parts.company
+            entry.location = parts.location
+        } else {
+            entry.company = name
+        }
+        return entry
+    }
+
+    /// Splits "Title, Company, City, ST", "Title | Company | Location", "Company - Title", or
+    /// "Title at Company" when exactly one of the two names reads like a job title.
+    static func splitOneLineHeader(_ text: String) -> (title: String, company: String, location: String)? {
+        var parts: [String]
+        if let at = text.range(of: " at ", options: .caseInsensitive) {
+            let before = String(text[..<at.lowerBound])
+            let after = String(text[at.upperBound...])
+            parts = [before] + after.components(separatedBy: ",")
+        } else {
+            parts = text.components(separatedBy: CharacterSet(charactersIn: ",|•·"))
+                .flatMap { $0.components(separatedBy: " – ") }
+                .flatMap { $0.components(separatedBy: " — ") }
+                .flatMap { $0.components(separatedBy: " - ") }
+        }
+        parts = parts.map { $0.trimmingCharacters(in: .whitespaces) }.filter { !$0.isEmpty }
+
+        // A trailing "City, ST", a known place, or "Remote" is the location.
+        var location = ""
+        if parts.count >= 2, let state = parts.last, state.range(of: #"^[A-Za-z]{2}$"#, options: .regularExpression) != nil {
+            location = "\(parts[parts.count - 2]), \(state.uppercased())"
+            parts.removeLast(2)
+        } else if let last = parts.last, knownLocations.contains(last.lowercased()) || last.lowercased() == "remote" {
+            location = last
+            parts.removeLast()
+        }
+
+        guard parts.count == 2 else { return nil }
+        let firstIsRole = looksLikeJobTitle(parts[0])
+        let secondIsRole = looksLikeJobTitle(parts[1])
+        guard firstIsRole != secondIsRole else { return nil }
+        return firstIsRole
+            ? (parts[0], parts[1], location)
+            : (parts[1], parts[0], location)
+    }
+
+    private static func looksLikeJobTitle(_ text: String) -> Bool {
+        let words = Set(text.lowercased().components(separatedBy: CharacterSet.letters.inverted))
+        return !words.isDisjoint(with: jobTitleWords)
+    }
+
+    private static let jobTitleWords: Set<String> = [
+        "engineer", "developer", "programmer", "manager", "designer", "analyst", "intern", "lead",
+        "director", "specialist", "consultant", "scientist", "architect", "coordinator", "associate",
+        "officer", "administrator", "assistant", "nurse", "technician", "representative", "executive",
+        "head", "founder", "cofounder", "president", "strategist", "writer", "editor", "researcher",
+        "accountant", "recruiter", "teacher", "instructor", "therapist", "pharmacist", "physician",
+        "marketer", "owner", "supervisor", "advisor", "agent", "clerk", "tester"
+    ]
 
     // MARK: - Projects
 
