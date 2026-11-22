@@ -45,7 +45,7 @@ final class ATSScoringServiceTests: XCTestCase {
             jobDescription: "Seeking Python, Kubernetes, and Terraform experience for production infrastructure."
         )
 
-        XCTAssertEqual(result.scoreVersion, "ats-v3")
+        XCTAssertEqual(result.scoreVersion, "ats-v4")
         XCTAssertEqual(result.keywordCoverage, 0)
         XCTAssertTrue(result.matchedKeywords.isEmpty)
         XCTAssertEqual(Set(result.missingKeywords), Set(["kubernetes", "python", "terraform"]))
@@ -105,6 +105,27 @@ final class ATSScoringServiceTests: XCTestCase {
         XCTAssertEqual(result.matchedKeywords, ["swift"])
         // The job names the product "GitHub Actions"; the github.com link still doesn't count.
         XCTAssertEqual(result.missingKeywords, ["github actions"])
+    }
+
+    func testGoOnlyCountsAsTheLanguage() {
+        XCTAssertEqual(ATSScoringService.extractKeywords(from: "We move fast and are ready to go. Ship services in Go and Python."), ["go", "python"])
+        XCTAssertEqual(ATSScoringService.extractKeywords(from: "Let's go build something with Python."), ["python"])
+        XCTAssertEqual(ATSScoringService.extractKeywords(from: "Skills: Python, Go\nTeam: platform"), ["go", "python"])
+        XCTAssertTrue(ATSScoringService.containsKeyword("go", in: "Built Golang services"))
+    }
+
+    func testNegatedJobMentionsDoNotCount() {
+        let keywords = ATSScoringService.extractKeywords(from: "Build Swift apps. No Java experience needed. Kafka is not required.")
+        XCTAssertEqual(keywords, ["swift"])
+    }
+
+    func testAliasesAndLineBreaksMatchTheSameSkill() {
+        let result = ATSScoringService.analyzeResume(
+            resumeText: "EXPERIENCE\nAcme\nEngineer\n- Deployed to Amazon Web Services and K8s\n- Synced with Core\nData",
+            jobDescription: "Run AWS, Kubernetes, and Core Data in production."
+        )
+        XCTAssertEqual(Set(result.matchedKeywords), ["aws", "kubernetes", "core data"])
+        XCTAssertEqual(ATSScoringService.extractKeywords(from: "Track campaigns in Google Analytics 4 and HubSpot."), ["ga4", "hubspot"])
     }
 
     func testSingleWordSkillsDoNotPartiallyMatchLongerWords() {

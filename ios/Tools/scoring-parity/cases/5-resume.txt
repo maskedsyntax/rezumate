@@ -1,0 +1,14 @@
+Alex Chen
+SUMMARY
+Product manager.
+EXPERIENCE
+Product Manager, Shopline
+- Led user research and wireframing for checkout redesign increasing conversion 12%
+- Managed Jira backlog and stakeholder management across 4 teams
+- Worked on budgeting
+PROJECTS
+- Built a forecasting model in Excel
+SKILLS
+Jira, Figma, SQL, Agile, Scrum, Prototyping
+EDUCATION
+MBA

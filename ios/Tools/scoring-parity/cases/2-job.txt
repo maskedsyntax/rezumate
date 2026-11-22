@@ -1,0 +1,12 @@
+Senior Backend Engineer
+We are ready to go fast. You will build services in Go and Python on AWS or Google Cloud.
+Requirements
+- 5+ years with Go, Python
+- Kubernetes and Docker in production
+- PostgreSQL or MySQL; Redis
+- CI/CD with GitHub Actions
+- No Java experience needed. Kafka is not required.
+Nice to have
+- Terraform
+- GraphQL, a plus
+Visit careers.acme.io/jobs for details.

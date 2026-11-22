@@ -4,7 +4,7 @@ import { useEffect, useRef, useState, type ChangeEvent, type CSSProperties, type
 
 import { APP_STORE_URL } from "../../lib/app-store";
 import { extractResumeFile } from "../../lib/extract-resume-file";
-import { analyzeResumePreview, type PreviewAnalysis } from "../../lib/resume-preview";
+import { analyzeResumePreview, displayName, type PreviewAnalysis } from "../../lib/resume-preview";
 import { RevealHeading } from "./RevealHeading";
 import { prefersReducedMotion, useTweenedNumber } from "./motion";
 
@@ -234,13 +234,13 @@ export function ResumeCheck() {
               <div className="check-finding-card">
                 <h4>Matched in your resume</h4>
                 <p>{result.matchedKeywords.length} of {result.jdKeywords.length} supported role terms found.{result.partialMatches.length ? ` ${result.partialMatches.length} possible partial ${result.partialMatches.length === 1 ? "match" : "matches"} to review.` : ""}</p>
-                <div className="check-chips">{result.matchedKeywords.slice(0, 8).map((keyword, index) => <span key={keyword} style={{ "--i": index } as CSSProperties}>{keyword}</span>)}{result.matchedKeywords.length === 0 && <span>None yet</span>}</div>
-                {result.partialMatches.length > 0 && <div className="check-chips partial" aria-label="Possible partial matches">{result.partialMatches.slice(0, 8).map((keyword, index) => <span key={keyword} style={{ "--i": index + 4 } as CSSProperties}>{keyword} · partial</span>)}</div>}
+                <div className="check-chips">{result.matchedKeywords.slice(0, 8).map((keyword, index) => <span key={keyword} style={{ "--i": index } as CSSProperties}>{displayName(keyword)}</span>)}{result.matchedKeywords.length === 0 && <span>None yet</span>}</div>
+                {result.partialMatches.length > 0 && <div className="check-chips partial" aria-label="Possible partial matches">{result.partialMatches.slice(0, 8).map((keyword, index) => <span key={keyword} style={{ "--i": index + 4 } as CSSProperties}>{displayName(keyword)} · partial</span>)}</div>}
               </div>
               <div className="check-finding-card">
                 <h4>Terms to review</h4>
                 <p>{result.missingKeywords.length ? "These appear in the job description but not your resume. Add one only if you genuinely have that skill." : "No supported role terms are missing."}</p>
-                <div className="check-chips missing">{result.missingKeywords.slice(0, 8).map((keyword, index) => <span key={keyword} style={{ "--i": index + 2 } as CSSProperties}>{keyword}</span>)}</div>
+                <div className="check-chips missing">{result.missingKeywords.slice(0, 8).map((keyword, index) => <span key={keyword} style={{ "--i": index + 2 } as CSSProperties}>{displayName(keyword)}</span>)}</div>
               </div>
             </div>
             <div className="check-next-step">
@@ -250,7 +250,7 @@ export function ResumeCheck() {
               </div>
               <a className="button button-shine" href={APP_STORE_URL}>Improve and export in Rezumate</a>
             </div>
-            <p className="check-result-note">The iPhone app lets you review changes, save variants, and export a clean PDF. Its score may differ because its matching rules and file extraction are not identical to this browser preview.</p>
+            <p className="check-result-note">The iPhone app lets you review changes, save variants, and export a clean PDF. It scores with the same rules as this preview, so the same resume text gets the same score. Different file readers can pull slightly different text from a PDF, which can move the number.</p>
           </div>
         )}
       </div>

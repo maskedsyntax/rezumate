@@ -21,7 +21,7 @@ struct ATSAnalysisResult: Codable, Equatable, Hashable {
 
 struct ATSScoringService {
     
-    static let scoreVersion = "ats-v3"
+    static let scoreVersion = "ats-v4"
     
     static let sectionAliases: [String: [String]] = [
         "summary": ["summary", "profile", "objective"],
@@ -57,7 +57,13 @@ struct ATSScoringService {
         // Marketing
         "seo", "sem", "ppc", "google analytics", "google ads", "hubspot", "salesforce",
         "crm", "content marketing", "email marketing", "social media", "copywriting",
-        "a/b testing", "marketing automation", "campaign management", "brand strategy"
+        "a/b testing", "marketing automation", "campaign management", "brand strategy",
+        "google analytics 4", "ga4", "meta ads",
+        // Product, project, design, and business
+        "jira", "asana", "k8s", "financial modeling", "budgeting", "forecasting",
+        "customer success", "account management", "stakeholder management", "user research",
+        "ux research", "wireframing", "prototyping", "project management", "program management",
+        "quickbooks", "sap", "erp"
     ]
     
     static let canonicalKeywords: [String: String] = [
@@ -78,20 +84,45 @@ struct ATSScoringService {
         "unit test": "unit testing",
         "ui tests": "ui testing",
         "ui test": "ui testing",
-        "push notification": "push notifications"
+        "push notification": "push notifications",
+        "golang": "go",
+        "k8s": "kubernetes",
+        "google analytics 4": "ga4"
     ]
 
     /// Other spellings that count as the same skill on a resume ("unit tests" for "unit testing").
     static let keywordVariants: [String: [String]] = [
         "unit testing": ["unit tests", "unit test"],
         "ui testing": ["ui tests", "ui test"],
-        "push notifications": ["push notification"]
+        "push notifications": ["push notification"],
+        "aws": ["amazon web services"],
+        "gcp": ["google cloud platform", "google cloud"],
+        "kubernetes": ["k8s"],
+        "go": ["golang"],
+        "rest api": ["restful apis", "restful api"],
+        "ci/cd": ["continuous integration and continuous delivery", "continuous integration and deployment", "ci-cd"],
+        "power bi": ["powerbi"],
+        "a/b testing": ["ab testing", "split testing"],
+        "ga4": ["google analytics 4"]
     ]
+
+    /// "Go" is also an everyday word, so it only counts written as the language: capitalized
+    /// and followed by a list separator, the end of the line, or a word like "developer".
+    static let goLanguagePattern = #"(?<![A-Za-z])Go(?=[ \t]*(?:[,;/.)|]|$|(?:and|or|developer|engineer|programming|language|services|backend|experience|skills)\b))"#
+
+    /// "No Kubernetes experience needed" mentions a skill the job doesn't ask for.
+    static let negationBeforeRegex = try! NSRegularExpression(
+        pattern: #"\b(?:no|without|lacks?|lacking|not|never)(?:\s+[\w-]+){0,5}\s*$"#, options: .caseInsensitive
+    )
+    static let negationAfterRegex = try! NSRegularExpression(
+        pattern: #"^\s+(?:(?:(?:is|are|was|were)\s+)?not|isn't|aren't|wasn't|weren't)\s+(?:required|needed|used|supported)\b"#,
+        options: .caseInsensitive
+    )
 
     /// Separators that make neighbouring skills alternatives: "Core Data or SwiftData",
     /// "AWS, GCP, or Azure", "Kotlin/Java". Commas alone only count inside a group that has an "or".
     static let alternativeSeparatorRegex = try! NSRegularExpression(
-        pattern: #"^[ \t]*(?:,[ \t]*)?(?:or|and/or|/)[ \t]*$"#, options: []
+        pattern: #"^[ \t]*(?:,[ \t]*)?(?:or|and/or|/)[ \t]*$"#, options: .caseInsensitive
     )
     static let commaSeparatorRegex = try! NSRegularExpression(pattern: #"^[ \t]*,[ \t]*$"#, options: [])
     
@@ -107,7 +138,9 @@ struct ATSScoringService {
         "design", "education", "email", "google", "infection", "learning", "machine",
         "management", "marketing", "media", "medication", "objective", "patient",
         "planning", "power", "product", "responsive", "signs", "social", "store",
-        "strategy", "test", "testing", "unit", "vital", "web"
+        "strategy", "test", "testing", "unit", "vital", "web",
+        "account", "ads", "customer", "financial", "meta", "modeling", "program", "project",
+        "research", "stakeholder", "success", "user"
     ]
 
     static let optionalHeadingRegex = try! NSRegularExpression(
@@ -161,16 +194,16 @@ struct ATSScoringService {
     ]
     
     static func containsKeyword(_ keyword: String, in resumeText: String) -> Bool {
-        keywordInText(keyword, textLower: removingLinks(from: resumeText.lowercased()))
+        keywordInText(keyword.lowercased(), in: removingLinks(from: resumeText))
     }
 
     static func analyzeResume(resumeText: String, jobDescription: String) -> ATSAnalysisResult {
-        let resumeLower = removingLinks(from: resumeText.lowercased())
+        let resumeClean = removingLinks(from: resumeText)
         // "Core Data or SwiftData": having one option meets the requirement, so the others
         // are neither missing nor counted.
         var jdKeywords = extractKeywords(from: jobDescription)
         for group in alternativeGroups(in: jobDescription) {
-            let have = group.filter { keywordInText($0, textLower: resumeLower) }
+            let have = group.filter { keywordInText($0, in: resumeClean) }
             if !have.isEmpty {
                 let dropped = Set(group).subtracting(have)
                 jdKeywords.removeAll { dropped.contains($0) }
@@ -184,9 +217,9 @@ struct ATSScoringService {
         // Free shows only the first few of each list, so required skills must come first.
         for keyword in prioritizedKeywords(jdKeywords, in: jobDescription) {
             let keywordLower = keyword.lowercased()
-            if keywordInText(keywordLower, textLower: resumeLower) {
+            if keywordInText(keywordLower, in: resumeClean) {
                 matchedKeywords.append(keyword)
-            } else if partialKeywordMatch(keywordLower, resumeLower: resumeLower) {
+            } else if partialKeywordMatch(keywordLower, resume: resumeClean) {
                 partialMatches.append(keyword)
             } else {
                 missingKeywords.append(keyword)
@@ -263,26 +296,37 @@ struct ATSScoringService {
 
     /// Every skill the text mentions, with where. Longer skills are matched first and their
     /// text is blanked out, so "GitHub Actions" doesn't also count as "GitHub" and
-    /// "React Native" doesn't also count as "React".
+    /// "React Native" doesn't also count as "React". Negated mentions ("no Kubernetes
+    /// experience needed") are blanked out too, but don't count.
     static func skillMentions(in text: String) -> [(keyword: String, range: NSRange)] {
-        var textLower = removingLinks(from: text.lowercased()) as NSString
+        var current = removingLinks(from: text) as NSString
         var mentions: [(keyword: String, range: NSRange)] = []
         for skill in skillsLongestFirst {
             let keyword = canonicalizeKeyword(skill)
             for pattern in patterns(for: skill) {
                 guard let regex = cachedRegex(pattern) else { continue }
-                let current = textLower as String
-                let matches = regex.matches(in: current, options: [], range: NSRange(location: 0, length: textLower.length))
+                let matches = regex.matches(in: current as String, options: [], range: NSRange(location: 0, length: current.length))
                 guard !matches.isEmpty else { continue }
                 let masked = NSMutableString(string: current)
                 for match in matches {
-                    mentions.append((keyword, match.range))
+                    if !isNegatedMention(match.range, in: current) {
+                        mentions.append((keyword, match.range))
+                    }
                     masked.replaceCharacters(in: match.range, with: String(repeating: " ", count: match.range.length))
                 }
-                textLower = masked
+                current = masked
             }
         }
         return mentions.sorted { $0.range.location < $1.range.location }
+    }
+
+    static func isNegatedMention(_ range: NSRange, in text: NSString) -> Bool {
+        let beforeStart = max(0, range.location - 75)
+        let before = text.substring(with: NSRange(location: beforeStart, length: range.location - beforeStart))
+            .components(separatedBy: CharacterSet(charactersIn: "\n.;!?")).last ?? ""
+        let end = range.location + range.length
+        let after = text.substring(with: NSRange(location: end, length: min(35, text.length - end)))
+        return matchesRegex(negationBeforeRegex, in: before) || matchesRegex(negationAfterRegex, in: after)
     }
 
     private static let skillsLongestFirst = knownSkills.filter { !keywordNoise.contains($0) }
@@ -293,14 +337,17 @@ struct ATSScoringService {
 
     private static func cachedRegex(_ pattern: String) -> NSRegularExpression? {
         if let regex = regexCache.object(forKey: pattern as NSString) { return regex }
-        guard let regex = try? NSRegularExpression(pattern: pattern, options: []) else { return nil }
+        // Everything matches regardless of case except "Go", whose capital letter is the signal.
+        let options: NSRegularExpression.Options = pattern == goLanguagePattern
+            ? [.anchorsMatchLines] : [.caseInsensitive, .anchorsMatchLines]
+        guard let regex = try? NSRegularExpression(pattern: pattern, options: options) else { return nil }
         regexCache.setObject(regex, forKey: pattern as NSString)
         return regex
     }
 
     /// Groups of skills the job offers as alternatives, such as ["core data", "swiftdata"].
     static func alternativeGroups(in jobDescription: String) -> [[String]] {
-        let text = removingLinks(from: jobDescription.lowercased()) as NSString
+        let text = removingLinks(from: jobDescription) as NSString
         let mentions = skillMentions(in: jobDescription)
         var groups: [[String]] = []
         var current: [String] = []
@@ -333,7 +380,7 @@ struct ATSScoringService {
     /// Orders keywords by how central they are to the job: skills outside a "nice to have"
     /// section first, then by how often the job mentions them, then by first mention.
     static func prioritizedKeywords(_ keywords: [String], in jobDescription: String) -> [String] {
-        let lines = removingLinks(from: jobDescription.lowercased()).components(separatedBy: .newlines)
+        let lines = removingLinks(from: jobDescription).components(separatedBy: .newlines)
         var inOptionalSection = false
         var lineIsOptional: [Bool] = []
 
@@ -355,7 +402,7 @@ struct ATSScoringService {
 
         let importance = Dictionary(uniqueKeysWithValues: keywords.map { keyword -> (String, Importance) in
             var value = Importance()
-            for (index, line) in lines.enumerated() where keywordInText(keyword, textLower: line) {
+            for (index, line) in lines.enumerated() where keywordInText(keyword, in: line) {
                 if lineIsOptional[index] { value.optionalHits += 1 } else { value.requiredHits += 1 }
                 value.firstLine = min(value.firstLine, index)
             }
@@ -458,32 +505,35 @@ struct ATSScoringService {
     /// Regexes that find the skill as a whole word, including its known spellings.
     private static func patterns(for keyword: String) -> [String] {
         let wholeWord = { (term: String) -> String in
+            // escapedPattern leaves spaces alone, so any run of whitespace can stand in for one.
             let escaped = NSRegularExpression.escapedPattern(for: term.lowercased())
-                .replacingOccurrences(of: "\\ ", with: "\\s+")
+                .replacingOccurrences(of: " ", with: "\\s+")
             return "(?<![a-z0-9])\(escaped)(?![a-z0-9])"
         }
-        return ([keyword] + (keywordVariants[keyword] ?? [])).map(wholeWord)
+        let variants = (keywordVariants[keyword] ?? []).map(wholeWord)
+        return (keyword == "go" ? [goLanguagePattern] : [wholeWord(keyword)]) + variants
     }
 
-    private static func keywordInText(_ keyword: String, textLower: String) -> Bool {
-        if patterns(for: keyword).contains(where: { matchesPattern($0, in: textLower) }) {
+    /// Whether the text (with links removed) mentions the skill. Case doesn't matter, except for "Go".
+    private static func keywordInText(_ keyword: String, in text: String) -> Bool {
+        if patterns(for: keyword).contains(where: { matchesPattern($0, in: text) }) {
             return true
         }
         
         if keyword == "api" {
-            return matchesPattern("(?<![a-z0-9])apis?(?![a-z0-9])", in: textLower)
+            return matchesPattern("(?<![a-z0-9])apis?(?![a-z0-9])", in: text)
         }
         if keyword == "rest api" {
-            return matchesPattern("(?<![a-z0-9])rest\\s+apis?(?![a-z0-9])", in: textLower)
+            return matchesPattern("(?<![a-z0-9])rest\\s+apis?(?![a-z0-9])", in: text)
         }
         if keyword == "postgresql" {
-            return matchesPattern("(?<![a-z0-9])postgres(?:ql)?(?![a-z0-9])", in: textLower)
+            return matchesPattern("(?<![a-z0-9])postgres(?:ql)?(?![a-z0-9])", in: text)
         }
         if keyword == "next.js" {
-            return matchesPattern("(?<![a-z0-9])next[.\\s-]?js(?![a-z0-9])", in: textLower)
+            return matchesPattern("(?<![a-z0-9])next[.\\s-]?js(?![a-z0-9])", in: text)
         }
         if keyword == "node.js" {
-            return matchesPattern("(?<![a-z0-9])node[.\\s-]?js(?![a-z0-9])", in: textLower)
+            return matchesPattern("(?<![a-z0-9])node[.\\s-]?js(?![a-z0-9])", in: text)
         }
         
         return false
@@ -495,14 +545,14 @@ struct ATSScoringService {
         return regex.firstMatch(in: text, options: [], range: range) != nil
     }
     
-    private static func partialKeywordMatch(_ keyword: String, resumeLower: String) -> Bool {
+    private static func partialKeywordMatch(_ keyword: String, resume: String) -> Bool {
         // Only multi-word skills can partially match; a single word inside another
         // ("excel" in "excellent", "java" in "javascript") is not the same skill.
         // They need a distinctive word, matched whole: "jetpack" for "jetpack compose".
         return keyword.components(separatedBy: CharacterSet(charactersIn: " /+-"))
             .filter { $0.count > 2 }
             .filter { !genericKeywordParts.contains($0) }
-            .contains(where: { keywordInText($0, textLower: resumeLower) })
+            .contains(where: { keywordInText($0, in: resume) })
     }
     
     private static func canonicalizeKeyword(_ keyword: String) -> String {

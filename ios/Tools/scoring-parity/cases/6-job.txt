@@ -1,0 +1,2 @@
+iOS Engineer. Build features in Swift, SwiftUI and UIKit. Core Data or SwiftData. React Native experience is a plus.
+Push notifications, unit tests and UI tests with XCTest. Ship via TestFlight and Xcode Cloud to the App Store.

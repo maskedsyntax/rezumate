@@ -1,0 +1,18 @@
+Senior iOS Engineer - Northwind Health
+
+We're hiring a Senior iOS Engineer to build our patient-facing iPhone app.
+
+Requirements:
+- 4+ years building iOS apps in Swift
+- Strong SwiftUI and UIKit experience
+- Experience with Core Data or SwiftData for offline-first apps
+- Writing unit tests and UI tests with XCTest
+- Shipping through TestFlight and the App Store
+- Experience with REST APIs and push notifications
+
+Nice to have:
+- Healthcare or HIPAA experience
+- CI/CD with Xcode Cloud or GitHub Actions
+- Accessibility (VoiceOver, Dynamic Type)
+
+You'll own features end to end, mentor junior engineers, and work closely with design and product.

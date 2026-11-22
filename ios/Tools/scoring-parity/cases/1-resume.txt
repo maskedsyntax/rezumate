@@ -1,0 +1,18 @@
+Jordan Lee
+jordan.lee@example.com | (555) 010-2233 | Austin, TX
+SUMMARY
+iOS developer with 4 years of experience building consumer apps in Swift.
+EXPERIENCE
+iOS Developer, Brightline Apps, Austin, TX Mar 2022 - Present
+- Worked on the checkout flow for the shopping app
+- Helped with moving the app from UIKit to SwiftUI
+- Responsible for fixing crashes
+- Built offline sync with Core Data, cutting support tickets by 30%
+Junior iOS Developer, Pixel Harbor, Dallas, TX Jun 2020 - Feb 2022
+- Worked on push notifications
+- Assisted the team with unit tests
+SKILLS
+Swift, SwiftUI, UIKit, Core Data, Git
+EDUCATION
+B.S. Computer Science, University of Texas at Dallas, 2020
+

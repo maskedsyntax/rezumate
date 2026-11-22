@@ -1,0 +1,15 @@
+Jordan Lee
+jordan@example.com | github.com/jlee | jlee.dev
+SUMMARY
+Backend engineer who builds Go and Python services on Amazon Web Services.
+EXPERIENCE
+Backend Engineer, Acme Corp, Remote
+- Built REST APIs in Go serving 2M requests per day
+- Worked on Kubernetes deployments
+- Responsible for the CI-CD pipeline in GitHub Actions
+- Migrated Postgres to managed RDS, cutting costs by 30%
+- Helped with on-call
+SKILLS
+Go, Python, Docker, K8s, Terraform, PostgreSQL, Redis
+EDUCATION
+B.S. Computer Science

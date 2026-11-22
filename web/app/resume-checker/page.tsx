@@ -35,7 +35,7 @@ export default function ResumeCheckerPage() {
               <p className="eyebrow">What the score means</p>
               <h2>A guide to reviewing this application.</h2>
               <p>The preview compares supported skills and tools in the job description with text found in your resume. It recognizes common aliases, avoids credit for negated skills, checks bullet outcomes, and looks for core resume sections. Projects can stand in for experience.</p>
-              <p>The score uses the same category weights as the iPhone app: keyword coverage 45%, impact quality 25%, structure 20%, and formatting warnings 10%. Browser matching rules and file extraction can differ from the app. It is an ATS-style estimate, not an employer’s actual ATS result or a prediction of interviews.</p>
+              <p>The score uses the same category weights as the iPhone app: keyword coverage 45%, impact quality 25%, structure 20%, and formatting warnings 10%. It uses the same matching rules as the app. It is an ATS-style estimate, not an employer’s actual ATS result or a prediction of interviews.</p>
             </div>
             <div className="seo-content-card">
               <h3>Use the result carefully</h3>
@@ -59,7 +59,7 @@ export default function ResumeCheckerPage() {
               <h3>Do you keep my resume?</h3>
               <p>No. The checker extracts and compares text in your browser. It does not send the resume or job description to a Rezumate analysis server. <Link href="/private-resume-checker">Read how privacy works.</Link></p>
               <h3>Why does the iPhone score sometimes differ?</h3>
-              <p>The browser and iPhone app share the four score categories and weights, but their matching rules and file parsers can differ. Review the specific findings in each result instead of expecting the numbers to match exactly.</p>
+              <p>Both use the same scoring rules, so the same resume text gets the same score. The browser and the app read PDF and DOCX files with different parsers, though, and a slightly different extracted text can move the number. The browser also holds back a total when it recognizes fewer than five role terms in the posting.</p>
             </div>
           </div>
         </section>
