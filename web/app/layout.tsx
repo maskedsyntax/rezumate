@@ -21,14 +21,16 @@ export const metadata: Metadata = {
   metadataBase: new URL("https://www.rezumate.app"),
   applicationName: "Rezumate",
   title: {
-    default: "Rezumate - Private ATS resume optimizer for iPhone",
+    default: "Rezumate - ATS resume builder and tailor for web and iPhone",
     template: "%s | Rezumate"
   },
-  description: "Check your resume against a job description for free in your browser. Then use Rezumate on iPhone to review missing keywords, improve wording, and export a polished PDF privately.",
+  description: "Build and tailor an ATS-friendly resume free in your browser, check it against any job description, and export a clean PDF. On iPhone, Rezumate adds AI rewrites that never invent facts.",
   keywords: [
     "resume optimizer",
     "ATS resume checker",
     "iOS resume app",
+    "free resume builder",
+    "ATS resume template",
     "resume feedback",
     "job description matching",
     "resume bullet rewrite"

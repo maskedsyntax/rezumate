@@ -1,7 +1,12 @@
 import type { MetadataRoute } from "next";
 
+import { templates } from "@/lib/pdf/templates";
+
 const routes = [
   "",
+  "/resume-builder",
+  "/templates",
+  ...templates.map((template) => `/templates/${template.id}`),
   "/resume-checker",
   "/private-resume-checker",
   "/faq",
@@ -16,7 +21,7 @@ const routes = [
 export default function sitemap(): MetadataRoute.Sitemap {
   return routes.map((route) => ({
     url: `https://www.rezumate.app${route}`,
-    lastModified: new Date(["", "/resume-checker", "/private-resume-checker"].includes(route) ? "2026-09-29" : "2026-07-23"),
+    lastModified: new Date(route === "/resume-builder" || route.startsWith("/templates") ? "2026-11-23" : ["", "/resume-checker", "/private-resume-checker"].includes(route) ? "2026-09-29" : "2026-07-23"),
     changeFrequency: route === "" ? "weekly" : "monthly",
     priority: route === "" ? 1 : 0.6
   }));

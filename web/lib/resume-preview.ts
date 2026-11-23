@@ -335,7 +335,7 @@ function partialKeywordMatch(keyword: string, resume: string): boolean {
     .some((part) => keywordInText(part, resume));
 }
 
-function hasImpactSignal(bullet: string): boolean {
+export function hasImpactSignal(bullet: string): boolean {
   if (measurableImpactRegex.test(bullet)) return true;
   const lowered = bullet.toLowerCase();
   return qualitativeImpactSignals.some((signal) => lowered.includes(signal));
@@ -360,7 +360,7 @@ function wordsIn(value: string): number {
   return value.split(/\s+/).filter(Boolean).length;
 }
 
-function isWeakBullet(bullet: string): boolean {
+export function isWeakBullet(bullet: string): boolean {
   const normalized = bullet.trim().toLowerCase();
   if (!normalized || !isValidBulletText(bullet)) return false;
   return weakBulletStarters.some((starter) => normalized.startsWith(starter)) || wordsIn(normalized) < 7;

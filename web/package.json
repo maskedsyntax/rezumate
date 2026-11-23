@@ -2,15 +2,20 @@
   "name": "rezumate-web",
   "version": "0.1.0",
   "private": true,
+  "type": "module",
   "scripts": {
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "test": "node --test tests/*.test.mjs"
+    "test": "node --test tests/*.test.mjs && npm run test:pdf",
+    "test:pdf": "node --import tsx --test tests/pdf/*.test.tsx",
+    "templates:previews": "node --import tsx scripts/render-template-previews.tsx"
   },
   "dependencies": {
+    "@react-pdf/renderer": "^4.9.0",
     "fflate": "^0.8.3",
+    "idb": "^8.0.4",
     "next": "16.2.6",
     "pdfjs-dist": "^6.3.289",
     "react": "19.1.0",
@@ -20,6 +25,7 @@
     "@types/node": "22.15.19",
     "@types/react": "19.1.6",
     "@types/react-dom": "19.1.5",
+    "tsx": "^4.23.15",
     "typescript": "5.8.3"
   },
   "overrides": {

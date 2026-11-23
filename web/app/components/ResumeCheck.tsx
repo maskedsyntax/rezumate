@@ -2,7 +2,11 @@
 
 import { useEffect, useRef, useState, type ChangeEvent, type CSSProperties, type DragEvent, type FormEvent } from "react";
 
+import { useRouter } from "next/navigation";
+
 import { APP_STORE_URL } from "@/lib/app-store";
+import { saveHandoff } from "@/lib/app/handoff";
+import { sampleJob as editorSampleJob, sampleResumeText as editorSampleResume } from "@/lib/app/sample";
 import { extractResumeFile } from "@/lib/extract-resume-file";
 import { analyzeResumePreview, displayName, type PreviewAnalysis } from "@/lib/resume-preview";
 import { RevealHeading } from "./RevealHeading";
@@ -78,6 +82,15 @@ export function ResumeCheck() {
   const [stage, setStage] = useState(0);
   const [isDragging, setIsDragging] = useState(false);
   const resultRef = useRef<HTMLDivElement>(null);
+  const router = useRouter();
+
+  // Opens this resume and job in the free web editor. Nothing leaves the browser.
+  function openInEditor() {
+    const handoff = isSample
+      ? { resumeText: editorSampleResume, jobDescription: editorSampleJob.description, fileName: "" }
+      : { resumeText, jobDescription, fileName };
+    router.push(saveHandoff(handoff) ? "/app/new" : "/app");
+  }
   const analyzeTimer = useRef<number | undefined>(undefined);
 
   useEffect(() => () => window.clearTimeout(analyzeTimer.current), []);
@@ -248,9 +261,12 @@ export function ResumeCheck() {
                 <strong>What to fix next</strong>
                 <p>{result.weakBullets[0] ? `Review this weak bullet: “${result.weakBullets[0]}”` : result.bulletsWithoutImpact[0] ? `Consider showing the outcome of: “${result.bulletsWithoutImpact[0]}”` : result.formattingWarnings[0] ?? "Review the role terms and keep every change truthful."}</p>
               </div>
-              <a className="button button-shine" href={APP_STORE_URL}>Improve and export in Rezumate</a>
+              <div className="check-next-actions">
+                <button className="button button-shine" type="button" onClick={openInEditor}>Fix it in the free editor</button>
+                <a className="button secondary" href={APP_STORE_URL}>Get the iPhone app</a>
+              </div>
             </div>
-            <p className="check-result-note">The iPhone app lets you review changes, save variants, and export a clean PDF. It scores with the same rules as this preview, so the same resume text gets the same score. Different file readers can pull slightly different text from a PDF, which can move the number.</p>
+            <p className="check-result-note">The free web editor and the iPhone app let you fix what this check found and export a clean PDF. Both score with the same rules as this preview, so the same resume text gets the same score. Different file readers can pull slightly different text from a PDF, which can move the number.</p>
           </div>
         )}
       </div>

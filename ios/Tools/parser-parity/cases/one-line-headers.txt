@@ -1,0 +1,42 @@
+Jordan Lee
+jordan.lee@example.com | +1 (512) 555-0199 | Austin, TX | linkedin.com/in/jordan-lee | github.com/jlee | jordanlee.dev
+
+SUMMARY
+iOS developer with five years of experience
+building offline-first apps.
+
+EXPERIENCE
+iOS Developer, Brightline Apps, Austin, TX Mar 2022 - Present
+- Built offline sync with Core Data, cutting support tickets by 30%
+- Worked on the onboarding flow and
+improved activation for new users
+Product Designer at Figma, Remote 2019 - 2022
+• Designed component libraries
+Acme Corp | Senior Data Analyst | Remote Jan 2018 - Dec 2018
+• Handled weekly reporting
+
+PROJECTS
+Habit Tracker 2021 - 2022
+• Shipped a SwiftUI habit tracker with widgets and
+reminders used by 2,000 people
+– Added CloudKit sync
+Open Recipes
+• (side project) recipe parser
+written in Swift
+
+SKILLS
+Languages: Swift, Objective-C, Python
+Frameworks: SwiftUI, UIKit, Core Data
+Git, Xcode, TestFlight
+
+EDUCATION
+University of Texas at Austin 2014 - 2018
+B.S. Computer Science Austin, TX
+• Dean's list
+Coding Bootcamp 2019 - 2019
+Certificate Remote
+
+CERTIFICATIONS
+AWS Certified Cloud Practitioner
+
+Volunteer Work

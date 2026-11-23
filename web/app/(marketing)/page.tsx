@@ -78,7 +78,7 @@ export default function Home() {
         <div className="hero-wrap">
           <section className="shell hero">
             <div className="hero-left">
-              <div className="eyebrow">Private resume tailoring on iPhone</div>
+              <div className="eyebrow">Private resume tailoring · Web and iPhone</div>
               <h1 className="hero-title">
                 {heroWords.map(([word, highlighted], index) => (
                   <Fragment key={word}>
@@ -90,11 +90,12 @@ export default function Home() {
                 ))}
               </h1>
               <p className="lead">
-                Rezumate is the private iPhone resume optimizer that scores your resume against a job description,
-                identifies missing keywords and weak bullets, then exports a polished ATS-safe PDF.
+                Rezumate scores your resume against a job description, finds missing keywords and weak bullets, and
+                exports a polished ATS-safe PDF. Build and tailor free in your browser, or use the iPhone app with AI
+                rewrites that never invent facts.
               </p>
               <div className="actions">
-                <a className="button button-shine" href="#free-check">Check your resume free</a>
+                <Link className="button button-shine" href="/app">Build your resume free</Link>
                 <a className="button secondary" href={ctaHref}>Download on the App Store</a>
               </div>
               <ul className="hero-assurance" aria-label="Browser preview">

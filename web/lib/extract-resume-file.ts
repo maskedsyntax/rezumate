@@ -19,13 +19,7 @@ async function extractPdf(file: File): Promise<string> {
     for (let pageNumber = 1; pageNumber <= pdf.numPages; pageNumber++) {
       const page = await pdf.getPage(pageNumber);
       const content = await page.getTextContent();
-      let pageText = "";
-      for (const item of content.items) {
-        if (!("str" in item)) continue;
-        pageText += item.str;
-        pageText += item.hasEOL ? "\n" : " ";
-      }
-      pages.push(pageText.trim());
+      pages.push(joinPdfTextItems(content.items));
     }
     const text = pages.join("\n").trim();
     if (text.length < 40) throw new Error("No usable text was found. Scanned or image-only PDFs need a text-based version.");
@@ -36,6 +30,18 @@ async function extractPdf(file: File): Promise<string> {
   } finally {
     await loadingTask.destroy();
   }
+}
+
+/** Joins pdf.js text items into lines the way the checker and the import flow read them. */
+export function joinPdfTextItems(items: readonly object[]): string {
+  let text = "";
+  for (const item of items) {
+    if (!("str" in item)) continue;
+    const { str, hasEOL } = item as { str: string; hasEOL?: boolean };
+    text += str;
+    text += hasEOL ? "\n" : " ";
+  }
+  return text.trim();
 }
 
 async function extractDocx(file: File): Promise<string> {

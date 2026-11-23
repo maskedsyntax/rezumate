@@ -26,11 +26,12 @@ export function SiteChrome({ children }: Props) {
             Rezumate
           </Link>
           <nav className="navlinks">
-            <Link className="navlink" href="/#free-check">Free checker</Link>
-            <a className="navlink" href="/#how-it-works">How it works</a>
-            <a className="navlink" href="/#features">Features</a>
+            <Link className="navlink" href="/resume-builder">Builder</Link>
+            <Link className="navlink" href="/templates">Templates</Link>
+            <Link className="navlink" href="/resume-checker">Free checker</Link>
             <a className="navlink" href="/#pricing">Pricing</a>
             <a className="navlink" href="/#faq">FAQ</a>
+            <Link className="nav-cta nav-cta-web" href="/app">Build free</Link>
             <a className="nav-cta" href={APP_STORE_URL}>Get the App</a>
           </nav>
         </div>
@@ -42,7 +43,7 @@ export function SiteChrome({ children }: Props) {
       <footer className="shell footer">
         <span>© {new Date().getFullYear()} Rezumate</span>
         <span>
-          <Link href="/resume-checker">Free checker</Link> · <Link href="/faq">FAQ</Link> · <Link href="/blog">Blog</Link> · <Link href="/terms">Terms</Link> · <Link href="/privacy">Privacy</Link> · <Link href="/support">Support</Link>
+          <Link href="/resume-builder">Resume builder</Link> · <Link href="/templates">Templates</Link> · <Link href="/resume-checker">Free checker</Link> · <Link href="/faq">FAQ</Link> · <Link href="/blog">Blog</Link> · <Link href="/terms">Terms</Link> · <Link href="/privacy">Privacy</Link> · <Link href="/support">Support</Link>
         </span>
       </footer>
 
