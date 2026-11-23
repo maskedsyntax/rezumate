@@ -1,9 +1,9 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 
-import { FaqList } from "../components/FaqList";
-import { faqSections } from "../components/faq-data";
-import { SiteChrome } from "../components/SiteChrome";
+import { FaqList } from "@/app/components/FaqList";
+import { faqSections } from "@/app/components/faq-data";
+import { SiteChrome } from "@/app/components/SiteChrome";
 
 export const metadata: Metadata = {
   title: "FAQ: Resume Scoring, Privacy and Pricing",

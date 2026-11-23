@@ -1,8 +1,7 @@
 import type { Metadata } from "next";
 import { IBM_Plex_Sans, JetBrains_Mono } from "next/font/google";
 import type { ReactNode } from "react";
-import "./globals.css";
-import "./motion.css";
+import "./tokens.css";
 
 const plexSans = IBM_Plex_Sans({
   subsets: ["latin"],

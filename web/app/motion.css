@@ -3,23 +3,6 @@
  * Loaded after globals.css; uses only the existing palette tokens.
  */
 
-:root {
-  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
-  --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
-  --ease-inout: cubic-bezier(0.65, 0, 0.35, 1);
-}
-
-.sr-only {
-  position: absolute;
-  width: 1px;
-  height: 1px;
-  margin: -1px;
-  padding: 0;
-  overflow: hidden;
-  clip: rect(0 0 0 0);
-  white-space: nowrap;
-  border: 0;
-}
 
 @keyframes spin { to { transform: rotate(360deg); } }
 @keyframes tapeScroll { to { transform: translateX(-50%); } }
@@ -108,14 +91,8 @@ html[data-scrolled="true"] .site-header .nav {
   box-shadow: 1px 1px 0 var(--line);
 }
 
-/* ── Buttons ── */
 
-.button {
-  position: relative;
-  overflow: hidden;
-  transition: transform 0.18s var(--ease-spring), box-shadow 0.18s ease, background 0.2s ease;
-}
-
+/* Repeated from tokens.css so press and focus states still win over marketing hover rules (e.g. .final-button:hover). */
 .button:active {
   transform: translate(4px, 4px);
   box-shadow: 0 0 0 var(--line);

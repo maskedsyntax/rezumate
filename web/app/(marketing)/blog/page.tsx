@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 
-import { SiteChrome } from "../components/SiteChrome";
+import { SiteChrome } from "@/app/components/SiteChrome";
 import { blogPosts } from "./posts-data";
 
 export const metadata: Metadata = {

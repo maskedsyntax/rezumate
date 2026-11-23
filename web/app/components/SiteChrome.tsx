@@ -1,7 +1,7 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
 
-import { APP_STORE_URL } from "../../lib/app-store";
+import { APP_STORE_URL } from "@/lib/app-store";
 import { ScrollProgress } from "./ScrollProgress";
 import { ScrollTopButton } from "./ScrollTopButton";
 

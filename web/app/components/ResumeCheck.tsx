@@ -2,9 +2,9 @@
 
 import { useEffect, useRef, useState, type ChangeEvent, type CSSProperties, type DragEvent, type FormEvent } from "react";
 
-import { APP_STORE_URL } from "../../lib/app-store";
-import { extractResumeFile } from "../../lib/extract-resume-file";
-import { analyzeResumePreview, displayName, type PreviewAnalysis } from "../../lib/resume-preview";
+import { APP_STORE_URL } from "@/lib/app-store";
+import { extractResumeFile } from "@/lib/extract-resume-file";
+import { analyzeResumePreview, displayName, type PreviewAnalysis } from "@/lib/resume-preview";
 import { RevealHeading } from "./RevealHeading";
 import { prefersReducedMotion, useTweenedNumber } from "./motion";
 

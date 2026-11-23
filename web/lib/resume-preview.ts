@@ -187,10 +187,14 @@ function cachedRegex(pattern: string): RegExp {
   return regex;
 }
 
+// Cached regexes are global, so `test` and `matchAll` would otherwise carry `lastIndex` over
+// from the previous use and skip matches. Always start from the beginning.
 function matchesPattern(pattern: string, text: string): boolean {
   const regex = cachedRegex(pattern);
   regex.lastIndex = 0;
-  return regex.test(text);
+  const found = regex.test(text);
+  regex.lastIndex = 0;
+  return found;
 }
 
 function escapeRegex(value: string): string {
@@ -244,6 +248,7 @@ function skillMentions(input: string): Mention[] {
     const keyword = canonicalize(skill);
     for (const pattern of patterns(skill)) {
       const regex = cachedRegex(pattern);
+      regex.lastIndex = 0;
       const matches = [...text.matchAll(regex)];
       if (matches.length === 0) continue;
       let masked = text;

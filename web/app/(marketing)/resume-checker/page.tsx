@@ -1,9 +1,9 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 
-import { ResumeCheck } from "../components/ResumeCheck";
-import { SiteChrome } from "../components/SiteChrome";
-import { APP_STORE_URL } from "../../lib/app-store";
+import { ResumeCheck } from "@/app/components/ResumeCheck";
+import { SiteChrome } from "@/app/components/SiteChrome";
+import { APP_STORE_URL } from "@/lib/app-store";
 
 export const metadata: Metadata = {
   title: "Free Resume Job Match Checker | Private ATS-Style Preview",

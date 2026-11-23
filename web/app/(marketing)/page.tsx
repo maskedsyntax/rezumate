@@ -2,21 +2,21 @@ import Link from "next/link";
 
 import { Fragment, type CSSProperties } from "react";
 
-import { CostCalculator } from "./components/CostCalculator";
-import { FaqList } from "./components/FaqList";
-import { FeatureBento } from "./components/FeatureBento";
-import { HeroDemo } from "./components/HeroDemo";
-import { HowItWorks } from "./components/HowItWorks";
-import { MobileCtaBar } from "./components/MobileCtaBar";
-import { ProofStory } from "./components/ProofStory";
-import { ResumeCheck } from "./components/ResumeCheck";
-import { RevealHeading } from "./components/RevealHeading";
-import { ScrollReveal } from "./components/ScrollReveal";
-import { featuredFaqItems } from "./components/faq-data";
-import { SiteChrome } from "./components/SiteChrome";
-import { TapeMarquee } from "./components/TapeMarquee";
-import { TestimonialMarquee } from "./components/TestimonialMarquee";
-import { APP_STORE_URL } from "../lib/app-store";
+import { CostCalculator } from "@/app/components/CostCalculator";
+import { FaqList } from "@/app/components/FaqList";
+import { FeatureBento } from "@/app/components/FeatureBento";
+import { HeroDemo } from "@/app/components/HeroDemo";
+import { HowItWorks } from "@/app/components/HowItWorks";
+import { MobileCtaBar } from "@/app/components/MobileCtaBar";
+import { ProofStory } from "@/app/components/ProofStory";
+import { ResumeCheck } from "@/app/components/ResumeCheck";
+import { RevealHeading } from "@/app/components/RevealHeading";
+import { ScrollReveal } from "@/app/components/ScrollReveal";
+import { featuredFaqItems } from "@/app/components/faq-data";
+import { SiteChrome } from "@/app/components/SiteChrome";
+import { TapeMarquee } from "@/app/components/TapeMarquee";
+import { TestimonialMarquee } from "@/app/components/TestimonialMarquee";
+import { APP_STORE_URL } from "@/lib/app-store";
 
 const ctaHref = APP_STORE_URL;
 

@@ -1,8 +1,8 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 
-import { SiteChrome } from "../../components/SiteChrome";
-import { APP_STORE_URL } from "../../../lib/app-store";
+import { SiteChrome } from "@/app/components/SiteChrome";
+import { APP_STORE_URL } from "@/lib/app-store";
 
 export const metadata: Metadata = {
   title: "Why I built resume scoring to run entirely on-device, with no backend",

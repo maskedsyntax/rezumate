@@ -1,7 +1,10 @@
 import Link from "next/link";
 
-import { SiteChrome } from "./components/SiteChrome";
-import { APP_STORE_URL } from "../lib/app-store";
+import { SiteChrome } from "@/app/components/SiteChrome";
+import { APP_STORE_URL } from "@/lib/app-store";
+
+import "./globals.css";
+import "./motion.css";
 
 export default function NotFound() {
   return (

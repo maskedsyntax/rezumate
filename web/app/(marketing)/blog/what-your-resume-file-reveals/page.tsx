@@ -1,8 +1,8 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 
-import { SiteChrome } from "../../components/SiteChrome";
-import { APP_STORE_URL } from "../../../lib/app-store";
+import { SiteChrome } from "@/app/components/SiteChrome";
+import { APP_STORE_URL } from "@/lib/app-store";
 
 export const metadata: Metadata = {
   title: "What's actually inside your resume file (and where it goes when you upload it)",
