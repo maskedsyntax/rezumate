@@ -1689,6 +1689,12 @@ h3 {
   letter-spacing: 0;
 }
 
+.pricing-price small {
+  margin-left: 4px;
+  font-size: 0.45em;
+  font-weight: 600;
+}
+
 .price-stack {
   display: grid;
   gap: 7px;

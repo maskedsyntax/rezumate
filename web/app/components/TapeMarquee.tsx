@@ -1,8 +1,8 @@
 const facts = [
-  "$14.99 one-time",
+  "AI that never makes things up",
   "No invented claims",
-  "Pay once",
-  "No cloud resume upload",
+  "Cover letters in seconds",
+  "Scoring on your iPhone",
   "No account",
   "PDF + DOCX import",
   "ATS-safe PDF export"

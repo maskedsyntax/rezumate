@@ -23,6 +23,11 @@ export default function OnDeviceResumeScoringPost() {
 
         <div className="blog-post-body">
           <p>
+            <em>Update for Rezumate 2.0: scoring, keyword matching, and PDF export still run entirely on the iPhone.
+            2.0 adds optional AI writing features (rewrites and cover letters) that send the needed text to a server
+            only when you tap them, with your name and contact details removed. See the <a href="/privacy">privacy policy</a>.</em>
+          </p>
+          <p>
             When I started building a resume-to-job-description matching tool, the default architecture was obvious:
             a client uploads a resume, a server parses it, a model scores it against a job description, and the
             client polls for results. That's how basically every &quot;ATS checker&quot; on the internet works
@@ -120,7 +125,7 @@ export default function OnDeviceResumeScoringPost() {
         </div>
 
         <div className="blog-cta">
-          <p>Rezumate: private, on-device ATS resume scoring for iPhone. No account, no cloud upload.</p>
+          <p>Rezumate: private ATS resume scoring for iPhone, with optional AI rewrites. No account needed.</p>
           <a className="button" href={APP_STORE_URL}>View on the App Store</a>
         </div>
       </main>

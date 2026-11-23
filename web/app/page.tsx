@@ -21,8 +21,8 @@ import { APP_STORE_URL } from "../lib/app-store";
 const ctaHref = APP_STORE_URL;
 
 const proofStats = [
-  ["100% local", "Resume parsing, scoring, keyword checks, rewrites, history, and PDF export run on your iPhone."],
-  ["Truthful improvements", "Weak wording is strengthened without adding skills, metrics, or achievements that are not already in your resume."],
+  ["Private by default", "Parsing, scoring, keyword checks, history, and PDF export run on your iPhone. AI runs only when you tap it."],
+  ["Truthful AI", "AI rewrites use only what is in your resume and the details you type. Nothing invented, and you approve every change."],
   ["No account", "Open the app, upload a resume, paste a job description, and start tailoring."]
 ];
 
@@ -35,8 +35,8 @@ const guideSteps = [
 ];
 
 const comparison = [
-  ["Pricing", "$14.99 once", "$15-30 every month", "Often subscription or per-credit"],
-  ["Privacy", "Runs locally on iPhone", "Uploads resume to servers", "Depends on vendor"],
+  ["Pricing", "Free to start, Pro $29.99/year", "$15-30 every month", "Often subscription or per-credit"],
+  ["Privacy", "Scoring on iPhone, AI only when you tap", "Uploads resume to servers", "Depends on vendor"],
   ["Workflow", "Upload, analyze, improve, export", "Usually long form builders", "Mostly formatting checks"],
   ["Output", "ATS-safe LaTeX-style PDF", "Template PDF", "Report only"]
 ];
@@ -47,8 +47,10 @@ const proFeatures = [
   "Unlimited saved variants",
   "Full score diagnosis",
   "Complete missing keyword insights",
-  "Professional on-device PDF export",
-  "No subscription, no credit packs, no account requirement"
+  "AI bullet rewrites and Improve Resume",
+  "Cover letters from your real experience",
+  "Up to 150 AI actions a month",
+  "No account needed. Cancel anytime"
 ];
 
 const heroWords: [string, boolean][] = [
@@ -65,7 +67,8 @@ const freeFeatures = [
   "3 improvements per day",
   "2 saved resume variants",
   "PDF export included",
-  "Basic score and keyword feedback"
+  "Basic score and keyword feedback",
+  "3 AI actions to try"
 ];
 
 export default function Home() {
@@ -100,10 +103,10 @@ export default function Home() {
                 <li>No payment</li>
               </ul>
 
-              <div className="offer-strip" aria-label="Lifetime pricing">
-                <span className="offer-label">Lifetime Pro</span>
-                <strong>$14.99</strong>
-                <span className="offer-note">One-time purchase. Localized App Store pricing may vary.</span>
+              <div className="offer-strip" aria-label="Pro pricing">
+                <span className="offer-label">Rezumate Pro</span>
+                <strong>$29.99/year</strong>
+                <span className="offer-note">Or $4.99/month. Free to start. Localized App Store pricing may vary.</span>
               </div>
             </div>
 
@@ -137,11 +140,11 @@ export default function Home() {
         <section className="band comparison-band">
           <div className="shell">
             <ScrollReveal>
-              <p className="eyebrow">Why one-time pricing works</p>
-              <RevealHeading>No monthly resume tax. No cloud AI meter.</RevealHeading>
+              <p className="eyebrow">Fair pricing</p>
+              <RevealHeading>A year of Pro costs less than two months elsewhere.</RevealHeading>
               <p className="lead faq-lead">
-                Most tools charge every month because the product runs on rented servers. Rezumate runs locally,
-                so Pro can be a one-time unlock instead of a subscription.
+                Scoring, keyword checks, and PDF export run on your iPhone, so they cost us nothing to serve.
+                You only pay for the AI writing, and a whole year of Pro is $29.99.
               </p>
             </ScrollReveal>
             <ScrollReveal delay={100}>
@@ -168,10 +171,10 @@ export default function Home() {
         <section id="pricing" className="band pricing-band">
           <div className="shell">
             <ScrollReveal>
-              <p className="eyebrow">Simple lifetime pricing</p>
-              <RevealHeading>Get the lifetime Pro unlock for $14.99.</RevealHeading>
+              <p className="eyebrow">Simple pricing</p>
+              <RevealHeading>Rezumate Pro: $29.99 a year or $4.99 a month.</RevealHeading>
               <p className="lead faq-lead">
-                Pay once with no subscription or credit packs. Localized App Store pricing may vary.
+                Start free. Upgrade when you are applying seriously, and cancel anytime. Localized App Store pricing may vary.
               </p>
             </ScrollReveal>
             <ScrollReveal stagger className="pricing-grid">
@@ -195,15 +198,15 @@ export default function Home() {
                     <path id="stamp-circle" d="M60,60 m-44,0 a44,44 0 1,1 88,0 a44,44 0 1,1 -88,0" />
                   </defs>
                   <circle cx="60" cy="60" r="58" />
-                  <text><textPath href="#stamp-circle" textLength="274" lengthAdjust="spacing">PAY ONCE ✦ OWN IT ✦ PAY ONCE ✦ OWN IT ✦</textPath></text>
+                  <text><textPath href="#stamp-circle" textLength="274" lengthAdjust="spacing">SAVE 50% ✦ YEARLY ✦ SAVE 50% ✦ YEARLY ✦</textPath></text>
                   <text className="price-stamp-center" x="60" y="68" textAnchor="middle">✦</text>
                 </svg>
                 <div className="pricing-card-head">
-                  <h3>Pro lifetime</h3>
+                  <h3>Pro</h3>
                 </div>
                 <div className="price-stack">
-                  <strong className="pricing-price">$14.99</strong>
-                  <span className="pricing-once">One-time purchase. No subscription.</span>
+                  <strong className="pricing-price">$29.99<small>/year</small></strong>
+                  <span className="pricing-once">Or $4.99/month. Cancel anytime.</span>
                 </div>
                 <p>For people who are applying seriously and do not want to ration resume checks.</p>
                 <ul>
@@ -231,7 +234,7 @@ export default function Home() {
               <RevealHeading>Run the resume through Rezumate first.</RevealHeading>
               <p className="lead">
                 A generic resume can miss the exact words recruiters search for. Rezumate is available now, so you can tailor
-                every application locally on your iPhone before you submit it.
+                every application on your iPhone before you submit it.
               </p>
             </div>
             <a className="button final-button" href={ctaHref}>Download on the App Store</a>
@@ -245,7 +248,7 @@ export default function Home() {
               <RevealHeading>Questions about Rezumate</RevealHeading>
               <p className="lead faq-lead">
                 Rezumate is built for one workflow: upload, analyze, improve, and export,
-                without compromising your privacy, showing ads, or uploading your CV to a cloud server.
+                with no ads, no account, and AI that only runs when you ask for it.
               </p>
             </ScrollReveal>
             <ScrollReveal delay={100}>

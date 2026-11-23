@@ -6,7 +6,7 @@ import { APP_STORE_URL } from "../../lib/app-store";
 
 export const metadata: Metadata = {
   title: "Private Resume Checker Without an Account",
-  description: "Learn how Rezumate checks resume and job-description text locally, what the browser preview does, and how the iPhone app keeps tailoring and PDF export on your device.",
+  description: "Learn how Rezumate checks resume and job-description text locally, what the browser preview does, and how the iPhone app keeps your resumes, scoring, and PDF export on your device.",
   alternates: { canonical: "/private-resume-checker" },
   openGraph: {
     title: "Private Resume Checker Without an Account | Rezumate",
@@ -29,8 +29,8 @@ export default function PrivateResumeCheckerPage() {
         <section className="band seo-content-band">
           <div className="shell privacy-steps">
             <article className="seo-content-card"><span>01 / Browser preview</span><h2>Your file stays in this tab.</h2><p>The free checker reads a PDF or DOCX in your browser, compares extracted text with the job description, and shows a score breakdown and findings. Rezumate does not receive or store those documents. Closing or refreshing the tab clears the result.</p></article>
-            <article className="seo-content-card"><span>02 / iPhone app</span><h2>Tailoring stays on your iPhone.</h2><p>The app imports, scores, improves supported wording, saves variants, and exports PDF files on-device. It requires no account for the core workflow and does not upload resume text to a scoring server.</p></article>
-            <article className="seo-content-card"><span>03 / Your review</span><h2>Keep every change truthful.</h2><p>Missing job terms are recommendations. Rezumate only places a missing skill after you confirm you actually have it. Local wording improvements do not invent employers, metrics, or experience.</p></article>
+            <article className="seo-content-card"><span>02 / iPhone app</span><h2>Your resumes stay on your iPhone.</h2><p>The app imports, scores, saves variants, and exports PDF files on-device, with no account. Optional AI features send only the needed text when you tap them, with your name and contact details removed, and nothing is kept.</p></article>
+            <article className="seo-content-card"><span>03 / Your review</span><h2>Keep every change truthful.</h2><p>Missing job terms are recommendations. Rezumate only places a missing skill after you confirm you actually have it. Wording improvements, including AI rewrites, do not invent employers, metrics, or experience.</p></article>
           </div>
         </section>
 

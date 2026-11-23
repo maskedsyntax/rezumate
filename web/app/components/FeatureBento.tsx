@@ -140,8 +140,8 @@ const features: Feature[] = [
   {
     area: "pro",
     glyph: "∞",
-    title: "Unlimited Pro unlock",
-    copy: "Pay once for unlimited analyses, improvements, variants, full diagnosis, and complete keyword insights."
+    title: "Rezumate Pro",
+    copy: "Unlimited analyses, improvements, and variants, the full diagnosis, plus AI rewrites and cover letters. $29.99/year or $4.99/month."
   }
 ];
 
@@ -150,7 +150,7 @@ export function FeatureBento() {
     <section id="features" className="band features-band">
       <div className="shell">
         <p className="eyebrow">What the app includes</p>
-        <RevealHeading>Everything shown in the app, built into one local resume workspace.</RevealHeading>
+        <RevealHeading>Everything shown in the app, built into one private resume workspace.</RevealHeading>
         <ScrollReveal stagger variant="tilt" className="bento">
           {features.map(({ area, glyph, title, copy, visual }) => (
             <article className={`bento-card bento-${area}`} key={area}>

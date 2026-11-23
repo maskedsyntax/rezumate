@@ -23,6 +23,11 @@ export default function WhatYourResumeFileRevealsPost() {
 
         <div className="blog-post-body">
           <p>
+            <em>Update for Rezumate 2.0: scoring, keyword matching, and PDF export still run entirely on the iPhone.
+            2.0 adds optional AI writing features (rewrites and cover letters) that send the needed text to a server
+            only when you tap them, with your name and contact details removed. See the <a href="/privacy">privacy policy</a>.</em>
+          </p>
+          <p>
             Somewhere in your job search, someone told you to run your resume through an &quot;ATS checker.&quot;
             You found a free one, uploaded your PDF, and got a score. Fair trade, right? Before you do that again,
             it's worth actually looking at what's inside that file — because it's more than the text you see when
@@ -89,12 +94,13 @@ export default function WhatYourResumeFileRevealsPost() {
 
           <p>
             I built Rezumate around this exact idea: it does resume parsing, ATS-style scoring, keyword matching,
-            and bullet rewriting entirely on your iPhone, without uploading the file anywhere.
+            and PDF export entirely on your iPhone, without uploading the file anywhere. AI rewriting is optional and
+            only runs when you ask for it.
           </p>
         </div>
 
         <div className="blog-cta">
-          <p>Rezumate: private, on-device ATS resume scoring for iPhone. No account, no cloud upload.</p>
+          <p>Rezumate: private ATS resume scoring for iPhone, with optional AI rewrites. No account needed.</p>
           <a className="button" href={APP_STORE_URL}>View on the App Store</a>
         </div>
       </main>

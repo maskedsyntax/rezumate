@@ -6,7 +6,8 @@ import { useInView, useTweenedNumber } from './motion';
 
 const LOW = 15;
 const HIGH = 30;
-const PRO = 14.99;
+const MONTHLY = 4.99;
+const YEARLY = 29.99;
 const MAX_MONTHS = 12;
 const SCALE = HIGH * MAX_MONTHS;
 
@@ -17,7 +18,10 @@ export function CostCalculator() {
   const [ref, inView] = useInView<HTMLDivElement>({ threshold: 0.4 });
   const low = useTweenedNumber(LOW * months);
   const high = useTweenedNumber(HIGH * months);
-  const saved = Math.max(0, high - PRO);
+  // The cheaper of paying monthly or buying a year.
+  const pro = Math.min(MONTHLY * months, YEARLY);
+  const proLabel = MONTHLY * months < YEARLY ? `$${pro.toFixed(2)} monthly` : '$29.99 a year';
+  const saved = Math.max(0, high - pro);
   const fill = inView ? 1 : 0;
 
   return (
@@ -47,13 +51,13 @@ export function CostCalculator() {
         <div className="cost-row cost-row-pro">
           <span className="cost-label">Rezumate Pro</span>
           <div className="cost-bar">
-            <i className="cost-pro" style={{ width: `${(PRO / SCALE) * 100 * fill}%` }} />
+            <i className="cost-pro" style={{ width: `${(pro / SCALE) * 100 * fill}%` }} />
           </div>
-          <strong>$14.99 once</strong>
+          <strong>{proLabel}</strong>
         </div>
       </div>
       <p className="cost-saved" aria-live="polite">
-        {saved > 1 ? <>Up to <strong>{money(saved)}</strong> stays in your pocket.</> : <>Pro costs about the same as one month.</>}
+        {saved > 1 ? <>Up to <strong>{money(saved)}</strong> stays in your pocket.</> : <>Pro costs less than one month elsewhere.</>}
       </p>
       <p className="cost-note">Uses the $15–30/month range from the table above. Localized App Store pricing may vary.</p>
     </div>
