@@ -120,7 +120,7 @@ struct ProPaywallSheet: View {
                     .buttonStyle(RezSecondaryButtonStyle())
                     .disabled(appState.isPurchasing || appState.isRestoring)
 
-                    Text("Subscriptions renew automatically until cancelled in Settings › Apple ID › Subscriptions. Fair use: up to 300 AI actions a month.")
+                    Text("Subscriptions renew automatically until cancelled in Settings › Apple ID › Subscriptions. Fair use: up to 150 AI actions a month.")
                         .font(.caption2)
                         .foregroundStyle(RezTheme.muted)
                         .fixedSize(horizontal: false, vertical: true)

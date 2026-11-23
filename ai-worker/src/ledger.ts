@@ -20,7 +20,7 @@ export function ledgerConfig(env: Env): LedgerConfig {
   return {
     trialActions: intVar(env.TRIAL_ACTIONS, 3),
     proBonusActions: intVar(env.PRO_BONUS_ACTIONS, 25),
-    subscriptionMonthlyCap: intVar(env.SUBSCRIPTION_MONTHLY_CAP, 300),
+    subscriptionMonthlyCap: intVar(env.SUBSCRIPTION_MONTHLY_CAP, 150),
     dailyRequestLimit: intVar(env.DAILY_REQUEST_LIMIT, 100),
   };
 }

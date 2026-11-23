@@ -34,7 +34,7 @@
     "SUBSCRIPTION_PRODUCT_IDS": "rezumate_ai_monthly,rezumate_ai_yearly",
     "TRIAL_ACTIONS": "3",
     "PRO_BONUS_ACTIONS": "25",
-    "SUBSCRIPTION_MONTHLY_CAP": "300",
+    "SUBSCRIPTION_MONTHLY_CAP": "150",
     "DAILY_REQUEST_LIMIT": "100",
     // "production" on release builds, "development" for Xcode debug builds, "off" for the simulator.
     "DEVICECHECK_MODE": "production"

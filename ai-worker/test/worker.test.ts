@@ -336,7 +336,7 @@ describe("entitlement sync", () => {
     const response = await post("/v1/entitlements/sync", token, { transactionIds: ["2001"] }, testEnv);
     const { access } = (await response.json()) as { access: Access };
     expect(access.subscriptionActive).toBe(true);
-    expect(access.monthlyRemaining).toBe(300);
+    expect(access.monthlyRemaining).toBe(150);
   });
 
   it("ignores transactions for other apps", async () => {
