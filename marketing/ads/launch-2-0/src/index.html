@@ -1,0 +1,661 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Rezumate 2.0 video</title>
+<style>
+@font-face { font-family: "Jakarta"; src: url(assets/jakarta.woff2) format("woff2"); font-weight: 200 800; }
+:root {
+  --ink: #111113; --muted: #6b6d73; --paper: #F4EFE6; --cream: #F6F0E6;
+  --yellow: #FDD31D; --green: #6BDD4A; --red: #FF6159; --blue: #DDEBFD; --line: #d9d4ca;
+  --W: 1080px; --H: 1350px;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html { width: 100%; height: 100%; overflow: hidden; background: #000; }
+body { width: var(--W); height: var(--H); overflow: hidden; }
+body { font-family: system-ui, sans-serif; color: var(--ink); -webkit-font-smoothing: antialiased; }
+#stage { position: relative; width: var(--W); height: var(--H); overflow: hidden; background: var(--cream); }
+.abs { position: absolute; }
+.jk { font-family: "Jakarta", sans-serif; }
+.blk { font-weight: 900; }
+
+/* brand row */
+#brand { left: 70px; top: 58px; display: flex; align-items: center; gap: 18px; font: 700 36px "Jakarta"; letter-spacing: -0.01em; }
+#brand img { width: 62px; height: 62px; border-radius: 15px; border: 3px solid var(--ink); }
+
+/* headlines */
+.hd { left: 70px; top: 150px; width: 940px; }
+.hd .ln { overflow: hidden; padding-bottom: 0.08em; margin-bottom: -0.08em; }
+.hd .ln span { display: inline-block; font: 800 96px/1.0 "Jakarta"; letter-spacing: -0.05em; white-space: nowrap; }
+.hd .sub { overflow: hidden; margin-top: 22px; }
+.hd .sub span { display: block; font: 500 33px/1.3 "Jakarta"; letter-spacing: -0.02em; color: #3c3d42; }
+
+/* phone */
+#phone { left: 150px; top: 540px; width: 780px; height: 1100px; border-radius: 112px; background: var(--ink); padding: 14px; box-shadow: 18px 14px 0 var(--ink); }
+#screen { position: relative; width: 100%; height: 100%; border-radius: 98px; background: var(--paper); overflow: hidden; }
+#status { position: absolute; left: 0; right: 0; top: 0; height: 110px; z-index: 5; }
+#status .time { position: absolute; left: 112px; top: 38px; font: 600 32px system-ui; }
+#status .island { position: absolute; left: 50%; top: 26px; width: 214px; height: 62px; margin-left: -107px; background: #000; border-radius: 40px; }
+#status .icons { position: absolute; right: 84px; top: 42px; display: flex; gap: 10px; align-items: flex-end; }
+#status .bars i { display: inline-block; width: 6px; margin-right: 3px; background: var(--ink); border-radius: 2px; }
+#status .batt { width: 50px; height: 24px; border: 3px solid #333; border-radius: 7px; padding: 2px; }
+#status .batt b { display: block; height: 100%; background: #3fc95b; border-radius: 3px; }
+.scr { position: absolute; left: 0; top: 0; width: 100%; padding: 128px 44px 0; }
+.nav { display: flex; align-items: center; justify-content: space-between; height: 80px; margin-bottom: 22px; }
+.navbtn { width: 78px; height: 78px; border-radius: 50%; background: #fbf8f2; box-shadow: 0 4px 16px rgba(0,0,0,.08); display: grid; place-items: center; font: 600 34px system-ui; }
+.navpill { padding: 0 28px; height: 74px; border-radius: 40px; background: #fbf8f2; box-shadow: 0 4px 16px rgba(0,0,0,.08); display: grid; place-items: center; font: 400 30px system-ui; }
+.navtitle { font: 600 32px system-ui; }
+.card { background: #fff; border: 4px solid var(--ink); border-radius: 22px; box-shadow: 7px 7px 0 var(--ink); padding: 26px 28px; margin-bottom: 26px; }
+.ttl { font: 900 34px system-ui; letter-spacing: -0.01em; }
+.cap { font: 900 22px system-ui; letter-spacing: 0.04em; }
+.muted { color: var(--muted); font: 400 25px/1.35 system-ui; }
+.tile { width: 178px; height: 178px; border: 4px solid var(--ink); border-radius: 20px; display: flex; flex-direction: column; align-items: center; justify-content: center; background: #ece8df; }
+.tile .n { font: 900 76px/1 system-ui; letter-spacing: -0.02em; }
+.tile .d { font: 900 26px system-ui; margin-top: 8px; }
+.brow { padding: 20px 0 22px; border-bottom: 2px solid #e3dfd6; }
+.brow:last-child { border-bottom: 0; }
+.brow .top { display: flex; justify-content: space-between; font: 600 27px system-ui; margin-bottom: 14px; }
+.track { height: 12px; border-radius: 8px; background: #e2e0dc; border: 2px solid #b9b6b0; overflow: hidden; }
+.fill { height: 100%; width: 0; border-radius: 8px; }
+.chip { display: inline-flex; align-items: center; justify-content: center; height: 70px; padding: 0 26px; border: 4px solid var(--ink); border-radius: 12px; box-shadow: 4px 4px 0 var(--ink); font: 900 30px system-ui; white-space: nowrap; }
+.chip.y { background: var(--yellow); }
+.chip.g { background: var(--green); }
+.btn { display: flex; align-items: center; justify-content: center; height: 88px; border-radius: 16px; font: 900 32px system-ui; letter-spacing: 0.03em; }
+.btn.blk { background: var(--ink); color: #fff; box-shadow: 6px 6px 0 #000; }
+.btn.wht { background: #fff; color: var(--ink); border: 4px solid var(--ink); box-shadow: 6px 6px 0 var(--ink); }
+
+/* pop cards */
+.pop { position: absolute; left: 56px; width: 968px; background: #fff; border: 5px solid var(--ink); border-radius: 30px; box-shadow: 16px 14px 0 var(--ink); padding: 40px 44px; will-change: transform; }
+.tag { position: absolute; padding: 14px 28px; border: 5px solid var(--ink); border-radius: 14px; box-shadow: 8px 8px 0 var(--ink); font: 800 40px "Jakarta"; letter-spacing: -0.03em; white-space: nowrap; }
+
+/* finger */
+#finger { left: 0; top: 0; width: 96px; height: 96px; margin: -48px 0 0 -48px; border-radius: 50%; background: rgba(17,17,19,.22); border: 4px solid rgba(17,17,19,.55); opacity: 0; z-index: 50; }
+#ripple { left: 0; top: 0; width: 96px; height: 96px; margin: -48px 0 0 -48px; border-radius: 50%; border: 5px solid var(--ink); opacity: 0; z-index: 50; }
+
+/* hook */
+.job { position: absolute; width: 640px; height: 420px; background: #fff; border: 5px solid var(--ink); border-radius: 28px; box-shadow: 14px 12px 0 var(--ink); padding: 36px 40px; }
+.job .logo { width: 76px; height: 76px; border-radius: 16px; border: 4px solid var(--ink); }
+.job .t { font: 900 42px system-ui; margin-top: 22px; letter-spacing: -0.01em; }
+.job .c { font: 500 28px system-ui; color: var(--muted); margin-top: 6px; }
+.job .sk { height: 16px; border-radius: 8px; background: #ebe7df; margin-top: 18px; }
+.job .ap { position: absolute; right: 36px; top: 40px; height: 64px; padding: 0 30px; border-radius: 14px; background: var(--ink); color: #fff; font: 900 28px system-ui; display: grid; place-items: center; letter-spacing: .04em; }
+
+/* privacy */
+.prow { position: absolute; left: 70px; width: 940px; display: flex; align-items: center; gap: 30px; }
+.prow .ic { flex: none; width: 104px; height: 104px; border-radius: 22px; border: 5px solid #fff; display: grid; place-items: center; font: 900 50px system-ui; color: var(--ink); }
+.prow .tx { font: 800 50px/1.1 "Jakarta"; letter-spacing: -0.035em; color: #fff; }
+.redact { display: inline-block; position: relative; }
+.redact b { position: absolute; left: -4px; right: -4px; top: 6px; bottom: 2px; background: #fff; border-radius: 6px; transform-origin: left center; }
+
+/* layout wrapper + 9:16 format (?f=9x16) */
+#lay { position: absolute; inset: 0; }
+body.v { --H: 1920px; }
+body.v #lay { transform: translateY(170px); }
+body.v #phone { height: 1400px; }
+body.v #jobA, body.v #jobB, body.v #jobC, body.v #stamp, body.v #stampTag { margin-top: 230px; }
+body.v #eFine { bottom: 380px !important; }
+body.v #eTag { top: 535px !important; }
+/* 16:9 (?f=16x9): headline column left, phone + cards right */
+body.h { --W: 1920px; --H: 1080px; }
+body.h #rig { transform: translate(830px, -380px); }
+body.h #brand { left: 120px; top: 300px; }
+body.h .hd { left: 120px; top: 392px; width: 820px; }
+body.h #hk { top: 330px; width: 1000px; }
+body.h #stampTag { margin-left: 840px !important; }
+body.h #jobA, body.h #jobB, body.h #jobC, body.h #stamp, body.h #stampTag { margin-left: 950px; margin-top: -330px; }
+body.h .prow { left: 930px; width: 940px; margin-top: -220px; }
+body.h .prow .tx { font-size: 42px; }
+body.h #eTag { top: 115px !important; }
+</style>
+</head>
+<body>
+<div id="stage">
+<div id="lay">
+
+  <!-- ============ HOOK ============ -->
+  <div id="s1" class="abs" style="inset:0">
+    <div class="hd abs" id="hk" style="top:120px">
+      <div class="ln"><span id="hk1" style="font-size:132px">Same resume,</span></div>
+      <div class="ln"><span id="hk2" style="font-size:132px">every job?</span></div>
+    </div>
+    <div class="job" id="jobA" style="left:300px;top:560px">
+      <div class="logo" style="background:#C9DDFB"></div><div class="ap">APPLY</div>
+      <div class="t">Mobile Developer</div><div class="c">Harbor Labs · Remote</div>
+      <div class="sk" style="width:92%;margin-top:34px"></div><div class="sk" style="width:80%"></div><div class="sk" style="width:62%"></div>
+    </div>
+    <div class="job" id="jobB" style="left:220px;top:600px">
+      <div class="logo" style="background:#E6DBFB"></div><div class="ap">APPLY</div>
+      <div class="t">iOS Engineer</div><div class="c">Kestrel · Hybrid</div>
+      <div class="sk" style="width:88%;margin-top:34px"></div><div class="sk" style="width:74%"></div><div class="sk" style="width:58%"></div>
+    </div>
+    <div class="job" id="jobC" style="left:150px;top:660px">
+      <div class="logo" style="background:#FDE3A6"></div><div class="ap">APPLY</div>
+      <div class="t">Senior iOS Engineer</div><div class="c">Northwind Health · Remote</div>
+      <div class="sk" style="width:90%;margin-top:34px"></div><div class="sk" style="width:76%"></div><div class="sk" style="width:64%"></div>
+    </div>
+    <div class="abs" id="stamp" style="left:560px;top:820px;display:flex;align-items:center;gap:22px;transform-origin:30% 50%">
+      <div class="tile" style="background:var(--red);width:230px;height:230px;border-width:6px;box-shadow:10px 10px 0 var(--ink)"><div class="n" style="font-size:104px" id="stampN">49</div><div class="d" style="font-size:32px">/100</div></div>
+    </div>
+    <div class="tag" id="stampTag" style="left:620px;top:1080px;background:#fff">Match for this job</div>
+  </div>
+
+  <!-- ============ BRAND + HEADLINES ============ -->
+  <div id="brand" class="abs"><img src="assets/icon.png"><span>Rezumate</span></div>
+
+  <div class="hd abs" id="hd2"><div class="ln"><span>Tailor your resume</span></div><div class="ln"><span>to any job</span></div><div class="sub"><span>Import a PDF or DOCX, paste the job post.</span></div></div>
+  <div class="hd abs" id="hd3"><div class="ln"><span>Know exactly</span></div><div class="ln"><span>what to fix</span></div><div class="sub"><span>An ATS-style match score for this job.</span></div></div>
+  <div class="hd abs" id="hd4"><div class="ln"><span>Find the keywords</span></div><div class="ln"><span>you're missing</span></div><div class="sub"><span>Tap a skill you really have to add it.</span></div></div>
+  <div class="hd abs" id="hd5"><div class="ln"><span>Stronger bullets.</span></div><div class="ln"><span>Only true facts.</span></div><div class="sub"><span>AI rewrites with what you actually did.</span></div></div>
+  <div class="hd abs" id="hd6"><div class="ln"><span>Watch your</span></div><div class="ln"><span>score climb</span></div><div class="sub"><span>Apply changes. Your match updates right away.</span></div></div>
+  <div class="hd abs" id="hd7"><div class="ln"><span>Cover letters from</span></div><div class="ln"><span>your real experience</span></div><div class="sub"><span>Written for this job, only from your resume.</span></div></div>
+  <div class="hd abs" id="hd8"><div class="ln"><span style="color:#fff">Private</span></div><div class="ln"><span style="color:#fff">by default.</span></div></div>
+
+<div id="rig" class="abs" style="inset:0">
+  <!-- ============ PHONE ============ -->
+  <div id="phone" class="abs">
+    <div id="screen">
+      <div id="status"><div class="time">9:41</div><div class="island"></div>
+        <div class="icons"><span class="bars"><i style="height:10px"></i><i style="height:15px"></i><i style="height:20px"></i><i style="height:25px"></i></span><div class="batt"><b></b></div></div></div>
+
+      <!-- home -->
+      <div class="scr" id="scrHome" style="padding-top:150px">
+        <div class="ttl" style="font-size:42px">Ready to tailor your resume</div>
+        <div class="muted" style="margin:6px 0 26px;font-weight:600">Let's improve your resume today.</div>
+        <div class="card"><div class="cap">RESUME SCORE</div><div style="font:900 64px system-ui;margin:30px 0 10px">– – <span style="font-size:36px;font-weight:600">/100</span></div><div class="muted" style="font-size:23px;font-weight:600">Upload a resume to generate an ATS score.</div><div style="height:20px;border:3px solid var(--ink);margin-top:20px"></div></div>
+        <div class="card"><div class="ttl" style="font-size:32px">Free</div><div class="muted">3 analyses/day, 3 improvements/day, 2 saved variants.</div></div>
+        <div class="card"><div class="ttl" style="font-size:32px">Job description</div><div class="muted" style="margin-top:8px">Paste the job post you're applying to.</div><div style="height:150px;border:3px solid var(--ink);border-radius:14px;margin-top:18px;background:#fff"></div></div>
+        <div class="btn blk">ANALYZE RESUME</div>
+      </div>
+
+      <!-- results -->
+      <div class="scr" id="scrResults">
+        <div class="nav"><div class="navbtn">‹</div><div class="navtitle">Results</div><div class="navbtn">↻</div></div>
+        <div id="resBody">
+          <div class="card" style="display:flex;gap:28px;align-items:center">
+            <div class="tile" id="tileR"><div class="n" id="tileRN">0</div><div class="d">/100</div></div>
+            <div><div class="cap" style="font-size:24px">ATS SCORE</div><div class="muted" style="margin-top:10px" id="tileRNote">Checking against this job…</div></div>
+          </div>
+          <div class="card"><div class="ttl">Score breakdown</div><div class="muted">Pro explains what's behind each score.</div>
+            <div class="brow"><div class="top"><span>Formatting Risk</span><span>100</span></div><div class="track"><div class="fill" style="width:100%;background:var(--green)"></div></div></div>
+            <div class="brow"><div class="top"><span>Impact Quality</span><span id="rIQ">17</span></div><div class="track"><div class="fill" id="rIQf" style="width:17%;background:var(--red)"></div></div></div>
+            <div class="brow"><div class="top"><span>Keyword Coverage</span><span>41</span></div><div class="track"><div class="fill" style="width:41%;background:var(--red)"></div></div></div>
+            <div class="brow"><div class="top"><span>Structure Readability</span><span>80</span></div><div class="track"><div class="fill" style="width:80%;background:var(--green)"></div></div></div>
+          </div>
+          <div class="card"><div class="ttl">Role fit</div><div class="muted">Checked against this job description. Not added to your resume automatically.</div></div>
+          <div class="card"><div class="ttl">Missing hard skills</div><div class="muted">Tap a skill you actually have to add it.</div></div>
+        </div>
+      </div>
+
+      <!-- review -->
+      <div class="scr" id="scrReview">
+        <div class="nav" style="justify-content:flex-start;gap:60px"><div class="navpill">Cancel</div><div class="navtitle">Review improvements</div></div>
+        <div class="muted" style="margin-bottom:22px">Review each change. Only the ones you keep are applied.</div>
+        <div class="card" style="background:var(--blue);box-shadow:none;border-width:3px"><div class="muted" style="text-decoration:line-through;font-size:22px">Helped with moving the app from UIKit to SwiftUI</div><div style="font:600 27px/1.35 system-ui;margin-top:6px">Migrated 40 screens from UIKit to SwiftUI, reducing UI code by 30%</div></div>
+        <div class="card" style="background:var(--blue);box-shadow:none;border-width:3px"><div class="muted" style="text-decoration:line-through;font-size:22px">Responsible for fixing crashes</div><div style="font:600 27px/1.35 system-ui;margin-top:6px">Fixed the top 10 crashes, increasing crash-free sessions from 97% to 99.5%</div></div>
+        <div class="card" style="box-shadow:none;border-width:3px"><div class="ttl" style="font-size:28px">Needs your details</div><div class="muted" style="font-size:22px">These only say what you worked on.</div><div class="btn wht" style="height:72px;font-size:26px;margin-top:16px">ADD DETAILS</div></div>
+        <div class="muted" style="font-size:22px;font-weight:600;color:var(--ink);margin:6px 0 22px">🛡 Checked: nothing was added beyond your resume and the results you entered.</div>
+        <div class="btn blk">APPLY 3 CHANGES</div>
+      </div>
+
+      <!-- letter -->
+      <div class="scr" id="scrLetter">
+        <div class="nav" style="justify-content:flex-start;gap:120px"><div class="navpill">Close</div><div class="navtitle">Cover letter</div></div>
+        <div class="muted" style="font-size:22px;font-weight:600;margin-bottom:18px">Edit freely. Built only from what's on your resume.</div>
+        <div class="card" style="box-shadow:none;border-width:3px;font:400 27px/1.42 system-ui;height:900px">Dear Hiring Manager,<br><br>Northwind Health's Senior iOS Engineer role interests me because it brings together SwiftUI development and offline app functionality in a patient-facing iPhone app. My background includes 4 years building consumer apps in Swift, with experience in SwiftUI, UIKit, and Core Data.<br><br>As an iOS Developer at Brightline Apps, I rebuilt the shopping app's checkout flow in SwiftUI with Apple Pay, increasing checkout completion by 18%. I also migrated 40 screens from UIKit to SwiftUI.<br><br>I'd welcome the chance to bring this experience to Northwind Health.<br><br>Sincerely,<br>Jordan Lee</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ POP CARDS ============ -->
+  <!-- S2: resume attached -->
+  <div class="pop" id="p2a" style="top:880px;padding:34px;background:#F4EFE6">
+    <div style="border:4px dashed var(--ink);border-radius:20px;padding:30px;text-align:center;background:#fff">
+      <div style="width:120px;height:120px;margin:0 auto;border:4px solid var(--ink);border-radius:16px;background:var(--green);display:grid;place-items:center"><div style="width:68px;height:68px;border-radius:50%;background:var(--ink);color:var(--green);font:900 40px/68px system-ui">✓</div></div>
+      <div style="font:900 36px system-ui;margin-top:20px">Resume attached</div>
+    </div>
+    <div style="display:flex;align-items:center;gap:24px;margin-top:24px;border:4px solid var(--ink);border-radius:18px;padding:18px 22px;background:#fff">
+      <div style="width:84px;height:84px;border-radius:12px;background:var(--ink);color:#fff;font:900 24px system-ui;display:grid;place-items:center">PDF</div>
+      <div><div style="font:500 34px system-ui">Jordan_Lee_iOS_Resume.pdf</div><div class="muted" style="font-size:27px">669 characters extracted</div></div>
+    </div>
+  </div>
+  <div class="tag" id="tagPdf" style="left:690px;top:830px;background:#BCD9FB">PDF or DOCX</div>
+
+  <!-- S2: job description -->
+  <div class="pop" id="p2b" style="top:820px">
+    <div style="display:flex;justify-content:space-between;align-items:center">
+      <div class="ttl" style="font-size:38px">Job description</div>
+      <div id="btnPaste" class="btn wht" style="height:66px;padding:0 24px;font-size:24px">PASTE FROM CLIPBOARD</div>
+    </div>
+    <div style="margin-top:24px;border:4px solid var(--ink);border-radius:18px;padding:24px 26px;height:250px;font:400 29px/1.42 system-ui;background:#fff"><span id="jdText"></span><span id="caret" style="display:inline-block;width:3px;height:32px;background:#2858A6;vertical-align:-5px"></span></div>
+    <div id="btnAnalyze" class="btn blk" style="margin-top:26px">ANALYZE RESUME</div>
+  </div>
+
+  <!-- S3: breakdown -->
+  <div class="pop" id="p3" style="top:860px;padding:36px 46px 20px">
+    <div class="ttl" style="font-size:42px">Score breakdown</div>
+    <div class="muted" style="font-size:30px">What's behind your score for this job.</div>
+    <div id="p3rows"></div>
+  </div>
+
+  <!-- S4: missing skills -->
+  <div class="pop" id="p4" style="top:740px">
+    <div class="ttl" style="font-size:42px">Missing hard skills</div>
+    <div class="muted" style="font-size:30px;margin-bottom:26px">Tap a skill you actually have to add it.</div>
+    <div id="mrow" style="display:flex;flex-wrap:wrap;gap:20px;min-height:180px">
+      <div class="chip y mc">+ UI testing</div><div class="chip y mc" id="mcX">+ XCTest</div><div class="chip y mc">+ App Store</div><div class="chip y mc">+ TestFlight</div><div class="chip y mc">+ REST API</div>
+    </div>
+    <div style="height:3px;background:#e3dfd6;margin:30px 0 26px"></div>
+    <div class="ttl" style="font-size:36px;margin-bottom:20px">Matched keywords</div>
+    <div id="grow" style="display:flex;flex-wrap:wrap;gap:18px">
+      <div class="chip g">iOS</div><div class="chip g">Swift</div><div class="chip g">SwiftUI</div><div class="chip g">UIKit</div><div class="chip g">Core Data</div><div class="chip g" id="gX">XCTest</div>
+    </div>
+  </div>
+  <div class="pop" id="sheet" style="top:860px;left:40px;width:1000px;border-radius:40px;padding:50px 54px 60px;background:#FBF8F2;box-shadow:0 -8px 0 var(--ink)">
+    <div style="width:90px;height:10px;border-radius:6px;background:#ccc;margin:-26px auto 34px"></div>
+    <div style="font:900 50px system-ui">Add XCTest</div>
+    <div style="font:500 32px/1.4 system-ui;color:#3c3d42;margin:14px 0 36px">Only add this if you actually have it. It goes in your Skills, and you can pick a bullet too.</div>
+    <div id="btnAdd" class="btn blk" style="height:100px;font-size:34px">ADD TO SKILLS</div>
+  </div>
+
+  <!-- S5: rewrite -->
+  <div class="pop" id="p5" style="top:760px;background:var(--blue);padding:38px 44px">
+    <div style="display:flex;gap:26px">
+      <div style="flex:none;width:52px;height:52px;border-radius:10px;background:var(--ink);color:#fff;font:900 34px/52px system-ui;text-align:center;margin-top:4px">✓</div>
+      <div style="flex:1;position:relative">
+        <div id="oldB" style="font:500 36px/1.35 system-ui;position:relative;display:inline">Worked on the checkout flow for the shopping app<b id="strike" style="position:absolute;left:0;top:50%;height:3px;background:#555;width:0"></b></div>
+        <div id="newB" style="font:700 40px/1.32 system-ui;margin-top:14px;min-height:160px"></div><div id="hintB" style="position:absolute;left:0;top:70px;font:italic 500 31px/1.35 system-ui;color:#5b6170">This only says what you worked on.<br>What came of it?</div>
+      </div>
+    </div>
+    <div id="detailBox" style="margin-top:20px;background:#fff;border:4px solid var(--ink);border-radius:18px;padding:20px 24px">
+      <div class="cap" style="font-size:22px;color:var(--muted)">ADD A DETAIL ONLY YOU KNOW</div>
+      <div style="font:500 32px/1.35 system-ui;margin-top:8px;min-height:44px"><span id="detailText"></span><span id="caret2" style="display:inline-block;width:3px;height:34px;background:#2858A6;vertical-align:-6px"></span></div>
+    </div>
+    <div id="checked" style="display:flex;gap:14px;margin-top:24px;font:600 27px/1.35 system-ui"><span style="font-size:30px">🛡</span><span>Checked: nothing added beyond your resume and the details you entered.</span></div>
+  </div>
+  <div class="tag" id="madeUp" style="left:640px;top:700px;background:var(--green)">Nothing made up</div>
+
+  <!-- S6: score climb -->
+  <div class="pop" id="p6" style="top:760px;padding:44px 48px">
+    <div style="display:flex;gap:40px;align-items:center">
+      <div class="tile" id="t6" style="width:250px;height:250px;border-width:6px"><div class="n" id="t6n" style="font-size:112px">49</div><div class="d" style="font-size:34px">/100</div></div>
+      <div>
+        <div style="display:flex;align-items:center;gap:18px"><span class="cap" style="font-size:34px">ATS SCORE</span><span id="optTag" style="background:var(--green);border:3px solid var(--ink);border-radius:8px;padding:4px 12px;font:900 20px system-ui;letter-spacing:.06em">IMPROVED</span></div>
+        <div style="font:900 44px system-ui;margin-top:18px"><span style="text-decoration:line-through;color:#666">49</span> → <span id="t6to">49</span> <span id="t6plus" style="color:#2f9e3f;font-size:36px">+12</span></div>
+      </div>
+    </div>
+    <div style="height:3px;background:#e3dfd6;margin:34px 0 24px"></div>
+    <div style="display:flex;justify-content:space-between;font:600 34px system-ui;margin-bottom:16px"><span>Impact Quality</span><span><span id="iqV">17</span> <span id="iqP" style="color:#2f9e3f;font-weight:900;font-size:28px">+50</span></span></div>
+    <div class="track" style="height:18px"><div class="fill" id="iqF" style="width:17%;background:var(--red)"></div></div>
+  </div>
+  <div class="tag" id="plus12" style="left:720px;top:700px;background:var(--yellow)">+12 points</div>
+
+  <!-- S7: letter -->
+  <div class="pop" id="p7" style="top:830px;padding:44px 50px;height:500px">
+    <div id="letterText" style="font:400 40px/1.42 system-ui"></div>
+  </div>
+  <div class="tag" id="tagJob" style="left:600px;top:780px;background:#D9CCFA">Written for this job</div>
+
+</div><!-- /rig -->
+
+  <!-- ============ PRIVACY ============ -->
+  <div id="s8" class="abs" style="inset:0">
+    <div class="prow" id="pr1" style="top:560px"><div class="ic" style="background:var(--green)">✓</div><div class="tx">Scoring runs on your iPhone</div></div>
+    <div class="prow" id="pr2" style="top:740px;align-items:flex-start"><div class="ic" style="background:var(--yellow)">✓</div>
+      <div><div class="tx">Contact details removed before AI</div>
+        <div style="font:600 34px system-ui;color:#cfcfd4;margin-top:16px;display:flex;gap:26px;flex-wrap:wrap">
+          <span class="redact">Jordan Lee<b></b></span><span class="redact">jordan@mail.com<b></b></span><span class="redact">(555) 014-2290<b></b></span>
+        </div></div></div>
+    <div class="prow" id="pr3" style="top:1000px"><div class="ic" style="background:#BCD9FB">✓</div><div class="tx">No account needed</div></div>
+  </div>
+
+</div><!-- /lay -->
+
+  <!-- ============ END ============ -->
+  <div id="s9" class="abs" style="inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center">
+    <img id="eIcon" src="assets/icon.png" style="width:230px;height:230px;border-radius:52px;border:6px solid var(--ink);box-shadow:14px 14px 0 var(--ink)">
+    <div class="tag" id="eTag" style="position:absolute;left:600px;top:250px;background:var(--yellow);font-size:46px">New in 2.0</div>
+    <div id="eName" style="font:800 124px/1 Jakarta;letter-spacing:-0.05em;margin-top:56px">Rezumate</div>
+    <div id="eLine" style="font:600 44px/1.3 Jakarta;letter-spacing:-0.025em;color:#3c3d42;margin-top:18px">Tailor your resume to any job.</div>
+    <div id="eBadge" style="margin-top:56px;display:flex;align-items:center;gap:20px;background:var(--ink);color:#fff;border-radius:24px;padding:22px 44px;box-shadow:10px 10px 0 #555">
+      <span style="font:500 64px/1 system-ui;margin-top:-10px"></span>
+      <span style="text-align:left"><span style="display:block;font:500 24px system-ui">Download on the</span><span style="display:block;font:600 46px/1.05 system-ui;letter-spacing:-0.01em">App Store</span></span>
+    </div>
+    <div id="ePills" style="display:flex;gap:16px;margin-top:44px">
+      <div class="chip" style="background:var(--green);height:62px;font-size:26px">Free to start</div>
+      <div class="chip" style="background:var(--yellow);height:62px;font-size:26px">AI with Rezumate Pro</div>
+      <div class="chip" style="background:#fff;height:62px;font-size:26px">iPhone</div>
+    </div>
+    <div id="eFine" style="position:absolute;bottom:44px;font:500 22px system-ui;color:#8a8b90">Sample resume shown. Scores vary by resume and job.</div>
+  </div>
+
+  <div class="chip y abs" id="xcFly" style="left:0;top:0;z-index:20">+ XCTest</div>
+  <div id="finger" class="abs"></div><div id="ripple" class="abs"></div>
+</div>
+
+<script>
+const FMT = new URLSearchParams(location.search).get('f');
+if (FMT === '9x16') document.body.classList.add('v');
+if (FMT === '16x9') document.body.classList.add('h');
+const MAXW = FMT === '16x9' ? 740 : 940;
+const W = 1080, H = 1350, FPS = 30, DUR = 31;
+const $ = id => document.getElementById(id);
+const clamp = (x, a = 0, b = 1) => Math.min(b, Math.max(a, x));
+const pr = (t, a, d) => clamp((t - a) / d);
+const eOut = p => 1 - Math.pow(1 - p, 3);
+const eOut5 = p => 1 - Math.pow(1 - p, 5);
+const eIn = p => p * p * p;
+const eIO = p => p < .5 ? 4 * p * p * p : 1 - Math.pow(-2 * p + 2, 3) / 2;
+const back = p => { const c = 1.9; return 1 + (c + 1) * Math.pow(p - 1, 3) + c * Math.pow(p - 1, 2); };
+const spring = p => p >= 1 ? 1 : 1 - Math.exp(-6.5 * p) * Math.cos(11 * p);
+const lerp = (a, b, p) => a + (b - a) * p;
+const css = (el, o) => { if (typeof el === 'string') el = $(el); for (const k in o) el.style[k] = o[k]; };
+const hex = h => [1, 3, 5].map(i => parseInt(h.slice(i, i + 2), 16));
+const mix = (a, b, p) => { const A = hex(a), B = hex(b); return `rgb(${A.map((v, i) => Math.round(lerp(v, B[i], p))).join(',')})`; };
+
+// ---------------------------------------------------------------- scene timing (seconds, on a 120 BPM grid)
+const S = {
+  s1: [0, 4], s2: [4, 8], s3: [8, 11], s4: [11, 14.5], s5: [14.5, 19.5],
+  s6: [19.5, 22.5], s7: [22.5, 25.5], s8: [25.5, 28], s9: [28, 32],
+};
+const BG = [[0, '#F6F0E6'], [4, '#F6F0E6'], [8, '#FDE7E3'], [11, '#FDF2CF'], [14.5, '#F6F0E6'], [19.5, '#E5EEFB'], [22.5, '#ECE8FA'], [25.5, '#111113'], [28, '#F6F0E6']];
+
+const JD = "Senior iOS Engineer, Northwind Health. You'll build in SwiftUI, write XCTest and UI testing suites, ship through TestFlight and the App Store, and integrate REST APIs.";
+const DETAIL = "Rebuilt it in SwiftUI with Apple Pay. Completion went up 18%.";
+const NEWB = "Rebuilt the shopping app's checkout flow in SwiftUI with Apple Pay, increasing checkout completion by 18%";
+const LETTER = "As an iOS Developer at Brightline Apps, I rebuilt the shopping app's checkout flow in SwiftUI with Apple Pay, increasing checkout completion by 18%. I also migrated 40 screens from UIKit to SwiftUI, reducing UI code by 30%.";
+const ROWS = [['Formatting Risk', 100, 'g'], ['Impact Quality', 17, 'r'], ['Keyword Coverage', 41, 'r'], ['Structure Readability', 80, 'g']];
+
+// build breakdown rows
+$('p3rows').innerHTML = ROWS.map((r, i) => `<div class="brow" style="padding:22px 0 24px"><div class="top" style="font-size:33px"><span>${r[0]}</span><span id="bv${i}">0</span></div><div class="track" style="height:18px"><div class="fill" id="bf${i}" style="background:var(--${r[2] === 'g' ? 'green' : 'red'})"></div></div></div>`).join('');
+
+// fit headlines to width
+function fit() {
+  document.querySelectorAll('.hd').forEach(hd => {
+    if (hd.id === 'hk') return;
+    const spans = hd.querySelectorAll('.ln span');
+    let size = 96;
+    const tooWide = () => [...spans].some(s => s.getBoundingClientRect().width > MAXW);
+    while (tooWide() && size > 60) { size -= 2; spans.forEach(s => s.style.fontSize = size + 'px'); }
+  });
+}
+
+const scoreColor = n => n < 50 ? '#FF6159' : n < 75 ? '#FDD31D' : '#6BDD4A';
+const typed = (str, t, a, d) => str.slice(0, Math.round(str.length * clamp((t - a) / d)));
+
+// visibility of a scene-scoped element: fades in at a, out at b
+function vis(el, t, a, b) { css(el, { visibility: (t >= a && t < b) ? 'visible' : 'hidden' }); }
+
+// generic headline animation
+function headline(id, t, a, b) {
+  const hd = $(id);
+  if (t < a - 0.01 || t >= b) { hd.style.visibility = 'hidden'; return; }
+  hd.style.visibility = 'visible';
+  const lines = hd.querySelectorAll('.ln span, .sub span');
+  lines.forEach((el, i) => {
+    const pin = eOut5(pr(t, a + 0.05 + i * 0.07, 0.55));
+    const pout = eIn(pr(t, b - 0.32 + i * 0.03, 0.28));
+    const y = (1 - pin) * 115 - pout * 115;
+    el.style.transform = `translateY(${y}%)`;
+  });
+}
+
+// pop card: rises with spring, leaves fast downward
+function pop(id, t, a, b, rot = -1.4, from = 700) {
+  const el = $(id);
+  if (t < a || t >= b) { el.style.visibility = 'hidden'; return 0; }
+  el.style.visibility = 'visible';
+  const p = spring(pr(t, a, 0.75));
+  const q = eIn(pr(t, b - 0.3, 0.3));
+  const y = (1 - p) * from + q * 900;
+  const r = lerp(rot + 5, rot, p);
+  el.style.transform = `translateY(${y}px) rotate(${r}deg)`;
+  return p;
+}
+function tagPop(id, t, a, b, rot = 3) {
+  const el = $(id);
+  if (t < a || t >= b) { el.style.visibility = 'hidden'; return; }
+  el.style.visibility = 'visible';
+  const p = back(pr(t, a, 0.4));
+  const q = eIn(pr(t, b - 0.3, 0.3));
+  el.style.transform = `translateY(${q * 900}px) scale(${lerp(0.4, 1, clamp(p, 0, 2))}) rotate(${lerp(-8, rot, clamp(p, 0, 1.2))}deg)`;
+  el.style.opacity = clamp(p * 3);
+}
+
+// taps: [time, element id]
+const TAPS = [[6.15, 'btnPaste'], [7.45, 'btnAnalyze'], [12.2, 'mcX'], [13.2, 'btnAdd'], [26.0, null]];
+function rectOf(id) {
+  const r = $(id).getBoundingClientRect(), s = $('stage').getBoundingClientRect();
+  const k = s.width / $('stage').offsetWidth;
+  return { x: (r.left - s.left) / k, y: (r.top - s.top) / k, w: r.width / k, h: r.height / k };
+}
+function finger(t) {
+  let shown = false;
+  for (const [tt, id] of TAPS) {
+    if (!id || t < tt - 0.35 || t > tt + 0.35) continue;
+    const r = rectOf(id);
+    const x = r.x + r.w * 0.62, y = r.y + r.h * 0.6;
+    const pin = eOut(pr(t, tt - 0.35, 0.25));
+    const press = t < tt ? lerp(1.15, 1, pin) : lerp(0.82, 1, eOut(pr(t, tt, 0.2)));
+    const out = pr(t, tt + 0.15, 0.2);
+    css('finger', { opacity: pin * (1 - out), transform: `translate(${x}px,${y + (1 - pin) * 40}px) scale(${press})` });
+    const rp = pr(t, tt, 0.35);
+    css('ripple', { opacity: rp > 0 && rp < 1 ? (1 - rp) * 0.8 : 0, transform: `translate(${x}px,${y}px) scale(${1 + rp * 1.4})` });
+    shown = true;
+  }
+  if (!shown) { css('finger', { opacity: 0 }); css('ripple', { opacity: 0 }); }
+}
+function pressed(id, t, tt) { // button press feedback
+  const d = t - tt;
+  const k = d >= 0 && d < 0.18 ? 1 : 0;
+  $(id).style.transform = k ? 'translate(4px,4px)' : '';
+  $(id).style.boxShadow = k ? 'none' : '';
+}
+
+// ---------------------------------------------------------------- render
+function render(t) {
+  // background
+  let bg = BG[0][1];
+  for (let i = 1; i < BG.length; i++) {
+    const [tt, c] = BG[i];
+    if (t >= tt - 0.25) bg = mix(BG[i - 1][1], c, eIO(pr(t, tt - 0.25, 0.35)));
+  }
+  $('stage').style.background = bg;
+
+  // ---- S1 hook
+  {
+    const [a, b] = S.s1;
+    vis('s1', t, a, b);
+    const out = eIn(pr(t, b - 0.35, 0.35));
+    ['hk1', 'hk2'].forEach((id, i) => {
+      const p = eOut5(pr(t, -0.3 + i * 0.6, 0.5));
+      css(id, { transform: `translateY(${(1 - p) * 110 - out * 120}%)` });
+    });
+    [['jobA', -0.45, 7], ['jobB', 0.05, -4], ['jobC', 0.55, -1.5]].forEach(([id, st, rot], i) => {
+      const p = spring(pr(t, st, 0.8));
+      css(id, { transform: `translate(${(1 - p) * 900}px, ${out * 900}px) rotate(${lerp(rot + 12, rot, p)}deg)` });
+    });
+    const sp = pr(t, 1.9, 0.28);
+    const sc = sp < 1 ? lerp(2.6, 1, eIn(sp)) : 1 + Math.sin(pr(t, 2.18, 0.25) * Math.PI) * 0.04;
+    css('stamp', { opacity: sp > 0 ? 1 : 0, transform: `translateY(${out * 900}px) scale(${sc}) rotate(${lerp(-14, -6, sp)}deg)` });
+    $('stampN').textContent = '49';
+    tagPop('stampTag', t, 2.45, b + 0.3, 3);
+    if (t < b && t >= b - 0.35) $('stampTag').style.transform += ` translateY(${out * 900}px)`;
+  }
+
+  // ---- brand row
+  {
+    const vis1 = t >= 4 && t < 25.5;
+    const p = eOut(pr(t, 4.0, 0.5));
+    css('brand', { visibility: vis1 ? 'visible' : 'hidden', transform: `translateY(${(1 - p) * -120}px)` });
+  }
+
+  // ---- headlines
+  headline('hd2', t, ...S.s2); headline('hd3', t, ...S.s3); headline('hd4', t, ...S.s4);
+  headline('hd5', t, ...S.s5); headline('hd6', t, ...S.s6); headline('hd7', t, ...S.s7); headline('hd8', t, ...S.s8);
+
+  // ---- phone
+  {
+    const pin = spring(pr(t, 4.0, 0.9));
+    const pout = eIn(pr(t, 25.2, 0.35));
+    const drift = Math.sin(t * 0.6) * 6;
+    css('phone', { visibility: t >= 4 && t < 25.6 ? 'visible' : 'hidden', transform: `translateY(${(1 - pin) * 900 + pout * 1000 + drift}px) rotate(${(1 - pin) * 6}deg)` });
+    // screens
+    const scr = t < 8 ? 'scrHome' : t < 14.5 ? 'scrResults' : t < 19.5 ? 'scrReview' : t < 22.5 ? 'scrResults' : 'scrLetter';
+    ['scrHome', 'scrResults', 'scrReview', 'scrLetter'].forEach(id => css(id, { visibility: id === scr ? 'inherit' : 'hidden' }));
+    // results scroll
+    let scroll = 0;
+    if (t >= 11 && t < 14.5) scroll = -eIO(pr(t, 11, 0.6)) * 640;
+    css('resBody', { transform: `translateY(${scroll}px)` });
+    // results score tile
+    let n = 0, note = 'Checking against this job…';
+    if (t >= 8 && t < 19.5) { n = Math.round(49 * eOut(pr(t, 8.35, 1.0))); if (n >= 49) note = 'Needs tailoring before sending.'; }
+    if (t >= 19.5) { n = 61; note = 'Good match. A few gaps left.'; }
+    $('tileRN').textContent = n;
+    $('tileR').style.background = t >= 8.35 ? scoreColor(Math.max(n, 1)) : '#ece8df';
+    $('tileRNote').textContent = note;
+    const iq = t >= 19.5 ? 67 : 17;
+    $('rIQ').textContent = iq; $('rIQf').style.width = iq + '%'; $('rIQf').style.background = scoreColor(iq);
+  }
+
+  // ---- S2
+  {
+    pop('p2a', t, 4.45, 5.95, -1.2);
+    tagPop('tagPdf', t, 4.95, 5.95, 4);
+    pop('p2b', t, 5.75, 8.0, -1.0);
+    const txt = typed(JD, t, 6.3, 0.8);
+    $('jdText').textContent = txt;
+    $('caret').style.opacity = (Math.floor(t * 4) % 2 === 0 || (t > 6.3 && t < 7.1)) ? 1 : 0;
+    pressed('btnPaste', t, 6.15); pressed('btnAnalyze', t, 7.45);
+  }
+
+  // ---- S3
+  {
+    pop('p3', t, 9.15, 11.0, -1.3);
+    ROWS.forEach((r, i) => {
+      const p = eOut(pr(t, 9.45 + i * 0.13, 0.7));
+      $('bf' + i).style.width = (r[1] * p) + '%';
+      $('bv' + i).textContent = Math.round(r[1] * p);
+    });
+  }
+
+  // ---- S4
+  {
+    pop('p4', t, 11.15, 14.5, -1.2);
+    document.querySelectorAll('.mc').forEach((el, i) => {
+      const p = back(pr(t, 11.45 + i * 0.09, 0.35));
+      el.style.transform = `scale(${clamp(p, 0, 1.3)})`;
+      el.style.opacity = clamp(p * 4);
+    });
+    // XCTest leaves after Add
+    const flyA = 13.45, flyD = 0.5;
+    $('mcX').style.visibility = t >= 13.45 ? 'hidden' : 'visible';
+    $('gX').style.opacity = t >= flyA + flyD ? 1 : 0;
+    if (t >= 13.45 && t < flyA + flyD) {
+      const A = rectOf('mcX'), B = rectOf('gX');
+      const p = eIO(pr(t, flyA, flyD));
+      const x = lerp(A.x, B.x, p), y = lerp(A.y, B.y, p) - Math.sin(p * Math.PI) * 120;
+      css('xcFly', { visibility: 'visible', transform: `translate(${x}px,${y}px) rotate(${-1.2 + Math.sin(p * Math.PI) * 8}deg) scale(${1 + Math.sin(p * Math.PI) * 0.15})`, background: p > 0.5 ? 'var(--green)' : 'var(--yellow)' });
+      $('xcFly').textContent = p > 0.5 ? 'XCTest' : '+ XCTest';
+    } else css('xcFly', { visibility: 'hidden' });
+    // gX landing bounce
+    const lb = pr(t, flyA + flyD, 0.3);
+    $('gX').style.transform = lb > 0 && lb < 1 ? `scale(${1 + Math.sin(lb * Math.PI) * 0.15})` : '';
+    // sheet
+    const el = $('sheet');
+    if (t >= 12.35 && t < 13.5) {
+      const p = eOut5(pr(t, 12.35, 0.45)), q = eIn(pr(t, 13.3, 0.2));
+      css(el, { visibility: 'visible', transform: `translateY(${(1 - p) * 520 + q * 560}px)` });
+    } else el.style.visibility = 'hidden';
+    pressed('btnAdd', t, 13.2);
+    // chip pressed state on tap
+    $('mcX').style.transform += (t >= 12.2 && t < 12.4) ? ' translate(4px,4px)' : '';
+  }
+
+  // ---- S5
+  {
+    pop('p5', t, 14.6, 19.5, -1.1);
+    $('detailText').textContent = typed(DETAIL, t, 15.4, 1.0);
+    $('caret2').style.opacity = t < 16.6 && Math.floor(t * 4) % 2 === 0 || (t > 15.4 && t < 16.4) ? 1 : 0;
+    // strike + fade old
+    const sp = eOut(pr(t, 16.8, 0.35));
+    $('strike').style.width = (sp * 100) + '%';
+    $('oldB').style.color = mix('#111113', '#8a8b90', sp);
+    $('oldB').style.fontSize = lerp(36, 28, eIO(pr(t, 17.0, 0.35))) + 'px';
+    // new bullet word-by-word
+    const words = NEWB.split(' ');
+    const k = Math.round(words.length * clamp((t - 17.15) / 0.95));
+    $('newB').innerHTML = words.slice(0, k).join(' ');
+    $('hintB').style.opacity = 1 - pr(t, 16.6, 0.25);
+    // shimmer while "rewriting"
+    $('detailBox').style.borderColor = (t > 16.5 && t < 16.85) ? '#2858A6' : '';
+    tagPop('madeUp', t, 18.25, 19.5, 3);
+    const cp = eOut(pr(t, 18.6, 0.4));
+    css('checked', { opacity: cp, transform: `translateY(${(1 - cp) * 20}px)` });
+  }
+
+  // ---- S6
+  {
+    pop('p6', t, 19.6, 22.5, -1.3);
+    const p = eOut(pr(t, 20.2, 0.9));
+    const n = Math.round(lerp(49, 61, p));
+    $('t6n').textContent = n; $('t6to').textContent = n;
+    $('t6').style.background = scoreColor(n);
+    $('t6plus').style.opacity = p >= 1 ? 1 : 0;
+    $('optTag').style.opacity = p >= 1 ? 1 : 0;
+    const t6s = pr(t, 21.1, 0.3);
+    $('t6').style.transform = t6s > 0 && t6s < 1 ? `scale(${1 + Math.sin(t6s * Math.PI) * 0.1}) rotate(${Math.sin(t6s * Math.PI) * -3}deg)` : '';
+    const iq = Math.round(lerp(17, 67, eOut(pr(t, 20.4, 0.9))));
+    $('iqV').textContent = iq; $('iqF').style.width = iq + '%'; $('iqF').style.background = scoreColor(iq);
+    $('iqP').style.opacity = iq >= 67 ? 1 : 0;
+    tagPop('plus12', t, 21.15, 22.5, 4);
+  }
+
+  // ---- S7
+  {
+    pop('p7', t, 22.6, 25.5, -1.2);
+    tagPop('tagJob', t, 23.0, 25.5, 3);
+    $('letterText').textContent = typed(LETTER, t, 23.2, 1.9);
+  }
+
+  // ---- S8 privacy
+  {
+    const [a, b] = S.s8;
+    vis('s8', t, a, b);
+    const out = eIn(pr(t, b - 0.3, 0.3));
+    ['pr1', 'pr2', 'pr3'].forEach((id, i) => {
+      const p = eOut5(pr(t, a + 0.25 + i * 0.35, 0.55));
+      css(id, { opacity: p, transform: `translateX(${(1 - p) * 140}px) translateY(${out * -60}px)` });
+      $(id).style.opacity = p * (1 - out);
+    });
+    document.querySelectorAll('.redact b').forEach((el, i) => {
+      el.style.transform = `scaleX(${eOut(pr(t, a + 0.95 + i * 0.12, 0.25))})`;
+    });
+  }
+
+  // ---- S9 end
+  {
+    const [a] = S.s9;
+    vis('s9', t, a, 99);
+    const ip = spring(pr(t, a, 0.8));
+    css('eIcon', { transform: `scale(${lerp(0.2, 1, ip)}) rotate(${(1 - ip) * -20}deg)` });
+    [['eTag', 0.45], ['eName', 0.15], ['eLine', 0.3], ['eBadge', 0.55], ['ePills', 0.75], ['eFine', 1.0]].forEach(([id, d]) => {
+      const p = eOut5(pr(t, a + d, 0.6));
+      css(id, { opacity: p, transform: `translateY(${(1 - p) * 50}px)` + (id === 'eTag' ? ` rotate(${lerp(-10, 6, back(pr(t, a + d, 0.45)))}deg)` : '') });
+    });
+    const push = 1 + pr(t, a, 4) * 0.03;
+    $('s9').style.transform = `scale(${push})`;
+  }
+
+  finger(t);
+}
+
+window.render = render;
+window.DUR = DUR; window.FPS = FPS;
+window.ready = document.fonts.ready.then(() => { fit(); render(0); return true; });
+// preview: ?t=12.3 renders that time; ?play plays in real time
+const q = new URLSearchParams(location.search);
+if (q.has('t')) window.ready.then(() => render(parseFloat(q.get('t'))));
+if (q.has('play')) window.ready.then(() => { const t0 = performance.now(); const loop = () => { render(((performance.now() - t0) / 1000) % DUR); requestAnimationFrame(loop); }; loop(); });
+</script>
+</body>
+</html>

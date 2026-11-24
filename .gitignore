@@ -68,3 +68,7 @@ yarn-error.log*
 local.properties
 *.iml
 android/app/release/
+
+# Rendered ad outputs (keep sources only)
+marketing/ads/*/out/
+marketing/ads/**/*.mp4
