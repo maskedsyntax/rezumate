@@ -12,15 +12,16 @@ import {
   type SectionKey
 } from "../core/resume-document.ts";
 import { fontFamily } from "./fonts.ts";
-import { densityScale, type TemplateSpec } from "./templates.ts";
+import { densityScale, scaleTemplate, type TemplateSpec } from "./templates.ts";
 
-export type RenderOptions = { pageSize: "LETTER" | "A4"; density: keyof typeof densityScale };
+export type RenderOptions = { pageSize: "LETTER" | "A4"; density: keyof typeof densityScale; textScale?: number };
 
 // Long dashes become hyphens, as in the app, so every ATS reads date ranges the same way.
 const clean = (value: string) => value.replace(/[—–−]/g, "-").trim();
 const filled = (lines: Line[]) => lines.map((l) => clean(l.text.replace(/^[•·\-*]\s+/, ""))).filter(Boolean);
 
-export function ResumePdf({ doc, template: t, options }: { doc: ResumeDoc; template: TemplateSpec; options: RenderOptions }) {
+export function ResumePdf({ doc, template, options }: { doc: ResumeDoc; template: TemplateSpec; options: RenderOptions }) {
+  const t = scaleTemplate(template, options.textScale ?? 1);
   const k = densityScale[options.density];
   const family = fontFamily(t.font);
   const base: Style = { fontFamily: family, fontSize: t.body.size, lineHeight: t.body.lineHeight, color: t.colors.text };

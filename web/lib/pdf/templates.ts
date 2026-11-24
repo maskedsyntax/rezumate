@@ -110,3 +110,30 @@ export function templateById(id: string): TemplateSpec {
 }
 
 export const densityScale = { comfortable: 1.25, standard: 1, compact: 0.75 } as const;
+
+/** Smallest body text "fit to one page" will go to, in points. */
+export const MIN_BODY_SIZE = 8.5;
+/** Smallest page margin "fit to one page" will go to, in points (about 0.4in). */
+export const MIN_MARGIN = 28;
+
+/** The lowest text scale a template allows before body text gets too small to read. */
+export function minTextScale(spec: TemplateSpec): number {
+  return Math.min(1, Math.max(0.85, MIN_BODY_SIZE / spec.body.size));
+}
+
+/** Scales a template's type and margins together, for "fit to one page". */
+export function scaleTemplate(spec: TemplateSpec, scale: number): TemplateSpec {
+  const f = Math.min(1, Math.max(minTextScale(spec), scale));
+  if (f === 1) return spec;
+  const size = (n: number) => Math.round(n * f * 100) / 100;
+  return {
+    ...spec,
+    margin: Math.max(Math.min(spec.margin, MIN_MARGIN), Math.round(spec.margin * f)),
+    nameStyle: { ...spec.nameStyle, size: size(spec.nameStyle.size) },
+    headline: { size: size(spec.headline.size) },
+    contact: { ...spec.contact, size: size(spec.contact.size) },
+    heading: { ...spec.heading, size: size(spec.heading.size) },
+    body: { ...spec.body, size: size(spec.body.size) },
+    meta: { size: size(spec.meta.size) },
+  };
+}

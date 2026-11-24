@@ -21,12 +21,15 @@ function loadPdfJs(): Promise<PdfJs> {
  * Shows the actual exported PDF, drawn with pdf.js, so what you see is exactly what an
  * employer (and their ATS) gets.
  */
-export function PreviewPane({ doc, templateId, options, onPages }: { doc: ResumeDoc; templateId: string; options: ResumeOptions; onPages?: (pages: number) => void }) {
+type FitControls = { fitting: boolean; onFit: () => void; onResetScale: () => void };
+
+export function PreviewPane({ doc, templateId, options, onPages, fit }: { doc: ResumeDoc; templateId: string; options: ResumeOptions; onPages?: (pages: number) => void; fit?: FitControls }) {
   const container = useRef<HTMLDivElement>(null);
   const [pages, setPages] = useState(0);
   const [rendering, setRendering] = useState(true);
   const [error, setError] = useState("");
   const generation = useRef(0);
+  const scaled = options.textScale && options.textScale < 1 ? options.textScale : 0;
 
   useEffect(() => {
     const run = ++generation.current;
@@ -80,13 +83,19 @@ export function PreviewPane({ doc, templateId, options, onPages }: { doc: Resume
     }, pages === 0 ? 0 : RENDER_DELAY_MS);
     return () => clearTimeout(timer);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [doc, templateId, options.pageSize, options.density]);
+  }, [doc, templateId, options.pageSize, options.density, options.textScale]);
 
   return (
     <div className="preview">
       <div className="preview-status" aria-live="polite">
         {pages > 0 ? <span className={`chip${pages > 1 ? " warn" : " matched"}`}>{pages} {pages === 1 ? "page" : "pages"}</span> : null}
-        {pages > 1 ? <span className="field-hint">Most recruiters prefer one page under 10 years of experience. Try the Compact density.</span> : null}
+        {pages > 1 && fit ? (
+          <button className="button small" type="button" onClick={fit.onFit} disabled={fit.fitting}>{fit.fitting ? "Fitting…" : "Fit to one page"}</button>
+        ) : null}
+        {pages > 1 ? <span className="field-hint">Most recruiters prefer one page under 10 years of experience.</span> : null}
+        {scaled && fit ? (
+          <span className="field-hint">Text at {Math.round(scaled * 100)}% <button className="text-button" type="button" onClick={fit.onResetScale}>Reset</button></span>
+        ) : null}
         {rendering && pages > 0 ? <span className="label muted">Updating…</span> : null}
       </div>
       {error ? <p className="notice error" role="alert">{error}</p> : null}

@@ -857,6 +857,7 @@ button.chip:focus-visible {
 
 .editor-form-inner {
   display: grid;
+  grid-template-columns: minmax(0, 1fr);
   gap: 22px;
   max-width: 760px;
   margin: 0 auto;
@@ -1511,6 +1512,21 @@ button.chip:focus-visible {
     max-width: none;
   }
 
+  .editor-bar-end {
+    flex-wrap: wrap;
+    width: 100%;
+    margin-left: 0;
+  }
+
+  .editor-bar-end .button.yellow {
+    margin-left: auto;
+  }
+
+  .history-list,
+  .template-list {
+    width: min(320px, calc(100vw - 24px));
+  }
+
   .match-top {
     flex-direction: column;
     align-items: stretch;
@@ -1532,4 +1548,39 @@ button.chip:focus-visible {
     animation: none;
     transition: none;
   }
+}
+
+/* Version history */
+.history-list {
+  width: 320px;
+  max-height: min(70vh, 520px);
+  overflow-y: auto;
+}
+
+.history-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 8px 10px;
+  border: 2px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--panel2);
+}
+
+.history-item div {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.history-item strong {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  text-transform: uppercase;
+}
+
+.history-item span:not(.chip) {
+  color: var(--muted);
+  font-size: 12px;
 }

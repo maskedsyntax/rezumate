@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 
 import type { ResumeDoc } from "@/lib/core/resume-document";
-import { getResume, saveResume, type ResumeRecord } from "@/lib/storage/db";
+import { addSnapshot, getResume, listSnapshots, saveResume, type ResumeRecord } from "@/lib/storage/db";
 
 export type SaveState = "saved" | "saving" | "unsaved" | "error";
 export type Mutator = (doc: ResumeDoc) => void;
@@ -11,6 +11,8 @@ export type Mutator = (doc: ResumeDoc) => void;
 const HISTORY_LIMIT = 100;
 const COALESCE_MS = 1200;
 const SAVE_DELAY_MS = 500;
+// Opening a resume records a version, at most this often, so earlier sessions can be restored.
+const OPEN_SNAPSHOT_MS = 30 * 60 * 1000;
 
 /**
  * Loads one resume and keeps it in sync with IndexedDB. Document edits go through
@@ -42,6 +44,7 @@ export function useResumeEditor(id: string) {
         recordRef.current = found;
         setRecord(found);
         setStatus("ready");
+        void snapshotOnOpen(found);
       })
       .catch(() => !cancelled && setStatus("error"));
     return () => { cancelled = true; };
@@ -100,6 +103,9 @@ export function useResumeEditor(id: string) {
     commit({ ...current, doc: nextDoc });
   }, [commit]);
 
+  /** Replace the whole document (restoring a version). Undoable like any edit. */
+  const replaceDoc = useCallback((doc: ResumeDoc) => update((draft) => { Object.assign(draft, structuredClone(doc)); }), [update]);
+
   /** Change record settings (title, template, page options, job). Not part of undo. */
   const patch = useCallback((changes: Partial<Omit<ResumeRecord, "id" | "doc">>) => {
     const current = recordRef.current;
@@ -130,5 +136,16 @@ export function useResumeEditor(id: string) {
     commit({ ...current, doc: next });
   }, [commit]);
 
-  return { record, status, saveState, update, patch, undo, redo, canUndo: past.current.length > 0, canRedo: future.current.length > 0, flush };
+  return { record, status, saveState, update, replaceDoc, patch, undo, redo, canUndo: past.current.length > 0, canRedo: future.current.length > 0, flush };
+}
+
+async function snapshotOnOpen(record: ResumeRecord): Promise<void> {
+  try {
+    const [latest] = await listSnapshots(record.id);
+    if (latest && Date.now() - latest.createdAt < OPEN_SNAPSHOT_MS) return;
+    if (latest && JSON.stringify(latest.doc) === JSON.stringify(record.doc)) return;
+    await addSnapshot(record.id, record.doc, "Opened");
+  } catch {
+    // Version history is a convenience; never block editing on it.
+  }
 }

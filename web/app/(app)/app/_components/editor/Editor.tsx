@@ -6,6 +6,7 @@ import { useCallback, useEffect, useState } from "react";
 import { normalizedOrder } from "@/lib/core/resume-document";
 import { addSnapshot, type Density } from "@/lib/storage/db";
 import { useToast } from "../useToast";
+import { HistoryMenu } from "./HistoryMenu";
 import { MatchPane } from "./MatchPane";
 import { PreviewPane } from "./PreviewPane";
 import { ContactForm, SectionForm } from "./SectionForms";
@@ -17,13 +18,15 @@ type SideTab = "preview" | "match";
 type View = "edit" | SideTab;
 
 const saveLabels: Record<SaveState, string> = { saved: "Saved on this device", saving: "Saving…", unsaved: "Saving…", error: "Couldn't save. Retrying on next edit." };
+const densityLabels: Record<Density, string> = { comfortable: "Roomy", standard: "Standard", compact: "Compact" };
 
 export function Editor({ id }: { id: string }) {
-  const { record, status, saveState, update, patch, undo, redo, canUndo, canRedo, flush } = useResumeEditor(id);
+  const { record, status, saveState, update, replaceDoc, patch, undo, redo, canUndo, canRedo, flush } = useResumeEditor(id);
   const [side, setSide] = useState<SideTab>("preview");
   const [view, setView] = useState<View>("edit");
   const [focusId, setFocusId] = useState<string | null>(null);
   const [exporting, setExporting] = useState(false);
+  const [fitting, setFitting] = useState(false);
   const [toast, showToast] = useToast();
 
   // ?tab=match opens the match panel (from "Tailor for a job" and the checker).
@@ -88,8 +91,33 @@ export function Editor({ id }: { id: string }) {
     }
   };
 
+  const fitToPage = async () => {
+    setFitting(true);
+    try {
+      const [{ renderResumePdf }, { fitToOnePage }] = await Promise.all([import("@/lib/pdf/render"), import("@/lib/pdf/fit")]);
+      const result = await fitToOnePage(doc, record.templateId, record.options, renderResumePdf);
+      if (result.fits) {
+        patch({ options: { ...record.options, ...result.options } });
+        const scale = result.options.textScale ?? 1;
+        const spacing = densityLabels[result.options.density].toLowerCase();
+        showToast(scale < 1 ? `Fits on one page: ${spacing} spacing, text at ${Math.round(scale * 100)}%` : `Fits on one page with ${spacing} spacing`);
+      } else {
+        showToast("Still too long at the smallest readable size. Cut older or weaker bullets to fit.");
+      }
+    } catch {
+      showToast("Couldn't fit the page. Try again.");
+    } finally {
+      setFitting(false);
+    }
+  };
+
   const sideContent = side === "preview"
-    ? <PreviewPane doc={doc} templateId={record.templateId} options={record.options} />
+    ? <PreviewPane
+        doc={doc}
+        templateId={record.templateId}
+        options={record.options}
+        fit={{ fitting, onFit: fitToPage, onResetScale: () => patch({ options: { ...record.options, textScale: 1 } }) }}
+      />
     : <MatchPane doc={doc} job={record.job} onJob={(job) => patch({ job })} update={update} onFocusBullet={focusBullet} toast={showToast} />;
 
   return (
@@ -101,6 +129,7 @@ export function Editor({ id }: { id: string }) {
         <div className="editor-bar-group">
           <button className="icon-button" type="button" onClick={undo} disabled={!canUndo} aria-label="Undo" title="Undo (⌘Z)">↶</button>
           <button className="icon-button" type="button" onClick={redo} disabled={!canRedo} aria-label="Redo" title="Redo (⇧⌘Z)">↷</button>
+          <HistoryMenu resumeId={record.id} doc={doc} onRestore={replaceDoc} toast={showToast} />
         </div>
         <div className="editor-bar-end">
           <TemplateMenu value={record.templateId} onChange={(templateId) => patch({ templateId })} />
@@ -111,9 +140,7 @@ export function Editor({ id }: { id: string }) {
           </div>
           <label className="sr-only" htmlFor="density">Spacing</label>
           <select id="density" className="select" style={{ width: "auto", padding: "6px 8px", fontSize: 12 }} value={record.options.density} onChange={(event) => patch({ options: { ...record.options, density: event.target.value as Density } })}>
-            <option value="comfortable">Roomy</option>
-            <option value="standard">Standard</option>
-            <option value="compact">Compact</option>
+            {(Object.keys(densityLabels) as Density[]).map((d) => <option key={d} value={d}>{densityLabels[d]}</option>)}
           </select>
           <button className="button small yellow" type="button" onClick={exportPdf} disabled={exporting}>{exporting ? "Creating PDF…" : "Download PDF"}</button>
         </div>

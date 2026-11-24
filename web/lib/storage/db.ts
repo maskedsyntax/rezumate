@@ -8,7 +8,12 @@ import { emptyDoc, newId, type ResumeDoc } from "../core/resume-document.ts";
 export type PageSize = "LETTER" | "A4";
 export type Density = "comfortable" | "standard" | "compact";
 
-export type ResumeOptions = { pageSize: PageSize; density: Density };
+export type ResumeOptions = {
+  pageSize: PageSize;
+  density: Density;
+  /** Text and margin scale set by "fit to one page" (1 or missing means the template as designed). */
+  textScale?: number;
+};
 
 /** The job a tailored version targets. */
 export type TargetJob = { company: string; role: string; description: string };
